@@ -1,601 +1,252 @@
-// ===== ASTELL HOME - PAINEL ADMINISTRATIVO =====
-
-let sb;
-try {
-  const url = (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').trim();
-  const key = (typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : '').trim();
-  if (url && key && !/COLE_AQUI/.test(url + key)) {
-    sb = supabase.createClient(new URL(url).origin, key);
-  } else {
-    sb = null;
-  }
-} catch (e) {
-  sb = null;
-}
-
-const $ = s => document.querySelector(s); const $$ = s => document.querySelectorAll(s);
-const view = $('#view');
-
-const fail = msg => {
-  view.innerHTML = `<div class="card" style="margin:20px; border-color:var(--bad)">
-    <b style="color:var(--bad)">Não foi possível iniciar o Painel Astell</b>
-    <p class="mute">${msg}</p>
-  </div>`;
-};
-
-if (!sb) {
-  fail('Preencha as credenciais do Supabase no arquivo <code>config.js</code>.');
-}
-
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = d => d ? new Date(d + 'T00:00').toLocaleDateString('pt-BR') : '—';
-const cpfDigits = v => String(v || '').replace(/\D/g, '').slice(0, 11);
-const cpfMask = v => cpfDigits(v).replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1-$2');
-const cpfOk = d => {
-  if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false;
-  for (let t = 9; t < 11; t++) {
-    let s = 0;
-    for (let i = 0; i < t; i++) s += d[i] * (t + 1 - i);
-    if ((s * 10) % 11 % 10 != d[t]) return false;
-  }
-  return true;
-};
-
-function toast(m, err) {
-  const t = $('#toast');
-  t.textContent = m;
-  t.className = 'show' + (err ? ' err' : '');
-  setTimeout(() => t.className = '', 3500);
-}
-
-const S = {
-  profile: null,
-  res: [],
-  cur: null,
-  menu: 'residences',
-  rows: {},
-  edit: null,
-  hf: {}
-};
-
-const DOC_CATS = ['Projeto arquitetônico','Projeto estrutural','Projeto elétrico','Projeto hidráulico','Projeto sanitário','Climatização','Cobertura','Memorial descritivo','Manuais','Notas e comprovantes','Termo de entrega','Garantia','Outros'];
-const REQ_CATS = ['Elétrica','Hidráulica','Cobertura','Esquadrias','Revestimentos','Pintura','Steel Frame','Equipamentos','Outros'];
-const STATUS = ['Recebida','Em análise','Aguardando informações','Agendada','Em atendimento','Concluída','Encerrada'];
-const QR_T = { 'Minha casa': 'casa', 'Documentos e manuais': 'documentos', 'Equipamentos': 'equipamentos', 'Manutenção': 'manutencao', 'Planta técnica': 'planta', 'Assistência técnica': 'assistencia' };
-const PT_CATS = ['Elétrica','Hidráulica','Gás','Climatização','Estrutura','Paredes','Equipamentos'];
-
-const T = {
-  warranties: { label: 'Garantias', order: 'start_date', f: [['system','Sistema ou componente'],['coverage','Descrição da cobertura'],['start_date','Data inicial','date'],['months','Prazo (meses)','number'],['notes','Condições e exclusões','textarea']] },
-  maintenance_tasks: { label: 'Manutenção preventiva', order: 'next_due', f: [['name','Tarefa'],['system','Sistema'],['frequency','Periodicidade'],['last_done','Última execução','date'],['next_due','Próxima data','date'],['interval_months','Repetir a cada (meses)','number'],['status','Situação',['Pendente','Em andamento','Concluída','Cancelada']],['instructions','Instruções','textarea']] },
-  equipment: { label: 'Equipamentos', f: [['name','Nome'],['category','Categoria'],['maker','Fabricante'],['model','Modelo'],['serial','Nº de série'],['location','Localização']] },
-  history_events: { label: 'Histórico da residência', order: 'event_date', f: [['event_date','Data','date'],['category','Categoria'],['description','Descrição','textarea']] },
-  contacts: { label: 'Contatos', f: [['name','Nome / empresa'],['specialty','Especialidade'],['phone','Telefone'],['whatsapp','WhatsApp'],['email','E-mail'],['hours','Horário de atendimento'],['notes','Instruções','textarea']] },
-  building_items: { label: 'Itens Construtivos (Steel Frame)', f: [['category','Categoria',['Estrutura','Sistemas','Materiais']],['title','Título'],['description','Descrição','textarea'],['highlights','Destaques (um por linha)','textarea']] }
-};
-
-const RES_F = [
-  ['code', 'Código (ex.: AST-2026-002)', 'text', true],
-  ['name', 'Nome da residência', 'text', true],
-  ['address', 'Endereço'],
-  ['area_m2', 'Área construída (m²)', 'number'],
-  ['floors', 'Pavimentos', 'number'],
-  ['build_system', 'Sistema construtivo'],
-  ['project_no', 'Nº do projeto'],
-  ['start_date', 'Início da obra', 'date'],
-  ['delivery_date', 'Entrega', 'date'],
-  ['tech_lead', 'Responsável técnico'],
-  ['notes', 'Observações', 'textarea']
-];
-
-const MENUS = [
-  { id: 'residences', label: 'Residências', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
-  { id: 'owners', label: 'Proprietários & CPFs', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2|M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
-  { id: 'building_items', label: 'Itens Steel Frame', icon: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5' },
-  { id: 'documents', label: 'Documentos', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6' },
-  { id: 'warranties', label: 'Garantias', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
-  { id: 'maintenance_tasks', label: 'Manutenções', icon: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
-  { id: 'equipment', label: 'Equipamentos', icon: 'M5 12.55a11 11 0 0 1 14.08 0|M1.42 9a16 16 0 0 1 21.16 0|M8.53 16.11a6 6 0 0 1 6.95 0|M12 20h.01' },
-  { id: 'service_requests', label: 'Assistência Técnica', icon: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9|M13.73 21a2 2 0 0 1-3.46 0' },
-  { id: 'floorplans', label: 'Plantas Técnicas', icon: 'M3 3h18v18H3z|M3 9h18|M9 21V9' },
-  { id: 'qr_codes', label: 'Etiquetas QR Code', icon: 'M3 3h6v6H3z|M15 3h6v6h-6z|M3 15h6v6H3z|M14 14h3v3h-3z|M18 18h3v3h-3z' },
-  { id: 'contacts', label: 'Contatos Úteis', icon: 'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z' },
-  { id: 'history_events', label: 'Histórico & Auditoria', icon: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' }
-];
-
-const ico = (d, c = '') => `<svg class="ico ${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
-const sel = (name, label, opts, selectedVal = '') => `<label>${label}<select name="${name}">${opts.map(o => `<option ${o === selectedVal ? 'selected' : ''}>${o}</option>`).join('')}</select></label>`;
-const formOf = (id, title, inner, btn = 'Salvar') => `<details class="card"><summary>${title}</summary><form data-form="${id}">${inner}<button>${btn}</button></form></details>`;
+// ASTELL HOME — Painel administrativo (página separada: admin.html).
+// Usa o mesmo banco Supabase do app do cliente: o que é cadastrado aqui aparece lá, conforme o CPF vinculado.
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = d => d ? new Date(String(d).slice(0, 10) + 'T00:00').toLocaleDateString('pt-BR') : '—';
 const clean = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v === '' ? null : v]));
+function toast(m, err) { const t = $('#toast'); t.textContent = m; t.className = 'show' + (err ? ' err' : ''); setTimeout(() => t.className = '', 3500); }
+
+let sb; try { sb = supabase.createClient(new URL(SUPABASE_URL.trim()).origin, SUPABASE_KEY.trim()); } catch (e) { sb = null; }
+const view = $('#view');
+const fail = m => { view.innerHTML = '<div class="card" style="margin:16px"><b>Não foi possível iniciar o painel</b><p class="mute">' + m + '</p></div>'; };
+if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo config.js e preencha SUPABASE_URL e SUPABASE_KEY.'); throw new Error('Supabase não configurado'); }
+addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
+
+const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false };
+
+// ---------- ícones
+const ico = d => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
+const IC = { casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15' };
+const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
+
+// ---------- menus (o primeiro é a tela inicial)
+const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user'], ['docs', 'Documentos', 'doc'], ['eq', 'Equipamentos', 'layers'], ['gar', 'Garantias', 'shield'], ['man', 'Manutenções', 'wrench'], ['ast', 'Assistência', 'phones'], ['his', 'Histórico', 'clock'], ['ctt', 'Contatos', 'book'], ['bld', 'Construção', 'home'], ['qr', 'QR Codes', 'grid'], ['pl', 'Planta técnica', 'map']];
+const TABLE_OF = { eq: 'equipment', gar: 'warranties', man: 'maintenance_tasks', ctt: 'contacts', bld: 'building_items' };
+
+// ---------- dados e campos
+const addMonths = (d, m) => { const x = new Date(d + 'T00:00'); x.setMonth(x.getMonth() + m); return x; };
+function wState(w) { const end = addMonths(w.start_date, w.months), days = (end - new Date()) / 864e5; return days < 0 ? ['Encerrada', 'bad', end] : days < 90 ? ['Próxima do vencimento', 'warn', end] : ['Vigente', 'ok', end]; }
+const DOC_CATS = ['Projeto arquitetônico', 'Projeto estrutural', 'Projeto elétrico', 'Projeto hidráulico', 'Projeto sanitário', 'Climatização', 'Cobertura', 'Memorial descritivo', 'Manuais', 'Notas e comprovantes', 'Termo de entrega', 'Garantia', 'Outros'];
+const STATUS = ['Recebida', 'Em análise', 'Aguardando informações', 'Agendada', 'Em atendimento', 'Concluída', 'Encerrada'];
+const PT_CATS = ['Elétrica', 'Hidráulica', 'Gás', 'Climatização', 'Estrutura', 'Paredes', 'Equipamentos'];
+const QR_T = { 'Minha casa': 'casa', 'Documentos e manuais': 'documentos', 'Equipamentos': 'equipamentos', 'Manutenção': 'manutencao', 'Planta técnica': 'planta', 'Assistência técnica': 'assistencia' };
+const TBL = { residences: 'Residência', documents: 'Documento', warranties: 'Garantia', maintenance_tasks: 'Manutenção', equipment: 'Equipamento', history_events: 'Evento do histórico', contacts: 'Contato', building_items: 'Item construtivo', floorplans: 'Planta', plan_points: 'Ponto da planta', qr_codes: 'QR Code', service_requests: 'Assistência' };
+const ACT = { INSERT: 'criou', UPDATE: 'alterou', DELETE: 'excluiu' };
+
+const DEFREQ = ['system', 'name', 'description', 'months', 'start_date', 'event_date', 'title'];
 const fld = ([k, l, t = 'text', req], v = {}) => {
-  const val = v[k] ?? '', r = req ? 'required' : '';
-  if (Array.isArray(t)) return sel(k, l, t, val);
+  const val = v[k] ?? '', r = (req ?? DEFREQ.includes(k)) ? 'required' : '';
+  if (Array.isArray(t)) return `<label>${l}<select name="${k}">${t.map(o => `<option ${o === val ? 'selected' : ''}>${o}</option>`).join('')}</select></label>`;
   return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}>`}</label>`;
 };
+const RES_F = [['code', 'Código (ex.: AST-2026-002)', 'text', true], ['name', 'Nome da residência', 'text', true], ['address', 'Endereço'], ['area_m2', 'Área construída (m²)', 'number'], ['floors', 'Pavimentos', 'number'], ['build_system', 'Sistema construtivo'], ['project_no', 'Nº do projeto'], ['start_date', 'Início da obra', 'date'], ['delivery_date', 'Entrega', 'date'], ['tech_lead', 'Responsável técnico'], ['notes', 'Observações', 'textarea']];
+const DOC_F = [['title', 'Título'], ['category', 'Categoria', DOC_CATS], ['version', 'Versão'], ['description', 'Descrição']];
+const T = {
+  warranties: { label: 'Garantias', order: 'start_date', f: [['system', 'Sistema ou componente'], ['coverage', 'Descrição da cobertura'], ['start_date', 'Data inicial', 'date'], ['months', 'Prazo (meses)', 'number'], ['notes', 'Condições e exclusões', 'textarea']],
+    row: r => { const [s, c, end] = wState(r); return `<b>${esc(r.system)}</b> <span class="badge ${c}">${s}</span><p>${esc(r.coverage)}</p><span class="mute">${fmt(r.start_date)} até ${end.toLocaleDateString('pt-BR')}</span><p class="mute">${esc(r.notes)}</p>`; },
+    note: 'Os prazos valem conforme contrato, fabricante e lei. As condições contratuais e legais prevalecem sobre os indicadores do aplicativo.' },
+  maintenance_tasks: { label: 'Manutenções', order: 'next_due', f: [['name', 'Tarefa'], ['system', 'Sistema'], ['frequency', 'Periodicidade (texto)'], ['last_done', 'Última execução', 'date'], ['next_due', 'Próxima data', 'date'], ['interval_months', 'Repetir a cada (meses)', 'number'], ['status', 'Situação', ['Pendente', 'Em andamento', 'Concluída', 'Cancelada']], ['instructions', 'Instruções', 'textarea']],
+    row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> <span class="badge ${late ? 'bad' : st === 'Concluída' ? 'ok' : ''}">${late ? 'Atrasada' : st}</span><p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
+  equipment: { label: 'Equipamentos', f: [['name', 'Nome'], ['category', 'Categoria'], ['maker', 'Fabricante'], ['model', 'Modelo'], ['serial', 'Nº de série'], ['location', 'Localização']],
+    row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.category)} · ${esc(r.location)}</span><p>${esc(r.maker)} ${esc(r.model)} ${r.serial ? '· Série ' + esc(r.serial) : ''}</p>` },
+  history_events: { label: 'Histórico', f: [['event_date', 'Data', 'date'], ['category', 'Categoria'], ['description', 'Descrição', 'textarea']], row: () => '' },
+  contacts: { label: 'Contatos', f: [['name', 'Nome / empresa'], ['specialty', 'Especialidade'], ['phone', 'Telefone'], ['whatsapp', 'WhatsApp'], ['email', 'E-mail'], ['hours', 'Horário de atendimento'], ['notes', 'Instruções', 'textarea']],
+    row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.specialty)}</span><p>${esc(r.phone)} ${esc(r.whatsapp)} ${esc(r.email)}</p><span class="mute">${esc(r.hours)} ${esc(r.notes)}</span>` },
+  building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais']], ['title', 'Título'], ['description', 'Descrição', 'textarea'], ['highlights', 'Destaques (um por linha)', 'textarea']],
+    row: r => `<b>${esc(r.title)}</b> <span class="badge">${esc(r.category)}</span><p class="mute">${esc(r.description)}</p><p>${esc((r.highlights || '').split('\n').filter(Boolean).join(' · '))}</p>` },
+};
+const fieldsFor = k => k === 'res' ? RES_F : k === 'documents' ? DOC_F : T[k].f;
 
-// Função auxiliar segura para upload no Cloudinary
-async function uploadToCloudinary(file) {
-  const cloudName = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? CLOUDINARY_CLOUD_NAME : '';
-  const preset = typeof CLOUDINARY_PRESET !== 'undefined' ? CLOUDINARY_PRESET : '';
-  
-  if (!cloudName || !preset) {
-    throw new Error('Cloudinary não configurado corretamente no config.js.');
-  }
+// CPF
+function cpfDigits(v) { return String(v || '').replace(/\D/g, '').slice(0, 11); }
+function cpfMask(v) { return cpfDigits(v).replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1-$2'); }
+function cpfOk(d) { if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false; for (let t = 9; t < 11; t++) { let s = 0; for (let i = 0; i < t; i++) s += d[i] * (t + 1 - i); if ((s * 10) % 11 % 10 != d[t]) return false; } return true; }
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', preset);
-
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: 'POST',
-    body: formData
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Erro ao enviar imagem para o Cloudinary');
-  return data.secure_url;
+// ---------- janela de formulário
+function modal(title, body, attrs, btn = 'Salvar') {
+  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sheethead"><b>${esc(title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div><form ${attrs}>${body}<button>${btn}</button><button type="button" class="ghost2" data-close>Cancelar</button></form></div>`;
+  $('#modal').hidden = false;
+}
+const closeModal = () => { $('#modal').hidden = true; $('#modal').innerHTML = ''; };
+const ADD = {
+  res: () => modal('Nova residência', RES_F.map(f => fld(f)).join(''), 'data-form="add:res"', 'Criar residência'),
+  own: () => modal('Novo proprietário', `<label>Nome<input name="name" required></label><label>CPF<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required></label><label>E-mail do proprietário (opcional, recomendado)<input name="email" type="email"></label>`, 'data-form="add:own"', 'Cadastrar'),
+  docs: () => modal('Enviar documento', '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f)).join(''), 'data-form="add:docs"', 'Enviar'),
+  qr: () => modal('Novo QR Code', `<label>Nome da etiqueta<input name="label" required></label>${fld(['target', 'Ao ler, abre', Object.keys(QR_T)])}`, 'data-form="add:qr"', 'Gerar'),
+  pl: () => modal('Enviar planta (imagem PNG ou JPG)', '<label>Título<input name="title" required></label><label>Imagem<input name="file" type="file" accept="image/*" required></label>', 'data-form="add:pl"', 'Enviar'),
+};
+function openAdd(k) { if (ADD[k]) return ADD[k](); modal('Adicionar — ' + T[k].label, T[k].f.map(f => fld(f)).join(''), `data-form="add:${k}"`); }
+function openEdit(k, id) {
+  const row = k === 'res' ? S.res.find(r => r.id === id) : (S.rows[k] || []).find(r => r.id === id); if (!row) return;
+  modal('Editar', fieldsFor(k).map(f => fld(f, row)).join(''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
 }
 
-function renderDrawer() {
-  const drawer = $('#drawer');
-  drawer.innerHTML = `
-    <div class="drawer-head">
-      <b>Painel Administrativo</b>
-      <span class="mute">${esc(S.profile?.name || S.profile?.email)}</span>
-    </div>
-    <nav class="drawer-nav">
-      ${MENUS.map(m => `<button class="drawer-item ${S.menu === m.id ? 'active' : ''}" data-nav="${m.id}">${ico(m.icon)} <span>${m.label}</span></button>`).join('')}
-    </nav>
-    <div class="drawer-foot">
-      <button id="logoutBtn" class="ghost2" style="width:100%">Sair do sistema</button>
-    </div>
-  `;
-}
+// ---------- páginas
+const head = (t, add, ctx = true) => `<div class="pagehead"><div><h2>${t}</h2>${ctx && S.cur ? `<p class="mute">Residência: <b>${esc(S.cur.name)}</b> — ${esc(S.cur.code)}</p>` : ''}</div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`;
+const acts = (...b) => `<div class="acts">${b.filter(Boolean).join('')}</div>`;
+const visBtn = (k, r) => `<button class="link" data-vis="${k}:${r.id}">${r.visible ? 'Ocultar do cliente' : 'Mostrar ao cliente'}</button>`;
+const hid = r => r.visible === false ? '<p><span class="badge">Oculto do cliente</span></p>' : '';
 
-function toggleDrawer(open) {
-  const drawer = $('#drawer'), scrim = $('#scrim'), btn = $('#menuBtn');
-  const show = open !== undefined ? open : !drawer.classList.contains('open');
-  drawer.classList.toggle('open', show);
-  scrim.hidden = !show;
-  btn.setAttribute('aria-expanded', String(show));
-}
-
-async function renderAdmin() {
-  if (!['admin', 'tech'].includes(S.profile?.role)) {
-    return view.innerHTML = '<div class="card"><b class="bad">Acesso Negado</b><p>Sua conta não possui permissão de administrador.</p></div>';
-  }
-
-  renderDrawer();
-
-  const isGlobal = ['residences', 'owners'].includes(S.menu);
-  if (!isGlobal && !S.cur) {
-    return view.innerHTML = `
-      <div class="page-title">
-        <h2>Selecione uma Residência</h2>
-        <p class="mute">Você precisa selecionar uma residência no topo para gerenciar ${MENUS.find(m => m.id === S.menu)?.label.toLowerCase()}.</p>
-      </div>`;
-  }
-
-  const curTitle = MENUS.find(m => m.id === S.menu)?.label || 'Painel';
-  let content = `<div class="page-title"><h2>${curTitle}</h2>${S.cur ? `<span class="res-tag">${esc(S.cur.name)} (${esc(S.cur.code)})</span>` : ''}</div>`;
-
-  switch (S.menu) {
-    case 'residences': content += await viewResidences(); break;
-    case 'owners': content += await viewOwners(); break;
-    case 'building_items': content += await viewGenericTable('building_items'); break;
-    case 'documents': content += await viewDocuments(); break;
-    case 'warranties': content += await viewGenericTable('warranties'); break;
-    case 'maintenance_tasks': content += await viewGenericTable('maintenance_tasks'); break;
-    case 'equipment': content += await viewGenericTable('equipment'); break;
-    case 'service_requests': content += await viewServiceRequests(); break;
-    case 'floorplans': content += await viewFloorplans(); break;
-    case 'qr_codes': content += await viewQrCodes(); break;
-    case 'contacts': content += await viewGenericTable('contacts'); break;
-    case 'history_events': content += await viewHistory(); break;
-  }
-
-  view.innerHTML = content;
-}
-
-async function viewResidences() {
-  const list = S.res.map(r => `
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <b>${esc(r.name)}</b>
-          <span class="mute">${esc(r.code)} · ${esc(r.address || 'Sem endereço')}</span>
-        </div>
-        ${S.cur?.id === r.id ? '<span class="badge ok">Selecionada</span>' : `<button class="ghost2" data-pick="${r.id}">Selecionar</button>`}
-      </div>
-      <p class="mute" style="margin-top:8px">Sistema: ${esc(r.build_system || 'Steel Frame')} | Entrega: ${fmt(r.delivery_date)}</p>
-    </div>
-  `).join('') || '<p class="empty">Nenhuma residência cadastrada.</p>';
-
-  return formOf('newres', 'Cadastrar Nova Residência', RES_F.map(f => fld(f)).join(''), 'Criar Residência') +
-    (S.cur ? formOf('editres', 'Editar Residência Selecionada (' + esc(S.cur.code) + ')', RES_F.map(f => fld(f, S.cur)).join(''), 'Salvar Alterações') : '') +
-    '<h3>Residências Cadastradas</h3>' + list;
-}
-
-async function viewOwners() {
-  const { data: cl } = await sb.from('client_cpfs').select('id,name,cpf_mask,claimed_by,email').order('created_at', { ascending: false });
-  const { data: lk } = S.cur ? await sb.from('cpf_residences').select('cpf_id').eq('residence_id', S.cur.id) : { data: [] };
-  const linked = new Set((lk || []).map(x => x.cpf_id));
-
-  const list = (cl || []).map(c => `
-    <div class="card">
-      <b>${esc(c.name)}</b>
-      <span class="mute">CPF: ${esc(c.cpf_mask)} ${c.email ? '· ' + esc(c.email) : ''}</span>
-      <p style="margin:6px 0">${c.claimed_by ? '<span class="badge ok">Acesso Ativo</span>' : '<span class="badge">Aguardando Primeiro Acesso</span>'}</p>
-      <div class="acts">
-        ${linked.has(c.id) ? '<span class="badge ok">Vinculado a esta residência</span>' : S.cur ? `<button class="link" data-linkcpf="${c.id}">Vincular a esta residência</button>` : ''}
-        ${c.claimed_by ? `<button class="link danger" data-rel="${c.id}">Liberar CPF / Dispositivo</button>` : ''}
-      </div>
-    </div>
-  `).join('') || '<p class="empty">Nenhum proprietário cadastrado.</p>';
-
-  return formOf('cpfnew', 'Cadastrar Novo Proprietário (CPF)', `
-    <label>Nome Completo<input name="name" required></label>
-    <label>CPF<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required></label>
-    <label>E-mail do Proprietário (opcional)<input name="email" type="email"></label>
-  `, 'Cadastrar Proprietário') + '<h3>Proprietários Registrados</h3>' + list;
-}
-
-async function viewGenericTable(k) {
+async function listPage(k) {
   const c = T[k];
   const { data, error } = await sb.from(k).select('*').eq('residence_id', S.cur.id).order(c.order || 'created_at', { ascending: false });
-  if (error) return '<p class="empty">Erro ao carregar dados.</p>';
-  S.rows[k] = data;
-
-  const ed = S.edit && S.edit.k === k ? data.find(r => r.id === S.edit.id) : null;
-  const form = ed ? `
-    <form class="card" data-form="edit:${k}" data-id="${ed.id}">
-      <b>Editar ${c.label}</b>
-      ${c.f.map(f => fld(f, ed)).join('')}
-      <button>Salvar alterações</button>
-      <button type="button" class="ghost2" data-cancel>Cancelar</button>
-    </form>` : formOf(k, `Adicionar em ${c.label}`, c.f.map(f => fld(f)).join(''));
-
-  const list = data.map(r => `
-    <div class="card">
-      <b>${esc(r.title || r.name || r.system || r.event_date)}</b>
-      <p class="mute">${esc(r.description || r.coverage || r.instructions || r.notes || '')}</p>
-      ${'visible' in r ? `<p><span class="badge ${r.visible ? 'ok' : ''}">${r.visible ? 'Visível ao cliente' : 'Oculto do cliente'}</span></p>` : ''}
-      <div class="acts">
-        <button class="link" data-edit="${k}:${r.id}">Editar</button>
-        ${'visible' in r ? `<button class="link" data-vis="${k}:${r.id}">${r.visible ? 'Ocultar' : 'Exibir'}</button>` : ''}
-        <button class="link danger" data-del="${k}:${r.id}">Excluir</button>
-      </div>
-    </div>
-  `).join('') || '<p class="empty">Nenhum registro cadastrado nesta residência.</p>';
-
-  return form + list;
+  if (error) throw error; S.rows[k] = data;
+  view.innerHTML = head(c.label, k) + (data.length ? data.map(r => `<div class="card">${c.row(r)}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>`).join('') : '<p class="empty">Nada cadastrado ainda. Toque em + para adicionar.</p>') + (c.note ? `<p class="notice">${c.note}</p>` : '');
 }
 
-async function viewDocuments() {
-  const { data } = await sb.from('documents').select('*').eq('residence_id', S.cur.id).order('created_at', { ascending: false });
-  S.rows.documents = data || [];
-
-  const up = formOf('doc', 'Enviar Documento / Projeto (Cloudinary)', `
-    <label>Título do Documento<input name="title" required></label>
-    ${sel('category', 'Categoria', DOC_CATS)}
-    <label>Versão<input name="version" placeholder="1.0"></label>
-    <label>Descrição<input name="description"></label>
-    <label>Arquivo (Imagem / PDF)<input name="file" type="file" required></label>
-  `, 'Upload Documento');
-
-  const list = (data || []).map(d => `
-    <div class="card">
-      <b>${esc(d.title)}</b>
-      <span class="mute">${esc(d.category)} · v${esc(d.version || '1.0')} · ${fmt(d.created_at.slice(0, 10))}</span>
-      <p>${esc(d.description || '')}</p>
-      <div class="acts">
-        <button class="ghost2" data-open="${esc(d.path)}">Visualizar Arquivo</button>
-        <button class="link" data-vis="documents:${d.id}">${d.visible ? 'Ocultar do cliente' : 'Mostrar ao cliente'}</button>
-        <button class="link danger" data-deldoc="${d.id}">Excluir</button>
-      </div>
-    </div>
-  `).join('') || '<p class="empty">Nenhum documento cadastrado.</p>';
-
-  return up + list;
-}
-
-async function viewServiceRequests() {
-  const { data } = await sb.from('service_requests').select('*').eq('residence_id', S.cur.id).order('created_at', { ascending: false });
-
-  const list = (data || []).map(r => `
-    <div class="card">
-      <div style="display:flex;justify-content:space-between">
-        <b>Protocolo: ${esc(r.protocol)}</b>
-        <span class="badge ${r.status === 'Concluída' ? 'ok' : 'warn'}">${esc(r.status)}</span>
-      </div>
-      <p><b>${esc(r.category)}</b> - ${esc(r.place)} (Urgência: ${esc(r.urgency)})</p>
-      <p class="mute">${esc(r.description)}</p>
-      <form data-form="upd" data-id="${r.id}" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
-        ${sel('status', 'Alterar Situação', STATUS, r.status)}
-        <label>Observação Técnica da Astell<input name="staff_note" value="${esc(r.staff_note || '')}"></label>
-        <button>Atualizar Chamado</button>
-      </form>
-    </div>
-  `).join('') || '<p class="empty">Nenhuma solicitação de assistência registrada.</p>';
-
-  return list;
-}
-
-async function viewFloorplans() {
-  const [{ data: fp }, { data: pts }] = await Promise.all([
-    sb.from('floorplans').select('*').eq('residence_id', S.cur.id).order('created_at'),
-    sb.from('plan_points').select('*').eq('residence_id', S.cur.id)
-  ]);
-
-  const up = formOf('plan', 'Cadastrar Nova Planta Técnica (Cloudinary)', `
-    <label>Título da Planta (ex.: Térreo, Pavimento Superior)<input name="title" required></label>
-    <label>Imagem da Planta (PNG, JPG)<input name="file" type="file" accept="image/*" required></label>
-  `, 'Enviar Planta');
-
-  if (!(fp || []).length) return up + '<p class="empty">Nenhuma planta cadastrada.</p>';
-
-  const cur = fp.find(p => p.id === S.planId) || fp[0];
-  S.planId = cur.id;
-  const imageUrl = cur.path; // URL direta do Cloudinary
-  S.pts = (pts || []).filter(p => p.floorplan_id === cur.id);
-
-  return up + `
-    <div class="card">
-      ${sel('plan_select', 'Planta Selecionada', fp.map(p => p.title), cur.title)}
-      <button data-place="${cur.id}">${S.place ? 'Parar de Marcar Pontos' : 'Marcar Pontos Técnicos nesta Planta'}</button>
-      ${S.place ? '<p class="notice">Clique em qualquer local na imagem abaixo para posicionar um ponto técnico (ex.: quadro elétrico, registro).</p>' : ''}
-      <div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px">
-        <img data-plan="1" src="${imageUrl}" alt="${esc(cur.title)}">
-        ${S.pts.map(p => `<button class="pin" title="${esc(p.label)}" data-pt="${p.id}" style="left:${p.x}\%;top:${p.y}%"></button>`).join('')}
-      </div>
-      <div id="ptbox"></div>
-    </div>
-  `;
-}
-
-async function viewQrCodes() {
-  const { data } = await sb.from('qr_codes').select('*').eq('residence_id', S.cur.id).order('created_at');
-  const base = location.href.replace('admin.html', 'index.html').split('#')[0];
-  const svg = t => { const q = qrcode(0, 'M'); q.addData(base + '#qr/' + t); q.make(); return q.createSvgTag(5, 0); };
-
-  const form = formOf('qr', 'Gerar Nova Etiqueta QR Code', `
-    <label>Nome/Local da Etiqueta (ex.: Quadro Elétrico Térreo)<input name="label" required></label>
-    ${sel('target', 'Ação ao Ler QR Code', Object.keys(QR_T))}
-  `, 'Gerar Etiqueta');
-
-  const list = (data || []).map(q => `
-    <div class="card qr">
-      ${svg(q.token)}
-      <b>${esc(q.label)}</b>
-      <span class="mute">Residência: ${esc(S.cur.code)}</span>
-      <button class="link danger" data-del="qr_codes:${q.id}">Excluir Etiqueta</button>
-    </div>
-  `).join('') || '<p class="empty">Nenhum QR Code gerado.</p>';
-
-  return form + '<button data-print style="margin-bottom:14px">Imprimir Etiquetas</button><div class="grid">' + list + '</div>';
-}
-
-async function viewHistory() {
-  const rid = S.cur.id, f = S.hf || {};
-  let q = sb.from('history_events').select('*').eq('residence_id', rid).order('event_date', { ascending: false }).limit(200);
-  let a = sb.from('audit_log').select('*').eq('residence_id', rid).order('at', { ascending: false }).limit(100);
-
-  if (f.cat) q = q.ilike('category', '%' + f.cat + '%');
-  if (f.from) { q = q.gte('event_date', f.from); a = a.gte('at', f.from); }
-  if (f.to) { q = q.lte('event_date', f.to); a = a.lte('at', f.to + 'T23:59:59'); }
-
-  const [{ data: ev }, { data: au }, { data: pr }] = await Promise.all([q, a, sb.from('profiles').select('id,name')]);
-  const who = Object.fromEntries((pr || []).map(p => [p.id, p.name]));
-
-  const addHist = formOf('histnew', 'Adicionar Evento na Linha do Tempo', `
-    <label>Data<input name="event_date" type="date" required value="${new Date().toISOString().slice(0, 10)}"></label>
-    <label>Categoria<input name="category" required placeholder="Ex.: Estrutura, Pintura, Inspeção"></label>
-    <label>Descrição<textarea name="description" rows="3" required></textarea></label>
-  `, 'Registrar Evento');
-
-  const evList = (ev || []).map(e => `
-    <div class="card">
-      <b>${fmt(e.event_date)} - ${esc(e.category)}</b>
-      <p>${esc(e.description)}</p>
-      <button class="link danger" data-del="history_events:${e.id}">Excluir</button>
-    </div>
-  `).join('') || '<p class="empty">Nenhum evento registrado.</p>';
-
-  const auList = (au || []).map(x => `
-    <div class="card">
-      <b>${esc(who[x.user_id] || 'Sistema')} -> ${x.action} em ${x.table_name}</b>
-      <span class="mute">${new Date(x.at).toLocaleString('pt-BR')}</span>
-    </div>
-  `).join('') || '<p class="empty">Sem logs de auditoria.</p>';
-
-  return addHist + '<h3>Linha do Tempo da Obra</h3>' + evList + '<h3>Logs de Alteração (Auditoria)</h3>' + auList;
-}
-
-// Global Event Listeners
-document.addEventListener('click', async e => {
-  const d = e.target.dataset;
-
-  if (e.target.id === 'menuBtn') toggleDrawer();
-  if (e.target.id === 'scrim') toggleDrawer(false);
-  if (d.nav) { S.menu = d.nav; S.edit = null; toggleDrawer(false); renderAdmin(); }
-  if (e.target.id === 'logoutBtn') sb.auth.signOut();
-
-  if (d.pick) {
-    S.cur = S.res.find(r => r.id === d.pick);
-    $('#resSel').value = d.pick;
-    renderAdmin();
-  }
-
-  if (d.edit) { const [k, id] = d.edit.split(':'); S.edit = { k, id }; renderAdmin(); }
-  if (d.cancel !== undefined) { S.edit = null; renderAdmin(); }
-  if (d.print !== undefined) window.print();
-
-  if (d.vis) {
-    const [k, id] = d.vis.split(':');
-    const r = S.rows[k].find(x => x.id === id);
-    await sb.from(k).update({ visible: !r.visible }).eq('id', id);
-    toast('Visibilidade alterada.');
-    renderAdmin();
-  }
-
-  if (d.del && confirm('Deseja excluir este registro?')) {
-    const [t, id] = d.del.split(':');
-    await sb.from(t).delete().eq('id', id);
-    toast('Registro excluído.');
-    renderAdmin();
-  }
-
-  if (d.deldoc && confirm('Excluir este documento?')) {
-    await sb.from('documents').delete().eq('id', d.deldoc);
-    toast('Documento excluído.');
-    renderAdmin();
-  }
-
-  if (d.linkcpf) {
-    await sb.rpc('admin_link_cpf', { p_cpf: d.linkcpf, p_res: S.cur.id });
-    toast('CPF vinculado à residência.');
-    renderAdmin();
-  }
-
-  if (d.rel && confirm('Liberar este CPF? O acesso atual do cliente será resetado.')) {
-    await sb.rpc('admin_release_cpf', { p_cpf: d.rel });
-    toast('CPF liberado.');
-    renderAdmin();
-  }
-
-  if (d.open) {
-    window.open(d.open, '_blank');
-  }
-
-  if (d.place) {
-    S.place = !S.place;
-    renderAdmin();
-  }
-
-  if (d.plan && S.place) {
-    const b = e.target.getBoundingClientRect();
-    S.pend = {
-      x: +((e.clientX - b.left) / b.width * 100).toFixed(2),
-      y: +((e.clientY - b.top) / b.height * 100).toFixed(2)
-    };
-    $('#ptbox').innerHTML = `
-      <form class="card" data-form="pt" style="margin-top:10px">
-        <b>Novo Ponto na Planta</b>
-        ${sel('category', 'Categoria', PT_CATS)}
-        <label>Identificação / Ponto<input name="label" required placeholder="Ex.: Quadro Principal"></label>
-        <label>Detalhes Técnicos<textarea name="description" rows="3"></textarea></label>
-        <button>Salvar Ponto</button>
-      </form>`;
-  }
-
-  if (d.pt) {
-    const p = S.pts.find(x => x.id === d.pt);
-    $('#ptbox').innerHTML = `
-      <div class="card" style="margin-top:10px">
-        <b>${esc(p.label)}</b> <span class="badge">${esc(p.category)}</span>
-        <p>${esc(p.description || '')}</p>
-        <button class="link danger" data-del="plan_points:${p.id}">Excluir Ponto</button>
-      </div>`;
-  }
-});
-
-// Forms Submit Listener
-document.addEventListener('submit', async e => {
-  e.preventDefault();
-  const f = e.target, id = f.dataset.form, o = clean(Object.fromEntries(new FormData(f))), rid = S.cur?.id;
-  let r;
-
-  try {
-    if (id.startsWith('edit:')) {
-      r = await sb.from(id.slice(5)).update(o).eq('id', f.dataset.id);
-      S.edit = null;
-    } else if (T[id]) {
-      r = await sb.from(id).insert({ ...o, residence_id: rid });
-    } else if (id === 'editres') {
-      r = await sb.from('residences').update(o).eq('id', rid);
-      if (!r.error) await loadRes(rid);
-    } else if (id === 'newres') {
-      r = await sb.from('residences').insert(o).select().single();
-      if (!r.error) await loadRes(r.data.id);
-    } else if (id === 'cpfnew') {
-      const cpf = cpfDigits(o.cpf);
-      if (!cpfOk(cpf)) return toast('CPF Inválido.', 1);
-      r = await sb.rpc('admin_register_cpf', { p_name: o.name, p_cpf: cpf, p_email: o.email || null });
-    } else if (id === 'doc') {
-      const file = f.file.files[0];
-      const imageUrl = await uploadToCloudinary(file);
-      r = await sb.from('documents').insert({ residence_id: rid, title: o.title, category: o.category, version: o.version, description: o.description, path: imageUrl });
-    } else if (id === 'plan') {
-      const file = f.file.files[0];
-      const imageUrl = await uploadToCloudinary(file);
-      r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path: imageUrl });
-    } else if (id === 'pt') {
-      r = await sb.from('plan_points').insert({ ...o, residence_id: rid, floorplan_id: S.planId, x: S.pend.x, y: S.pend.y });
-      S.pend = null;
-    } else if (id === 'qr') {
-      r = await sb.from('qr_codes').insert({ residence_id: rid, label: o.label, target_hash: QR_T[o.target] });
-    } else if (id === 'upd') {
-      r = await sb.from('service_requests').update(o).eq('id', f.dataset.id);
-    } else if (id === 'histnew') {
-      r = await sb.from('history_events').insert({ ...o, residence_id: rid });
-    }
-
-    if (r?.error) return toast('Erro ao salvar: ' + r.error.message, 1);
-    toast('Salvo com sucesso!');
-    renderAdmin();
-  } catch (err) {
-    toast(err.message || 'Erro inesperado durante o upload.', 1);
-  }
-});
-
-document.addEventListener('input', e => {
-  if (e.target.classList?.contains('cpf')) e.target.value = cpfMask(e.target.value);
-});
-
-document.addEventListener('change', e => {
-  if (e.target.name === 'plan_select') {
-    const fp = S.pts || [];
-    const selected = fp.find(p => p.title === e.target.value);
-    if (selected) S.planId = selected.id;
-    renderAdmin();
-  }
-});
-
-async function loadRes(selectId) {
-  const { data } = await sb.from('residences').select('*').order('created_at');
-  S.res = data || [];
-  const resSel = $('#resSel');
-  resSel.hidden = S.res.length === 0;
-  S.cur = S.res.find(r => r.id === selectId) || S.res.find(r => r.id === S.cur?.id) || S.res[0] || null;
-  resSel.innerHTML = S.res.map(r => `<option value="${r.id}" ${r.id === S.cur?.id ? 'selected' : ''}>${esc(r.name)} (${esc(r.code)})</option>`).join('');
-}
-
-$('#resSel').onchange = e => {
-  S.cur = S.res.find(r => r.id === e.target.value);
-  renderAdmin();
+const PAGES = {
+  async res() {
+    view.innerHTML = head('Residências', 'res', false) + (S.res.map(r => `<div class="card"><b>${esc(r.name)}</b> ${S.cur && S.cur.id === r.id ? '<span class="badge ok">Selecionada</span>' : ''}<span class="mute">${esc(r.code)} · ${esc(r.address || '')}</span><p class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</p>${acts(`<button class="link" data-edit="res:${r.id}">Editar</button>`, !(S.cur && S.cur.id === r.id) && `<button class="link" data-pick="${r.id}">Selecionar</button>`)}</div>`).join('') || '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>') +
+      '<p class="notice">A residência marcada como "Selecionada" é a que os demais menus (documentos, garantias, manutenções...) estão editando.</p>';
+  },
+  async own() {
+    const { data: cl } = await sb.from('client_cpfs').select('id,name,cpf_mask,claimed_by,expected_email').order('created_at', { ascending: false });
+    const { data: lk } = S.cur ? await sb.from('cpf_residences').select('cpf_id').eq('residence_id', S.cur.id) : { data: [] };
+    const linked = new Set((lk || []).map(x => x.cpf_id));
+    view.innerHTML = head('Proprietários', 'own', !!S.cur) + ((cl || []).map(c => `<div class="card"><b>${esc(c.name)}</b><span class="mute">${esc(c.cpf_mask)} · ${c.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}${c.expected_email ? ' · ' + esc(c.expected_email) : ''}</span>${linked.has(c.id) ? '<p><span class="badge ok">Vinculado a esta residência</span></p>' : ''}${acts(S.cur && !linked.has(c.id) && `<button class="link" data-link="${c.id}">Vincular à residência selecionada</button>`, c.claimed_by && `<button class="link danger" data-rel="${c.id}">Liberar CPF</button>`)}</div>`).join('') || '<p class="empty">Nenhum proprietário cadastrado. Toque em + para adicionar.</p>') +
+      '<p class="notice">O proprietário cria a conta no app (ou entra com o Google) e informa o CPF para ver a casa. Se você cadastrar o e-mail dele, só a conta com esse e-mail consegue usar o CPF.</p>';
+  },
+  async docs() {
+    const { data } = await sb.from('documents').select('*').eq('residence_id', S.cur.id).order('created_at', { ascending: false }); S.rows.documents = data || [];
+    view.innerHTML = head('Documentos', 'docs') + ((data || []).map(d => `<div class="card"><b>${esc(d.title)}</b><span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhum documento. Toque em + para enviar o primeiro.</p>');
+  },
+  eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), ctt: () => listPage('contacts'), bld: () => listPage('building_items'),
+  async ast() {
+    const { data } = await sb.from('service_requests').select('*').eq('residence_id', S.cur.id).order('created_at', { ascending: false });
+    view.innerHTML = head('Assistência técnica', null) + ((data || []).map(r => `<div class="card"><b>${esc(r.protocol)}</b> <span class="badge">${esc(r.status)}</span><p>${esc(r.category)} · ${esc(r.place)} · urgência ${esc(r.urgency)}</p><p>${esc(r.description)}</p><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p>
+      <form class="statusform" data-form="ast" data-id="${r.id}">${fld(['status', 'Alterar situação', STATUS], r)}<label>Comentário para o cliente<input name="staff_note" value="${esc(r.staff_note || '')}"></label><button>Atualizar</button></form></div>`).join('') || '<p class="empty">Nenhuma solicitação de assistência.</p>');
+  },
+  async his() {
+    const rid = S.cur.id, f = S.hf;
+    let q = sb.from('history_events').select('*').eq('residence_id', rid).order('event_date', { ascending: false }).limit(200);
+    let a = sb.from('audit_log').select('*').eq('residence_id', rid).order('at', { ascending: false }).limit(100);
+    if (f.cat) q = q.ilike('category', '%' + f.cat + '%');
+    if (f.from) { q = q.gte('event_date', f.from); a = a.gte('at', f.from); }
+    if (f.to) { q = q.lte('event_date', f.to); a = a.lte('at', f.to + 'T23:59:59'); }
+    const [{ data: ev }, { data: au, error }, { data: pr }] = await Promise.all([q, a, sb.from('profiles').select('id,name')]);
+    const who = Object.fromEntries((pr || []).map(p => [p.id, p.name]));
+    const what = x => { const n = x.new_data || x.old_data || {}; if (x.action === 'UPDATE') return 'campos: ' + Object.keys(n).filter(k => k !== 'created_at' && JSON.stringify((x.old_data || {})[k]) !== JSON.stringify(n[k])).join(', '); return n.title || n.name || n.system || n.protocol || n.label || n.description || ''; };
+    view.innerHTML = head('Histórico', 'history_events') + `<form class="card" data-form="hf"><b>Filtros</b><label>Categoria contém<input name="cat" value="${esc(f.cat || '')}"></label><label>De<input name="from" type="date" value="${esc(f.from || '')}"></label><label>Até<input name="to" type="date" value="${esc(f.to || '')}"></label><button>Filtrar</button><button type="button" class="ghost2" data-hclear>Limpar filtros</button></form><h3>Linha do tempo da residência</h3>` +
+      ((ev || []).map(e => `<div class="card"><b>${fmt(e.event_date)}</b><span class="mute">${esc(e.category)}</span><p>${esc(e.description)}</p>${acts(`<button class="link danger" data-del="history_events:${e.id}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhum evento no período.</p>') +
+      '<h3>Alterações registradas no sistema</h3>' + (error ? '<p class="empty">O registro de alterações ainda não está disponível. Rode o schema_v5.sql.</p>' : ((au || []).map(x => `<div class="card"><b>${esc(who[x.user_id] || 'Sistema')} ${ACT[x.action] || ''} ${esc((TBL[x.table_name] || x.table_name).toLowerCase())}</b><span class="mute">${new Date(x.at).toLocaleString('pt-BR')}</span><p class="mute">${esc(what(x))}</p></div>`).join('') || '<p class="empty">Nenhuma alteração registrada.</p>'));
+  },
+  async qr() {
+    const { data } = await sb.from('qr_codes').select('*').eq('residence_id', S.cur.id).order('created_at');
+    const base = new URL('index.html', location.href.split('#')[0]).href;
+    const svg = t => { const q = qrcode(0, 'M'); q.addData(base + '#qr/' + t); q.make(); return q.createSvgTag(5, 0); };
+    view.innerHTML = head('QR Codes', 'qr') + acts('<button class="link" data-print>Imprimir etiquetas</button>') + '<div class="grid">' + ((data || []).map(q => `<div class="card qr">${svg(q.token)}<b>${esc(q.label)}</b><span class="mute">Astell Home · ${esc(S.cur.code)}</span>${acts(`<button class="link danger" data-del="qr_codes:${q.id}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhum QR Code. Toque em + para gerar.</p>') + '</div><p class="notice">O QR leva ao app do cliente (index.html). Quem ler precisa entrar com a conta vinculada à casa para ver qualquer informação.</p>';
+  },
+  async pl() {
+    const rid = S.cur.id;
+    const [{ data: fp }, { data: pts }] = await Promise.all([sb.from('floorplans').select('*').eq('residence_id', rid).order('created_at'), sb.from('plan_points').select('*').eq('residence_id', rid)]);
+    if (!(fp || []).length) return view.innerHTML = head('Planta técnica', 'pl') + '<p class="empty">Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.</p>';
+    const cur = fp.find(p => p.id === S.planId) || fp[0]; S.planId = cur.id;
+    const { data: u } = await sb.storage.from('documents').createSignedUrl(cur.path, 3600);
+    const mine = (pts || []).filter(p => p.floorplan_id === cur.id);
+    view.innerHTML = head('Planta técnica', 'pl') + `<label>Planta<select id="planSel">${fp.map(p => `<option value="${p.id}" ${p.id === cur.id ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}</select></label>` +
+      acts(`<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}|${esc(cur.path)}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
+      `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${mine.map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div><h3>Pontos cadastrados</h3>` +
+      (mine.map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>');
+  },
 };
 
-async function initAdmin() {
-  if (!sb) return;
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    window.location.href = 'index.html';
-    return;
-  }
-
-  const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-  S.profile = profile;
-
-  if (!['admin', 'tech'].includes(profile?.role)) {
-    fail('Sua conta não possui permissão de acesso ao Painel Administrativo.');
-    return;
-  }
-
-  $('#top').hidden = false;
-  await loadRes();
-  renderAdmin();
+async function render() {
+  if (!S.profile || S.profile.role !== 'admin') return;
+  const key = location.hash.slice(1) || 'res', m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
+  document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
+  if (!S.cur && !['res', 'own'].includes(S.menu)) return view.innerHTML = '<p class="empty">Crie ou selecione uma residência no menu Residências.</p>';
+  try { await PAGES[S.menu](); } catch (e) { view.innerHTML = '<p class="empty">Não foi possível carregar esta tela. ' + esc(e.message || '') + '</p>'; }
+}
+async function loadRes(pick) {
+  const { data } = await sb.from('residences').select('*').order('created_at');
+  S.res = data || []; S.cur = S.res.find(r => r.id === pick) || S.res.find(r => S.cur && r.id === S.cur.id) || S.res[0] || null;
+  $('#resSel').innerHTML = S.res.map(r => `<option value="${r.id}" ${S.cur && r.id === S.cur.id ? 'selected' : ''}>${esc(r.name)} — ${esc(r.code)}</option>`).join('');
+  $('#resSel').hidden = S.res.length < 2; render();
 }
 
-sb?.auth.onAuthStateChange((ev, session) => {
-  if (ev === 'SIGNED_OUT') window.location.href = 'index.html';
+// ---------- menu lateral
+function buildDrawer() {
+  $('#drawer').innerHTML = `<div class="dhead"><strong class="logo">ASTELL<span>PAINEL ADMINISTRATIVO</span></strong></div><div class="dnav">${MENU.map(([k, l, i]) => `<a href="#${k}" data-m="${k}">${ico(IC[i])}<span>${l}</span></a>`).join('')}</div><div class="dfoot"><a href="index.html">${ico(IC.casa)}<span>Ver app do cliente</span></a><button type="button" class="ghost" data-out>Sair</button></div>`;
+}
+function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').hidden = !open; $('#menuBtn').setAttribute('aria-expanded', open); }
+$('#menuBtn').onclick = () => drawer(!$('#drawer').classList.contains('open'));
+$('#scrim').onclick = () => drawer(false);
+addEventListener('hashchange', () => { drawer(false); S.place = false; render(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') { drawer(false); closeModal(); } });
+$('#resSel').onchange = e => { S.cur = S.res.find(r => r.id === e.target.value); S.planId = null; render(); };
+
+// ---------- acesso
+function loginScreen() {
+  $('#top').hidden = true; drawer(false);
+  view.innerHTML = `<div class="login"><form id="lf"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><p class="tag">Acesso restrito à equipe Astell.</p><h2>Entrar</h2>
+    <button type="button" class="btn-google" id="gg">${GOOGLE_SVG}<span>Entrar com o Google</span></button><div class="or"><span>ou</span></div>
+    <label>E-mail<input id="em" type="email" required autocomplete="username"></label><label>Senha<input id="pw" type="password" required autocomplete="current-password"></label>
+    <button class="btn-main">Entrar no painel</button><p class="fine"><a href="index.html" style="color:#9fb5c1">Ir para o aplicativo do cliente</a></p></form></div>`;
+  $('#gg').onclick = async () => { if (location.protocol === 'file:') return toast('O login com Google não funciona com o arquivo aberto direto. Abra por um endereço http ou https.', 1); const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); if (error) toast('Não foi possível entrar com o Google.', 1); };
+  $('#lf').onsubmit = async e => { e.preventDefault(); const { error } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value }); if (error) toast('E-mail ou senha incorretos.', 1); };
+}
+function deniedScreen() {
+  $('#top').hidden = true; drawer(false);
+  view.innerHTML = `<div class="login"><form><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><h2 style="margin-top:28px">Acesso restrito</h2><p class="lead">Esta conta não tem permissão de administrador. Se você é cliente, use o aplicativo.</p><a href="index.html"><button type="button" class="btn-main">Ir para o aplicativo</button></a><button type="button" class="btn-text" data-out>Sair</button></form></div>`;
+}
+async function start(session) {
+  if (!session) { S.profile = null; S.cur = null; return loginScreen(); }
+  const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  S.profile = data;
+  if (!data || data.role !== 'admin') return deniedScreen();
+  $('#top').hidden = false; buildDrawer(); await loadRes();
+}
+sb.auth.getSession().then(({ data }) => start(data.session));
+sb.auth.onAuthStateChange((ev, s) => {
+  if (ev === 'SIGNED_IN' && S.profile && s && S.profile.id === s.user.id) return;
+  if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT') setTimeout(() => start(s), 0);
 });
 
-initAdmin();
+// ---------- ações
+document.addEventListener('click', async e => {
+  if (e.target.id === 'modal') return closeModal();
+  const el = e.target.closest('[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
+  if (d.close !== undefined) closeModal();
+  if (d.add) openAdd(d.add);
+  if (d.edit) { const [k, id] = d.edit.split(':'); openEdit(k, id); }
+  if (d.pick) { S.cur = S.res.find(r => r.id === d.pick); S.planId = null; $('#resSel').value = d.pick; toast('Residência selecionada: ' + S.cur.name); render(); }
+  if (d.vis) { const [k, id] = d.vis.split(':'), r = S.rows[k].find(x => x.id === id); const { error } = await sb.from(k).update({ visible: !r.visible }).eq('id', id); done(error && 'Não foi possível alterar.', r.visible ? 'Oculto do cliente.' : 'Visível ao cliente.'); }
+  if (d.del && confirm('Excluir este registro?')) { const [k, id] = d.del.split(':'); const { error } = await sb.from(k).delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
+  if (d.deldoc && confirm('Excluir este documento?')) { const [id, p] = d.deldoc.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('documents').delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Documento excluído.'); }
+  if (d.delplan && confirm('Excluir esta planta e todos os pontos marcados nela?')) { const [id, p] = d.delplan.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('floorplans').delete().eq('id', id); S.planId = null; done(error && 'Não foi possível excluir.', 'Planta excluída.'); }
+  if (d.open) { const { data, error } = await sb.storage.from('documents').createSignedUrl(d.open, 60); error ? toast('Não foi possível abrir.', 1) : window.open(data.signedUrl, '_blank', 'noopener'); }
+  if (d.done) {
+    const t = S.rows.maintenance_tasks.find(x => x.id === d.done), today = new Date().toISOString().slice(0, 10), nx = t.interval_months ? addMonths(today, +t.interval_months).toISOString().slice(0, 10) : null;
+    const { error } = await sb.from('maintenance_tasks').update({ last_done: today, next_due: nx, status: nx ? 'Pendente' : 'Concluída' }).eq('id', t.id);
+    if (!error) await sb.from('history_events').insert({ residence_id: S.cur.id, category: 'Manutenção', description: 'Manutenção executada: ' + t.name });
+    done(error && 'Não foi possível registrar.', 'Execução registrada.');
+  }
+  if (d.link) { const { error } = await sb.rpc('admin_link_cpf', { p_cpf: d.link, p_res: S.cur.id }); done(error && 'Não foi possível vincular.', 'Proprietário vinculado à residência.'); }
+  if (d.rel && confirm('Liberar este CPF? O acesso atual do cliente será removido e outro cadastro poderá usá-lo.')) { const { error } = await sb.rpc('admin_release_cpf', { p_cpf: d.rel }); done(error && 'Não foi possível liberar.', 'CPF liberado.'); }
+  if (d.place !== undefined) { S.place = !S.place; render(); }
+  if (d.plan && S.place) { const b = el.getBoundingClientRect(); S.pend = { x: +((e.clientX - b.left) / b.width * 100).toFixed(2), y: +((e.clientY - b.top) / b.height * 100).toFixed(2) }; modal('Novo ponto na planta', fld(['category', 'Categoria', PT_CATS]) + '<label>Identificação<input name="label" required></label><label>Detalhes<textarea name="description" rows="3"></textarea></label>', 'data-form="add:pt"', 'Salvar ponto'); }
+  if (d.print !== undefined) print();
+  if (d.hclear !== undefined) { S.hf = {}; render(); }
+  if (d.out !== undefined) sb.auth.signOut();
+});
+document.addEventListener('change', e => { if (e.target.id === 'planSel') { S.planId = e.target.value; render(); } });
+document.addEventListener('input', e => { const t = e.target; if (t.classList && t.classList.contains('cpf')) t.value = cpfMask(t.value); });
+
+document.addEventListener('submit', async e => {
+  const f = e.target, id = f.dataset.form; if (!id) return; e.preventDefault();
+  const o = clean(Object.fromEntries(new FormData(f))), rid = S.cur && S.cur.id, [op, k] = id.split(':'); let r;
+  if (id === 'hf') { S.hf = o; return render(); }
+  if (id === 'ast') { r = await sb.from('service_requests').update({ status: o.status, staff_note: o.staff_note }).eq('id', f.dataset.id); if (!r.error) await sb.from('history_events').insert({ residence_id: rid, category: 'Assistência', description: 'Solicitação atualizada: ' + o.status }); }
+  else if (id === 'add:res') { r = await sb.from('residences').insert(o).select().single(); if (!r.error) { closeModal(); await loadRes(r.data.id); return toast('Residência criada e selecionada.'); } }
+  else if (id === 'edit:res') { r = await sb.from('residences').update(o).eq('id', f.dataset.id); if (!r.error) { closeModal(); await loadRes(f.dataset.id); return toast('Dados da residência salvos.'); } }
+  else if (id === 'add:own') { const cpf = cpfDigits(o.cpf); if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1); r = await sb.rpc('admin_register_cpf', { p_name: o.name, p_cpf: cpf, p_email: o.email || null }); }
+  else if (id === 'add:docs') { const file = f.file.files[0]; delete o.file; const path = `${rid}/${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('documents').insert({ ...o, residence_id: rid, path }); }
+  else if (id === 'add:qr') r = await sb.from('qr_codes').insert({ residence_id: rid, label: o.label, target_hash: QR_T[o.target] });
+  else if (id === 'add:pl') { const file = f.file.files[0], path = `${rid}/planta_${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path }); }
+  else if (id === 'add:pt') r = await sb.from('plan_points').insert({ ...o, residence_id: rid, floorplan_id: S.planId, x: S.pend.x, y: S.pend.y });
+  else if (op === 'add') r = await sb.from(k).insert({ ...o, residence_id: rid });
+  else if (op === 'edit') r = await sb.from(k).update(o).eq('id', f.dataset.id);
+  if (r && r.error) return toast('Não foi possível salvar: ' + r.error.message, 1);
+  closeModal(); toast('Salvo com sucesso.'); render();
+});
