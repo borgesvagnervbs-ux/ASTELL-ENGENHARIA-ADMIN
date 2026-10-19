@@ -1,6 +1,5 @@
 // ===== ASTELL HOME - PAINEL ADMINISTRATIVO =====
 
-
 let sb;
 try {
   const url = (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '').trim();
@@ -14,8 +13,7 @@ try {
   sb = null;
 }
 
-const $ = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
+const $ = s => document.querySelector(s); const $$ = s => document.querySelectorAll(s);
 const view = $('#view');
 
 const fail = msg => {
@@ -114,13 +112,20 @@ const fld = ([k, l, t = 'text', req], v = {}) => {
   return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}>`}</label>`;
 };
 
-// Função auxiliar para upload no Cloudinary
+// Função auxiliar segura para upload no Cloudinary
 async function uploadToCloudinary(file) {
+  const cloudName = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? CLOUDINARY_CLOUD_NAME : '';
+  const preset = typeof CLOUDINARY_PRESET !== 'undefined' ? CLOUDINARY_PRESET : '';
+  
+  if (!cloudName || !preset) {
+    throw new Error('Cloudinary não configurado corretamente no config.js.');
+  }
+
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_PRESET);
+  formData.append('upload_preset', preset);
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
     method: 'POST',
     body: formData
   });
@@ -339,7 +344,7 @@ async function viewFloorplans() {
       ${S.place ? '<p class="notice">Clique em qualquer local na imagem abaixo para posicionar um ponto técnico (ex.: quadro elétrico, registro).</p>' : ''}
       <div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px">
         <img data-plan="1" src="${imageUrl}" alt="${esc(cur.title)}">
-        ${S.pts.map(p => `<button class="pin" title="${esc(p.label)}" data-pt="${p.id}" style="left:${p.x}%;top:${p.y}%"></button>`).join('')}
+        ${S.pts.map(p => `<button class="pin" title="${esc(p.label)}" data-pt="${p.id}" style="left:${p.x}\%;top:${p.y}%"></button>`).join('')}
       </div>
       <div id="ptbox"></div>
     </div>
