@@ -17,6 +17,9 @@ const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false };
 const CLD_NAME = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? String(CLOUDINARY_CLOUD_NAME).trim() : '';
 const CLD_PRESET = typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' ? String(CLOUDINARY_UPLOAD_PRESET).trim() : (typeof CLOUDINARY_PRESET !== 'undefined' ? String(CLOUDINARY_PRESET).trim() : '');
 const CLOUD_OK = !!(CLD_NAME && CLD_PRESET) && !/COLE_AQUI/.test(CLD_NAME + CLD_PRESET);
+const isVid = x => x.media_type === 'video';
+const vsrc = u => String(u).replace('/upload/', '/upload/f_mp4,vc_h264,q_auto/').replace(/\.\w+$/, '.mp4');
+const vposter = u => String(u).replace('/upload/', '/upload/w_480,c_limit,so_0/').replace(/\.\w+$/, '.jpg');
 const cld = (u, w) => String(u).replace('/upload/', `/upload/w_${w},c_limit,q_auto,f_auto/`);
 const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x => `<img src="${esc(cld(x.url, 240))}" alt="" loading="lazy">`).join('')}</div>` : '';
 
@@ -76,11 +79,23 @@ function modal(title, body, attrs, btn = 'Salvar') {
 const closeModal = () => { $('#modal').hidden = true; $('#modal').innerHTML = ''; };
 const ADD = {
   res: () => modal('Nova residência', RES_F.map(f => fld(f)).join(''), 'data-form="add:res"', 'Criar residência'),
-  own: () => modal('Novo proprietário', `<label>Nome<input name="name" required></label><label>CPF<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required></label><label>E-mail do proprietário (opcional, recomendado)<input name="email" type="email"></label>`, 'data-form="add:own"', 'Cadastrar'),
+  own: () => { S.back = null; openOwnerAdd(S.cur && S.cur.id); },
   docs: () => modal('Enviar documento', '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f)).join(''), 'data-form="add:docs"', 'Enviar'),
   qr: () => modal('Novo QR Code', `<label>Nome da etiqueta<input name="label" required></label>${fld(['target', 'Ao ler, abre', Object.keys(QR_T)])}`, 'data-form="add:qr"', 'Gerar'),
   pl: () => modal('Enviar planta (imagem PNG ou JPG)', '<label>Título<input name="title" required></label><label>Imagem<input name="file" type="file" accept="image/*" required></label>', 'data-form="add:pl"', 'Enviar'),
 };
+function openOwnerAdd(resId) {
+  const r = resId && S.res.find(x => x.id === resId);
+  modal('Novo proprietário', `<label>Nome<input name="name" required></label><label>CPF<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required></label><label>E-mail do proprietário (opcional, recomendado)<input name="email" type="email"></label>${r ? `<label class="chk"><input type="checkbox" name="res_id" value="${r.id}" checked> Vincular à residência ${esc(r.name)}</label>` : ''}`, 'data-form="add:own"', 'Cadastrar');
+}
+function openOwnerEdit(id) {
+  const c = (S.owners || []).find(x => x.id === id); if (!c) return;
+  const blocks = (S.links || []).filter(x => x.cpf_id === id).map(x => x.residence_id).map(rid => {
+    const r = S.res.find(x => x.id === rid), co = S.links.filter(x => x.residence_id === rid).map(x => S.owners.find(o => o.id === x.cpf_id)).filter(Boolean);
+    return `<div class="card"><b>${esc(r ? r.name : 'Residência')}</b> <span class="mute">${esc(r ? r.code : '')}</span><p class="mute">Proprietários: ${co.map(o => esc(o.name) + (o.id === id ? ' (este)' : '')).join(', ')}</p>${acts(`<button type="button" class="link" data-oadd="${rid}">+ Adicionar proprietário a esta residência</button>`, `<button type="button" class="link danger" data-ounlink="${id}:${rid}">Desvincular</button>`)}</div>`;
+  }).join('') || '<p class="empty">Este proprietário ainda não está vinculado a nenhuma residência. Use "Vincular à residência selecionada" na lista.</p>';
+  modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label><h3>Residências vinculadas</h3>${blocks}`, `data-form="edit:own" data-id="${id}"`, 'Salvar alterações');
+}
 function openAdd(k) { if (ADD[k]) return ADD[k](); modal('Adicionar — ' + T[k].label, T[k].f.map(f => fld(f)).join(''), `data-form="add:${k}"`); }
 function openEdit(k, id) {
   const row = k === 'res' ? S.res.find(r => r.id === id) : (S.rows[k] || []).find(r => r.id === id); if (!row) return;
@@ -89,12 +104,13 @@ function openEdit(k, id) {
 
 // ---------- galeria de imagens (Cloudinary)
 async function gallery() {
-  const g = S.gal;
+  const g = S.gal, withVid = g.kind === 'residence';
   const { data, error } = await sb.from('images').select('*').eq('residence_id', g.resId).eq('kind', g.kind).order('created_at');
   const list = (data || []).filter(x => g.kind === 'residence' || x.ref_id === g.refId); S.imgs = list;
-  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Imagens"><div class="sheethead"><b>Imagens — ${esc(g.title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
-    (CLOUD_OK ? '<form data-form="gal"><label>Adicionar imagens (selecione quantas quiser)<input name="imgs" type="file" accept="image/*" multiple required></label><button>Enviar imagens</button></form><p class="mute" id="galmsg"></p>' : `<p class="notice">Cloudinary não configurado. Faltando no config.js: ${[!CLD_NAME && 'CLOUDINARY_CLOUD_NAME', !CLD_PRESET && 'CLOUDINARY_UPLOAD_PRESET'].filter(Boolean).join(' e ')}.</p>`) +
-    (error ? '<p class="empty">Rode o schema_v6.sql no Supabase para habilitar as imagens.</p>' : `<h3>${list.length} imagem(ns)</h3><div class="gallery">${list.map(x => `<div class="gtile"><a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>${x.visible === false ? '<span class="badge">Oculta do cliente</span>' : ''}${acts(`<button class="link" data-gvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`, `<button class="link danger" data-gdel="${x.id}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhuma imagem ainda.</p>'}</div>`) + '</div>';
+  const tile = x => `<div class="gtile">${isVid(x) ? `<video controls playsinline preload="metadata" poster="${esc(vposter(x.url))}" src="${esc(vsrc(x.url))}"></video><span class="badge">Vídeo</span>` : `<a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>`}${x.visible === false ? ' <span class="badge">Oculto do cliente</span>' : ''}${acts(`<button class="link" data-gvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`, `<button class="link danger" data-gdel="${x.id}">Excluir</button>`)}</div>`;
+  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Galeria"><div class="sheethead"><b>${withVid ? 'Imagens e vídeos' : 'Imagens'} — ${esc(g.title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
+    (CLOUD_OK ? `<form data-form="gal"><label>${withVid ? 'Adicionar imagens e vídeos (selecione quantos quiser)' : 'Adicionar imagens (selecione quantas quiser)'}<input name="imgs" type="file" accept="${withVid ? 'image/*,video/*' : 'image/*'}" multiple required></label><button>Salvar</button></form><p class="mute" id="galmsg"></p>` : `<p class="notice">Cloudinary não configurado. Faltando no config.js: ${[!CLD_NAME && 'CLOUDINARY_CLOUD_NAME', !CLD_PRESET && 'CLOUDINARY_UPLOAD_PRESET'].filter(Boolean).join(' e ')}.</p>`) +
+    (error ? '<p class="empty">Rode o schema_v6.sql no Supabase para habilitar as imagens.</p>' : `<h3>${list.length} arquivo(s)</h3><div class="gallery">${list.map(tile).join('') || '<p class="empty">Nada enviado ainda.</p>'}</div>`) + '</div>';
   $('#modal').hidden = false;
 }
 async function uploadImages(form) {
@@ -103,16 +119,17 @@ async function uploadImages(form) {
   for (let i = 0; i < files.length; i++) {
     const file = files[i]; msg.textContent = `Enviando ${i + 1} de ${files.length}...`;
     try {
-      if (!/^image\//.test(file.type || 'image/')) throw new Error('não é uma imagem');
-      if (file.size > 10 * 1024 * 1024) throw new Error('maior que 10 MB');
+      const vid = /^video\//.test(file.type || ''), img = /^image\//.test(file.type || '');
+      if (!img && !(vid && g.kind === 'residence')) throw new Error(g.kind === 'residence' ? 'envie apenas imagens ou vídeos' : 'envie apenas imagens');
+      const max = vid ? 100 : 10; if (file.size > max * 1024 * 1024) throw new Error('maior que ' + max + ' MB');
       const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLD_PRESET); fd.append('folder', folder);
-      const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLD_NAME}/image/upload`, { method: 'POST', body: fd });
+      const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLD_NAME}/auto/upload`, { method: 'POST', body: fd });
       const j = await resp.json(); if (!resp.ok) throw new Error((j.error && j.error.message) || 'erro no envio');
-      const { error } = await sb.from('images').insert({ residence_id: g.resId, kind: g.kind, ref_id: g.refId || null, url: j.secure_url, public_id: j.public_id });
+      const { error } = await sb.from('images').insert({ residence_id: g.resId, kind: g.kind, ref_id: g.refId || null, url: j.secure_url, public_id: j.public_id, ...(vid ? { media_type: 'video' } : {}) });
       if (error) throw error; ok++;
     } catch (e) { toast(`Falha em "${file.name}": ${e.message}`, 1); }
   }
-  if (ok) toast(ok + (ok === 1 ? ' imagem enviada.' : ' imagens enviadas.'));
+  if (ok) toast(ok + (ok === 1 ? ' arquivo salvo.' : ' arquivos salvos.'));
   await gallery(); render();
 }
 
@@ -133,17 +150,20 @@ async function listPage(k) {
 
 const PAGES = {
   async res() {
-    const { data: im } = await sb.from('images').select('residence_id,url').eq('kind', 'residence').order('created_at');
+    const { data: im } = await sb.from('images').select('*').eq('kind', 'residence').order('created_at');
     const by = {}; (im || []).forEach(x => (by[x.residence_id] = by[x.residence_id] || []).push(x));
-    view.innerHTML = head('Residências', 'res', false) + (S.res.map(r => { const g = by[r.id] || []; return `<div class="card"><b>${esc(r.name)}</b> ${S.cur && S.cur.id === r.id ? '<span class="badge ok">Selecionada</span>' : ''}<span class="mute">${esc(r.code)} · ${esc(r.address || '')}</span><p class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</p>${thumbsOf(g)}${acts(`<button class="link" data-edit="res:${r.id}">Editar</button>`, `<button class="link" data-gal="res:${r.id}">Imagens (${g.length})</button>`, !(S.cur && S.cur.id === r.id) && `<button class="link" data-pick="${r.id}">Selecionar</button>`)}</div>`; }).join('') || '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>') +
+    view.innerHTML = head('Residências', 'res', false) + (S.res.map(r => { const g = by[r.id] || []; return `<div class="card"><b>${esc(r.name)}</b> ${S.cur && S.cur.id === r.id ? '<span class="badge ok">Selecionada</span>' : ''}<span class="mute">${esc(r.code)} · ${esc(r.address || '')}</span><p class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</p>${thumbsOf(g.filter(x => !isVid(x)))}${acts(`<button class="link" data-edit="res:${r.id}">Editar</button>`, `<button class="link" data-gal="res:${r.id}">Imagens e vídeos (${g.length})</button>`, !(S.cur && S.cur.id === r.id) && `<button class="link" data-pick="${r.id}">Selecionar</button>`)}</div>`; }).join('') || '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>') +
       '<p class="notice">A residência marcada como "Selecionada" é a que os demais menus (documentos, garantias, manutenções...) estão editando. As imagens da residência aparecem para o cliente no Início e em Minha casa.</p>';
   },
   async own() {
-    const { data: cl } = await sb.from('client_cpfs').select('id,name,cpf_mask,claimed_by,expected_email').order('created_at', { ascending: false });
-    const { data: lk } = S.cur ? await sb.from('cpf_residences').select('cpf_id').eq('residence_id', S.cur.id) : { data: [] };
-    const linked = new Set((lk || []).map(x => x.cpf_id));
-    view.innerHTML = head('Proprietários', 'own', !!S.cur) + ((cl || []).map(c => `<div class="card"><b>${esc(c.name)}</b><span class="mute">${esc(c.cpf_mask)} · ${c.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}${c.expected_email ? ' · ' + esc(c.expected_email) : ''}</span>${linked.has(c.id) ? '<p><span class="badge ok">Vinculado a esta residência</span></p>' : ''}${acts(S.cur && !linked.has(c.id) && `<button class="link" data-link="${c.id}">Vincular à residência selecionada</button>`, c.claimed_by && `<button class="link danger" data-rel="${c.id}">Liberar CPF</button>`)}</div>`).join('') || '<p class="empty">Nenhum proprietário cadastrado. Toque em + para adicionar.</p>') +
-      '<p class="notice">O proprietário cria a conta no app (ou entra com o Google) e informa o CPF para ver a casa. Se você cadastrar o e-mail dele, só a conta com esse e-mail consegue usar o CPF.</p>';
+    const [{ data: cl }, { data: lk }] = await Promise.all([sb.from('client_cpfs').select('id,name,cpf_mask,claimed_by,expected_email').order('name'), sb.from('cpf_residences').select('cpf_id,residence_id')]);
+    S.owners = cl || []; S.links = lk || [];
+    const here = new Set(S.links.filter(x => S.cur && x.residence_id === S.cur.id).map(x => x.cpf_id));
+    const card = c => `<div class="card"><b>${esc(c.name)}</b><span class="mute">${esc(c.cpf_mask)} · ${c.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}${c.expected_email ? ' · ' + esc(c.expected_email) : ''}</span>${acts(`<button class="link" data-oedit="${c.id}">Editar</button>`, S.cur && !here.has(c.id) && `<button class="link" data-link="${c.id}">Vincular à residência selecionada</button>`, S.cur && here.has(c.id) && `<button class="link danger" data-unlink="${c.id}">Desvincular desta residência</button>`, c.claimed_by && `<button class="link danger" data-rel="${c.id}">Liberar CPF</button>`)}</div>`;
+    const mine = S.owners.filter(c => here.has(c.id)), other = S.owners.filter(c => !here.has(c.id));
+    view.innerHTML = head('Proprietários', 'own', !!S.cur) + (S.cur ? `<h3>Proprietários desta residência (${mine.length})</h3>` + (mine.map(card).join('') || '<p class="empty">Nenhum proprietário vinculado ainda. Toque em + para adicionar quantos forem necessários.</p>') : '') +
+      `<h3>${S.cur ? 'Outros proprietários cadastrados' : 'Proprietários cadastrados'}</h3>` + (other.map(card).join('') || '<p class="empty">Nenhum outro proprietário cadastrado.</p>') +
+      '<p class="notice">Uma residência pode ter vários proprietários, cada um com o seu CPF. Cada um cria a própria conta no app e informa o CPF para ver a casa. Se você cadastrar o e-mail do proprietário, só a conta com esse e-mail consegue usar o CPF.</p>';
   },
   async docs() {
     const { data } = await sb.from('documents').select('*').eq('residence_id', S.cur.id).order('created_at', { ascending: false }); S.rows.documents = data || [];
@@ -244,9 +264,9 @@ sb.auth.onAuthStateChange((ev, s) => {
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
-  const el = e.target.closest('[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-oedit],[data-oadd],[data-unlink],[data-ounlink],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
-  if (d.close !== undefined) { closeModal(); render(); }
+  if (d.close !== undefined) { closeModal(); await render(); if (S.back) { const b = S.back; S.back = null; openOwnerEdit(b); } }
   if (d.gal) { const [t, id] = d.gal.split(':'); if (t === 'res') S.gal = { kind: 'residence', refId: null, resId: id, title: S.res.find(x => x.id === id).name }; else S.gal = { kind: 'maintenance', refId: id, resId: S.cur.id, title: S.rows.maintenance_tasks.find(x => x.id === id).name }; gallery(); }
   if (d.gvis) { const x = S.imgs.find(i => i.id === d.gvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await gallery(); }
   if (d.gdel && confirm('Excluir esta imagem do sistema? O arquivo continua guardado no Cloudinary.')) { const { error } = await sb.from('images').delete().eq('id', d.gdel); if (error) toast('Não foi possível excluir.', 1); else toast('Imagem excluída.'); await gallery(); }
@@ -264,6 +284,10 @@ document.addEventListener('click', async e => {
     if (!error) await sb.from('history_events').insert({ residence_id: S.cur.id, category: 'Manutenção', description: 'Manutenção executada: ' + t.name });
     done(error && 'Não foi possível registrar.', 'Execução registrada.');
   }
+  if (d.oedit) openOwnerEdit(d.oedit);
+  if (d.oadd) { const fm = el.closest('form'); S.back = fm && fm.dataset ? fm.dataset.id : null; openOwnerAdd(d.oadd); }
+  if (d.unlink && confirm('Desvincular este proprietário da residência selecionada? Ele perde o acesso a ela.')) { const { error } = await sb.rpc('admin_unlink_cpf', { p_cpf: d.unlink, p_res: S.cur.id }); done(error && 'Não foi possível desvincular.', 'Proprietário desvinculado.'); }
+  if (d.ounlink && confirm('Desvincular este proprietário desta residência? Ele perde o acesso a ela.')) { const [oid, rid] = d.ounlink.split(':'); const { error } = await sb.rpc('admin_unlink_cpf', { p_cpf: oid, p_res: rid }); if (error) toast('Não foi possível desvincular.', 1); else toast('Proprietário desvinculado.'); await render(); openOwnerEdit(oid); }
   if (d.link) { const { error } = await sb.rpc('admin_link_cpf', { p_cpf: d.link, p_res: S.cur.id }); done(error && 'Não foi possível vincular.', 'Proprietário vinculado à residência.'); }
   if (d.rel && confirm('Liberar este CPF? O acesso atual do cliente será removido e outro cadastro poderá usá-lo.')) { const { error } = await sb.rpc('admin_release_cpf', { p_cpf: d.rel }); done(error && 'Não foi possível liberar.', 'CPF liberado.'); }
   if (d.place !== undefined) { S.place = !S.place; render(); }
@@ -283,7 +307,8 @@ document.addEventListener('submit', async e => {
   if (id === 'ast') { r = await sb.from('service_requests').update({ status: o.status, staff_note: o.staff_note }).eq('id', f.dataset.id); if (!r.error) await sb.from('history_events').insert({ residence_id: rid, category: 'Assistência', description: 'Solicitação atualizada: ' + o.status }); }
   else if (id === 'add:res') { r = await sb.from('residences').insert(o).select().single(); if (!r.error) { closeModal(); await loadRes(r.data.id); return toast('Residência criada e selecionada.'); } }
   else if (id === 'edit:res') { r = await sb.from('residences').update(o).eq('id', f.dataset.id); if (!r.error) { closeModal(); await loadRes(f.dataset.id); return toast('Dados da residência salvos.'); } }
-  else if (id === 'add:own') { const cpf = cpfDigits(o.cpf); if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1); r = await sb.rpc('admin_register_cpf', { p_name: o.name, p_cpf: cpf, p_email: o.email || null }); }
+  else if (id === 'add:own') { const cpf = cpfDigits(o.cpf); if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1); r = await sb.rpc('admin_register_cpf', { p_name: o.name, p_cpf: cpf, p_email: o.email || null }); if (!r.error && o.res_id) r = await sb.rpc('admin_link_cpf', { p_cpf: r.data, p_res: o.res_id }); }
+  else if (id === 'edit:own') { const cpf = cpfDigits(o.cpf || ''); if (cpf && !cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1); r = await sb.rpc('admin_update_cpf', { p_id: f.dataset.id, p_name: o.name, p_email: o.email || null, p_cpf: cpf || null }); }
   else if (id === 'add:docs') { const file = f.file.files[0]; delete o.file; const path = `${rid}/${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('documents').insert({ ...o, residence_id: rid, path }); }
   else if (id === 'add:qr') r = await sb.from('qr_codes').insert({ residence_id: rid, label: o.label, target_hash: QR_T[o.target] });
   else if (id === 'add:pl') { const file = f.file.files[0], path = `${rid}/planta_${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path }); }
@@ -291,5 +316,6 @@ document.addEventListener('submit', async e => {
   else if (op === 'add') r = await sb.from(k).insert({ ...o, residence_id: rid });
   else if (op === 'edit') r = await sb.from(k).update(o).eq('id', f.dataset.id);
   if (r && r.error) return toast('Não foi possível salvar: ' + r.error.message, 1);
-  closeModal(); toast('Salvo com sucesso.'); render();
+  closeModal(); toast('Salvo com sucesso.'); await render();
+  if (id === 'add:own' && S.back) { const b = S.back; S.back = null; openOwnerEdit(b); }
 });

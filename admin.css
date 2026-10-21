@@ -39,3 +39,7 @@ header .menubtn:hover{background:#16283a;filter:none}
 .gtile{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px}
 .gtile img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;display:block}
 .gtile .badge{margin-top:6px}
+
+.chk{display:flex;gap:10px;align-items:center;color:var(--ink);margin-top:14px}.chk input{width:auto;min-height:0}
+.gtile video{width:100%;aspect-ratio:16/9;border-radius:8px;background:#000;display:block}
+.sheet .card{background:var(--bg)}
