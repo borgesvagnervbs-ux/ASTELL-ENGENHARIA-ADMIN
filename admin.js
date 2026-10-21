@@ -13,6 +13,9 @@ if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo
 addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
 
 const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false };
+const CLOUD_OK = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' && typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' && !/COLE_AQUI/.test(CLOUDINARY_CLOUD_NAME + CLOUDINARY_UPLOAD_PRESET);
+const cld = (u, w) => String(u).replace('/upload/', `/upload/w_${w},c_limit,q_auto,f_auto/`);
+const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x => `<img src="${esc(cld(x.url, 240))}" alt="" loading="lazy">`).join('')}</div>` : '';
 
 // ---------- ícones
 const ico = d => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
@@ -30,7 +33,7 @@ const DOC_CATS = ['Projeto arquitetônico', 'Projeto estrutural', 'Projeto elét
 const STATUS = ['Recebida', 'Em análise', 'Aguardando informações', 'Agendada', 'Em atendimento', 'Concluída', 'Encerrada'];
 const PT_CATS = ['Elétrica', 'Hidráulica', 'Gás', 'Climatização', 'Estrutura', 'Paredes', 'Equipamentos'];
 const QR_T = { 'Minha casa': 'casa', 'Documentos e manuais': 'documentos', 'Equipamentos': 'equipamentos', 'Manutenção': 'manutencao', 'Planta técnica': 'planta', 'Assistência técnica': 'assistencia' };
-const TBL = { residences: 'Residência', documents: 'Documento', warranties: 'Garantia', maintenance_tasks: 'Manutenção', equipment: 'Equipamento', history_events: 'Evento do histórico', contacts: 'Contato', building_items: 'Item construtivo', floorplans: 'Planta', plan_points: 'Ponto da planta', qr_codes: 'QR Code', service_requests: 'Assistência' };
+const TBL = { residences: 'Residência', documents: 'Documento', warranties: 'Garantia', maintenance_tasks: 'Manutenção', equipment: 'Equipamento', history_events: 'Evento do histórico', contacts: 'Contato', building_items: 'Item construtivo', images: 'Imagem', floorplans: 'Planta', plan_points: 'Ponto da planta', qr_codes: 'QR Code', service_requests: 'Assistência' };
 const ACT = { INSERT: 'criou', UPDATE: 'alterou', DELETE: 'excluiu' };
 
 const DEFREQ = ['system', 'name', 'description', 'months', 'start_date', 'event_date', 'title'];
@@ -81,6 +84,35 @@ function openEdit(k, id) {
   modal('Editar', fieldsFor(k).map(f => fld(f, row)).join(''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
 }
 
+// ---------- galeria de imagens (Cloudinary)
+async function gallery() {
+  const g = S.gal;
+  const { data, error } = await sb.from('images').select('*').eq('residence_id', g.resId).eq('kind', g.kind).order('created_at');
+  const list = (data || []).filter(x => g.kind === 'residence' || x.ref_id === g.refId); S.imgs = list;
+  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Imagens"><div class="sheethead"><b>Imagens — ${esc(g.title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
+    (CLOUD_OK ? '<form data-form="gal"><label>Adicionar imagens (selecione quantas quiser)<input name="imgs" type="file" accept="image/*" multiple required></label><button>Enviar imagens</button></form><p class="mute" id="galmsg"></p>' : '<p class="notice">Cloudinary não configurado: preencha CLOUDINARY_CLOUD_NAME e CLOUDINARY_UPLOAD_PRESET no config.js.</p>') +
+    (error ? '<p class="empty">Rode o schema_v6.sql no Supabase para habilitar as imagens.</p>' : `<h3>${list.length} imagem(ns)</h3><div class="gallery">${list.map(x => `<div class="gtile"><a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>${x.visible === false ? '<span class="badge">Oculta do cliente</span>' : ''}${acts(`<button class="link" data-gvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`, `<button class="link danger" data-gdel="${x.id}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhuma imagem ainda.</p>'}</div>`) + '</div>';
+  $('#modal').hidden = false;
+}
+async function uploadImages(form) {
+  const g = S.gal, files = [...form.imgs.files], res = S.res.find(r => r.id === g.resId), msg = $('#galmsg'); let ok = 0;
+  const folder = 'astell-home/' + String(res ? res.code : g.resId).replace(/[^\w-]/g, '_') + '/' + g.kind;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]; msg.textContent = `Enviando ${i + 1} de ${files.length}...`;
+    try {
+      if (!/^image\//.test(file.type || 'image/')) throw new Error('não é uma imagem');
+      if (file.size > 10 * 1024 * 1024) throw new Error('maior que 10 MB');
+      const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); fd.append('folder', folder);
+      const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+      const j = await resp.json(); if (!resp.ok) throw new Error((j.error && j.error.message) || 'erro no envio');
+      const { error } = await sb.from('images').insert({ residence_id: g.resId, kind: g.kind, ref_id: g.refId || null, url: j.secure_url, public_id: j.public_id });
+      if (error) throw error; ok++;
+    } catch (e) { toast(`Falha em "${file.name}": ${e.message}`, 1); }
+  }
+  if (ok) toast(ok + (ok === 1 ? ' imagem enviada.' : ' imagens enviadas.'));
+  await gallery(); render();
+}
+
 // ---------- páginas
 const head = (t, add, ctx = true) => `<div class="pagehead"><div><h2>${t}</h2>${ctx && S.cur ? `<p class="mute">Residência: <b>${esc(S.cur.name)}</b> — ${esc(S.cur.code)}</p>` : ''}</div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`;
 const acts = (...b) => `<div class="acts">${b.filter(Boolean).join('')}</div>`;
@@ -91,13 +123,17 @@ async function listPage(k) {
   const c = T[k];
   const { data, error } = await sb.from(k).select('*').eq('residence_id', S.cur.id).order(c.order || 'created_at', { ascending: false });
   if (error) throw error; S.rows[k] = data;
-  view.innerHTML = head(c.label, k) + (data.length ? data.map(r => `<div class="card">${c.row(r)}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>`).join('') : '<p class="empty">Nada cadastrado ainda. Toque em + para adicionar.</p>') + (c.note ? `<p class="notice">${c.note}</p>` : '');
+  const im = {};
+  if (k === 'maintenance_tasks') { const { data: ii } = await sb.from('images').select('url,ref_id').eq('residence_id', S.cur.id).eq('kind', 'maintenance').order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
+  view.innerHTML = head(c.label, k) + (data.length ? data.map(r => `<div class="card">${c.row(r)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>`).join('') : '<p class="empty">Nada cadastrado ainda. Toque em + para adicionar.</p>') + (c.note ? `<p class="notice">${c.note}</p>` : '');
 }
 
 const PAGES = {
   async res() {
-    view.innerHTML = head('Residências', 'res', false) + (S.res.map(r => `<div class="card"><b>${esc(r.name)}</b> ${S.cur && S.cur.id === r.id ? '<span class="badge ok">Selecionada</span>' : ''}<span class="mute">${esc(r.code)} · ${esc(r.address || '')}</span><p class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</p>${acts(`<button class="link" data-edit="res:${r.id}">Editar</button>`, !(S.cur && S.cur.id === r.id) && `<button class="link" data-pick="${r.id}">Selecionar</button>`)}</div>`).join('') || '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>') +
-      '<p class="notice">A residência marcada como "Selecionada" é a que os demais menus (documentos, garantias, manutenções...) estão editando.</p>';
+    const { data: im } = await sb.from('images').select('residence_id,url').eq('kind', 'residence').order('created_at');
+    const by = {}; (im || []).forEach(x => (by[x.residence_id] = by[x.residence_id] || []).push(x));
+    view.innerHTML = head('Residências', 'res', false) + (S.res.map(r => { const g = by[r.id] || []; return `<div class="card"><b>${esc(r.name)}</b> ${S.cur && S.cur.id === r.id ? '<span class="badge ok">Selecionada</span>' : ''}<span class="mute">${esc(r.code)} · ${esc(r.address || '')}</span><p class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</p>${thumbsOf(g)}${acts(`<button class="link" data-edit="res:${r.id}">Editar</button>`, `<button class="link" data-gal="res:${r.id}">Imagens (${g.length})</button>`, !(S.cur && S.cur.id === r.id) && `<button class="link" data-pick="${r.id}">Selecionar</button>`)}</div>`; }).join('') || '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>') +
+      '<p class="notice">A residência marcada como "Selecionada" é a que os demais menus (documentos, garantias, manutenções...) estão editando. As imagens da residência aparecem para o cliente no Início e em Minha casa.</p>';
   },
   async own() {
     const { data: cl } = await sb.from('client_cpfs').select('id,name,cpf_mask,claimed_by,expected_email').order('created_at', { ascending: false });
@@ -166,7 +202,7 @@ async function loadRes(pick) {
 
 // ---------- menu lateral
 function buildDrawer() {
-  $('#drawer').innerHTML = `<div class="dhead"><strong class="logo">ASTELL<span>PAINEL ADMINISTRATIVO</span></strong></div><div class="dnav">${MENU.map(([k, l, i]) => `<a href="#${k}" data-m="${k}">${ico(IC[i])}<span>${l}</span></a>`).join('')}</div><div class="dfoot"><a href="https://borgesvagnervbs-ux.github.io/ASTELL-ENGENHARIA-APP/index.html">${ico(IC.casa)}<span>Ver app do cliente</span></a><button type="button" class="ghost" data-out>Sair</button></div>`;
+  $('#drawer').innerHTML = `<div class="dhead"><strong class="logo">ASTELL<span>PAINEL ADMINISTRATIVO</span></strong></div><div class="dnav">${MENU.map(([k, l, i]) => `<a href="#${k}" data-m="${k}">${ico(IC[i])}<span>${l}</span></a>`).join('')}</div><div class="dfoot"><a href="index.html">${ico(IC.casa)}<span>Ver app do cliente</span></a><button type="button" class="ghost" data-out>Sair</button></div>`;
 }
 function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').hidden = !open; $('#menuBtn').setAttribute('aria-expanded', open); }
 $('#menuBtn').onclick = () => drawer(!$('#drawer').classList.contains('open'));
@@ -205,9 +241,12 @@ sb.auth.onAuthStateChange((ev, s) => {
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
-  const el = e.target.closest('[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
-  if (d.close !== undefined) closeModal();
+  if (d.close !== undefined) { closeModal(); render(); }
+  if (d.gal) { const [t, id] = d.gal.split(':'); if (t === 'res') S.gal = { kind: 'residence', refId: null, resId: id, title: S.res.find(x => x.id === id).name }; else S.gal = { kind: 'maintenance', refId: id, resId: S.cur.id, title: S.rows.maintenance_tasks.find(x => x.id === id).name }; gallery(); }
+  if (d.gvis) { const x = S.imgs.find(i => i.id === d.gvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await gallery(); }
+  if (d.gdel && confirm('Excluir esta imagem do sistema? O arquivo continua guardado no Cloudinary.')) { const { error } = await sb.from('images').delete().eq('id', d.gdel); if (error) toast('Não foi possível excluir.', 1); else toast('Imagem excluída.'); await gallery(); }
   if (d.add) openAdd(d.add);
   if (d.edit) { const [k, id] = d.edit.split(':'); openEdit(k, id); }
   if (d.pick) { S.cur = S.res.find(r => r.id === d.pick); S.planId = null; $('#resSel').value = d.pick; toast('Residência selecionada: ' + S.cur.name); render(); }
@@ -235,6 +274,7 @@ document.addEventListener('input', e => { const t = e.target; if (t.classList &&
 
 document.addEventListener('submit', async e => {
   const f = e.target, id = f.dataset.form; if (!id) return; e.preventDefault();
+  if (id === 'gal') return uploadImages(f);
   const o = clean(Object.fromEntries(new FormData(f))), rid = S.cur && S.cur.id, [op, k] = id.split(':'); let r;
   if (id === 'hf') { S.hf = o; return render(); }
   if (id === 'ast') { r = await sb.from('service_requests').update({ status: o.status, staff_note: o.staff_note }).eq('id', f.dataset.id); if (!r.error) await sb.from('history_events').insert({ residence_id: rid, category: 'Assistência', description: 'Solicitação atualizada: ' + o.status }); }

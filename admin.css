@@ -35,3 +35,7 @@ header .menubtn:hover{background:#16283a;filter:none}
 @media(min-width:900px){#drawer{width:300px}}
 @media print{#drawer,#scrim,#modal,.pagehead,.acts{display:none!important}}
 @media(prefers-reduced-motion:reduce){#drawer{transition:none}}
+
+.gtile{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px}
+.gtile img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;display:block}
+.gtile .badge{margin-top:6px}
