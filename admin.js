@@ -13,7 +13,10 @@ if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo
 addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
 
 const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false };
-const CLOUD_OK = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' && typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' && !/COLE_AQUI/.test(CLOUDINARY_CLOUD_NAME + CLOUDINARY_UPLOAD_PRESET);
+// Aceita CLOUDINARY_UPLOAD_PRESET ou CLOUDINARY_PRESET no config.js
+const CLD_NAME = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? String(CLOUDINARY_CLOUD_NAME).trim() : '';
+const CLD_PRESET = typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' ? String(CLOUDINARY_UPLOAD_PRESET).trim() : (typeof CLOUDINARY_PRESET !== 'undefined' ? String(CLOUDINARY_PRESET).trim() : '');
+const CLOUD_OK = !!(CLD_NAME && CLD_PRESET) && !/COLE_AQUI/.test(CLD_NAME + CLD_PRESET);
 const cld = (u, w) => String(u).replace('/upload/', `/upload/w_${w},c_limit,q_auto,f_auto/`);
 const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x => `<img src="${esc(cld(x.url, 240))}" alt="" loading="lazy">`).join('')}</div>` : '';
 
@@ -90,7 +93,7 @@ async function gallery() {
   const { data, error } = await sb.from('images').select('*').eq('residence_id', g.resId).eq('kind', g.kind).order('created_at');
   const list = (data || []).filter(x => g.kind === 'residence' || x.ref_id === g.refId); S.imgs = list;
   $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Imagens"><div class="sheethead"><b>Imagens — ${esc(g.title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
-    (CLOUD_OK ? '<form data-form="gal"><label>Adicionar imagens (selecione quantas quiser)<input name="imgs" type="file" accept="image/*" multiple required></label><button>Enviar imagens</button></form><p class="mute" id="galmsg"></p>' : '<p class="notice">Cloudinary não configurado: preencha CLOUDINARY_CLOUD_NAME e CLOUDINARY_UPLOAD_PRESET no config.js.</p>') +
+    (CLOUD_OK ? '<form data-form="gal"><label>Adicionar imagens (selecione quantas quiser)<input name="imgs" type="file" accept="image/*" multiple required></label><button>Enviar imagens</button></form><p class="mute" id="galmsg"></p>' : `<p class="notice">Cloudinary não configurado. Faltando no config.js: ${[!CLD_NAME && 'CLOUDINARY_CLOUD_NAME', !CLD_PRESET && 'CLOUDINARY_UPLOAD_PRESET'].filter(Boolean).join(' e ')}.</p>`) +
     (error ? '<p class="empty">Rode o schema_v6.sql no Supabase para habilitar as imagens.</p>' : `<h3>${list.length} imagem(ns)</h3><div class="gallery">${list.map(x => `<div class="gtile"><a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>${x.visible === false ? '<span class="badge">Oculta do cliente</span>' : ''}${acts(`<button class="link" data-gvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`, `<button class="link danger" data-gdel="${x.id}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhuma imagem ainda.</p>'}</div>`) + '</div>';
   $('#modal').hidden = false;
 }
@@ -102,8 +105,8 @@ async function uploadImages(form) {
     try {
       if (!/^image\//.test(file.type || 'image/')) throw new Error('não é uma imagem');
       if (file.size > 10 * 1024 * 1024) throw new Error('maior que 10 MB');
-      const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); fd.append('folder', folder);
-      const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+      const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLD_PRESET); fd.append('folder', folder);
+      const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLD_NAME}/image/upload`, { method: 'POST', body: fd });
       const j = await resp.json(); if (!resp.ok) throw new Error((j.error && j.error.message) || 'erro no envio');
       const { error } = await sb.from('images').insert({ residence_id: g.resId, kind: g.kind, ref_id: g.refId || null, url: j.secure_url, public_id: j.public_id });
       if (error) throw error; ok++;
@@ -202,7 +205,7 @@ async function loadRes(pick) {
 
 // ---------- menu lateral
 function buildDrawer() {
-  $('#drawer').innerHTML = `<div class="dhead"><strong class="logo">ASTELL<span>PAINEL ADMINISTRATIVO</span></strong></div><div class="dnav">${MENU.map(([k, l, i]) => `<a href="#${k}" data-m="${k}">${ico(IC[i])}<span>${l}</span></a>`).join('')}</div><div class="dfoot"><a href="https://borgesvagnervbs-ux.github.io/ASTELL-ENGENHARIA-APP/index.html">${ico(IC.casa)}<span>Ver app do cliente</span></a><button type="button" class="ghost" data-out>Sair</button></div>`;
+  $('#drawer').innerHTML = `<div class="dhead"><strong class="logo">ASTELL<span>PAINEL ADMINISTRATIVO</span></strong></div><div class="dnav">${MENU.map(([k, l, i]) => `<a href="#${k}" data-m="${k}">${ico(IC[i])}<span>${l}</span></a>`).join('')}</div><div class="dfoot"><a href="index.html">${ico(IC.casa)}<span>Ver app do cliente</span></a><button type="button" class="ghost" data-out>Sair</button></div>`;
 }
 function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').hidden = !open; $('#menuBtn').setAttribute('aria-expanded', open); }
 $('#menuBtn').onclick = () => drawer(!$('#drawer').classList.contains('open'));
