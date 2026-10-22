@@ -104,13 +104,20 @@ function openEdit(k, id) {
 
 // ---------- galeria de imagens (Cloudinary)
 async function gallery() {
-  const g = S.gal, withVid = g.kind === 'residence';
+  const g = S.gal;
   const { data, error } = await sb.from('images').select('*').eq('residence_id', g.resId).eq('kind', g.kind).order('created_at');
-  const list = (data || []).filter(x => g.kind === 'residence' || x.ref_id === g.refId); S.imgs = list;
+  S.imgs = (data || []).filter(x => g.kind === 'residence' || x.ref_id === g.refId); S.galErr = error; galleryRender();
+}
+// Galeria da residência: abas Todos / Imagens / Vídeos (as manutenções só têm imagens, então sem abas)
+function galleryRender() {
+  const g = S.gal, withVid = g.kind === 'residence', list = S.imgs || [], vids = list.filter(isVid), pics = list.filter(x => !isVid(x));
+  const tab = withVid ? (S.galTab || 'all') : 'all', shown = { all: list, img: pics, vid: vids }[tab] || list;
   const tile = x => `<div class="gtile">${isVid(x) ? `<video controls playsinline preload="metadata" poster="${esc(vposter(x.url))}" src="${esc(vsrc(x.url))}"></video><span class="badge">Vídeo</span>` : `<a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>`}${x.visible === false ? ' <span class="badge">Oculto do cliente</span>' : ''}${acts(`<button class="link" data-gvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`, `<button class="link danger" data-gdel="${x.id}">Excluir</button>`)}</div>`;
+  const tabs = withVid ? `<div class="tabs three" role="tablist">${[['all', 'Todos', list.length], ['img', 'Imagens', pics.length], ['vid', 'Vídeos', vids.length]].map(([k, l, c]) => `<button type="button" role="tab" aria-selected="${tab === k}" class="${tab === k ? 'on' : ''}" data-gtab="${k}">${l} (${c})</button>`).join('')}</div>` : `<h3>${list.length} imagem(ns)</h3>`;
+  const empty = tab === 'img' ? 'Nenhuma imagem enviada ainda.' : tab === 'vid' ? 'Nenhum vídeo enviado ainda.' : 'Nada enviado ainda.';
   $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Galeria"><div class="sheethead"><b>${withVid ? 'Imagens e vídeos' : 'Imagens'} — ${esc(g.title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
     (CLOUD_OK ? `<form data-form="gal"><label>${withVid ? 'Adicionar imagens e vídeos (selecione quantos quiser)' : 'Adicionar imagens (selecione quantas quiser)'}<input name="imgs" type="file" accept="${withVid ? 'image/*,video/*' : 'image/*'}" multiple required></label><button>Salvar</button></form><p class="mute" id="galmsg"></p>` : `<p class="notice">Cloudinary não configurado. Faltando no config.js: ${[!CLD_NAME && 'CLOUDINARY_CLOUD_NAME', !CLD_PRESET && 'CLOUDINARY_UPLOAD_PRESET'].filter(Boolean).join(' e ')}.</p>`) +
-    (error ? '<p class="empty">Rode o schema_v6.sql no Supabase para habilitar as imagens.</p>' : `<h3>${list.length} arquivo(s)</h3><div class="gallery">${list.map(tile).join('') || '<p class="empty">Nada enviado ainda.</p>'}</div>`) + '</div>';
+    (S.galErr ? '<p class="empty">Rode o schema_v6.sql no Supabase para habilitar as imagens.</p>' : tabs + `<div class="gallery">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div>`) + '</div>';
   $('#modal').hidden = false;
 }
 async function uploadImages(form) {
@@ -264,10 +271,11 @@ sb.auth.onAuthStateChange((ev, s) => {
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
-  const el = e.target.closest('[data-oedit],[data-oadd],[data-unlink],[data-ounlink],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-oedit],[data-oadd],[data-unlink],[data-ounlink],[data-gtab],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { closeModal(); await render(); if (S.back) { const b = S.back; S.back = null; openOwnerEdit(b); } }
-  if (d.gal) { const [t, id] = d.gal.split(':'); if (t === 'res') S.gal = { kind: 'residence', refId: null, resId: id, title: S.res.find(x => x.id === id).name }; else S.gal = { kind: 'maintenance', refId: id, resId: S.cur.id, title: S.rows.maintenance_tasks.find(x => x.id === id).name }; gallery(); }
+  if (d.gtab) { S.galTab = d.gtab; galleryRender(); }
+  if (d.gal) { S.galTab = 'all'; const [t, id] = d.gal.split(':'); if (t === 'res') S.gal = { kind: 'residence', refId: null, resId: id, title: S.res.find(x => x.id === id).name }; else S.gal = { kind: 'maintenance', refId: id, resId: S.cur.id, title: S.rows.maintenance_tasks.find(x => x.id === id).name }; gallery(); }
   if (d.gvis) { const x = S.imgs.find(i => i.id === d.gvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await gallery(); }
   if (d.gdel && confirm('Excluir esta imagem do sistema? O arquivo continua guardado no Cloudinary.')) { const { error } = await sb.from('images').delete().eq('id', d.gdel); if (error) toast('Não foi possível excluir.', 1); else toast('Imagem excluída.'); await gallery(); }
   if (d.add) openAdd(d.add);
