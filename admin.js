@@ -12,7 +12,7 @@ const fail = m => { view.innerHTML = '<div class="card" style="margin:16px"><b>N
 if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo config.js e preencha SUPABASE_URL e SUPABASE_KEY.'); throw new Error('Supabase não configurado'); }
 addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
 
-const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false };
+const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() } };
 // Aceita CLOUDINARY_UPLOAD_PRESET ou CLOUDINARY_PRESET no config.js
 const CLD_NAME = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? String(CLOUDINARY_CLOUD_NAME).trim() : '';
 const CLD_PRESET = typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' ? String(CLOUDINARY_UPLOAD_PRESET).trim() : (typeof CLOUDINARY_PRESET !== 'undefined' ? String(CLOUDINARY_PRESET).trim() : '');
@@ -102,29 +102,28 @@ function openEdit(k, id) {
   modal('Editar', fieldsFor(k).map(f => fld(f, row)).join(''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
 }
 
-// ---------- galeria de imagens (Cloudinary)
+// ---------- galeria de imagens das manutenções (Cloudinary; só imagens)
 async function gallery() {
   const g = S.gal;
   const { data, error } = await sb.from('images').select('*').eq('residence_id', g.resId).eq('kind', g.kind).order('created_at');
-  S.imgs = (data || []).filter(x => g.kind === 'residence' || x.ref_id === g.refId); S.galErr = error; galleryRender();
+  S.imgs = (data || []).filter(x => x.ref_id === g.refId); S.galErr = error; galleryRender();
 }
-// Galeria da residência: abas Todos / Imagens / Vídeos (as manutenções só têm imagens, então sem abas)
 function galleryRender() {
-  const g = S.gal, withVid = g.kind === 'residence', list = S.imgs || [], vids = list.filter(isVid), pics = list.filter(x => !isVid(x));
-  const tab = withVid ? (S.galTab || 'all') : 'all', shown = { all: list, img: pics, vid: vids }[tab] || list;
-  const tile = x => `<div class="gtile">${isVid(x) ? `<video controls playsinline preload="metadata" poster="${esc(vposter(x.url))}" src="${esc(vsrc(x.url))}"></video><span class="badge">Vídeo</span>` : `<a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>`}${x.visible === false ? ' <span class="badge">Oculto do cliente</span>' : ''}${acts(`<button class="link" data-gvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`, `<button class="link danger" data-gdel="${x.id}">Excluir</button>`)}</div>`;
-  const tabs = withVid ? `<div class="tabs three" role="tablist">${[['all', 'Todos', list.length], ['img', 'Imagens', pics.length], ['vid', 'Vídeos', vids.length]].map(([k, l, c]) => `<button type="button" role="tab" aria-selected="${tab === k}" class="${tab === k ? 'on' : ''}" data-gtab="${k}">${l} (${c})</button>`).join('')}</div>` : `<h3>${list.length} imagem(ns)</h3>`;
-  const empty = tab === 'img' ? 'Nenhuma imagem enviada ainda.' : tab === 'vid' ? 'Nenhum vídeo enviado ainda.' : 'Nada enviado ainda.';
-  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Galeria"><div class="sheethead"><b>${withVid ? 'Imagens e vídeos' : 'Imagens'} — ${esc(g.title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
-    (CLOUD_OK ? `<form data-form="gal"><label>${withVid ? 'Adicionar imagens e vídeos (selecione quantos quiser)' : 'Adicionar imagens (selecione quantas quiser)'}<input name="imgs" type="file" accept="${withVid ? 'image/*,video/*' : 'image/*'}" multiple required></label><button>Salvar</button></form><p class="mute" id="galmsg"></p>` : `<p class="notice">Cloudinary não configurado. Faltando no config.js: ${[!CLD_NAME && 'CLOUDINARY_CLOUD_NAME', !CLD_PRESET && 'CLOUDINARY_UPLOAD_PRESET'].filter(Boolean).join(' e ')}.</p>`) +
-    (S.galErr ? '<p class="empty">Rode o schema_v6.sql no Supabase para habilitar as imagens.</p>' : tabs + `<div class="gallery">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div>`) + '</div>';
+  const g = S.gal, list = S.imgs || [];
+  const tile = x => `<div class="gtile"><a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>${x.visible === false ? ' <span class="badge">Oculto do cliente</span>' : ''}${acts(`<button class="link" data-gvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`, `<button class="link danger" data-gdel="${x.id}">Excluir</button>`)}</div>`;
+  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Imagens"><div class="sheethead"><b>Imagens — ${esc(g.title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
+    (CLOUD_OK ? '<form data-form="gal"><label>Adicionar imagens (selecione quantas quiser)<input name="imgs" type="file" accept="image/*" multiple required></label><button>Salvar</button></form><p class="mute" id="galmsg"></p>' : cloudMissing()) +
+    (S.galErr ? '<p class="empty">Rode o schema_v6.sql no Supabase para habilitar as imagens.</p>' : `<h3>${list.length} imagem(ns)</h3><div class="gallery">${list.map(tile).join('') || '<p class="empty">Nenhuma imagem enviada ainda.</p>'}</div>`) + '</div>';
   $('#modal').hidden = false;
 }
-async function uploadImages(form) {
-  const g = S.gal, files = [...form.imgs.files], res = S.res.find(r => r.id === g.resId), msg = $('#galmsg'); let ok = 0;
+const cloudMissing = () => `<p class="notice">Cloudinary não configurado. Faltando no config.js: ${[!CLD_NAME && 'CLOUDINARY_CLOUD_NAME', !CLD_PRESET && 'CLOUDINARY_UPLOAD_PRESET'].filter(Boolean).join(' e ')}.</p>`;
+
+// envia vários arquivos ao Cloudinary e grava os links no Supabase; devolve quantos deram certo e quais falharam
+async function uploadFiles(files, g, msg) {
+  const res = S.res.find(r => r.id === g.resId), failed = []; let ok = 0;
   const folder = 'astell-home/' + String(res ? res.code : g.resId).replace(/[^\w-]/g, '_') + '/' + g.kind;
   for (let i = 0; i < files.length; i++) {
-    const file = files[i]; msg.textContent = `Enviando ${i + 1} de ${files.length}...`;
+    const file = files[i]; if (msg) msg.textContent = `Enviando ${i + 1} de ${files.length}...`;
     try {
       const vid = /^video\//.test(file.type || ''), img = /^image\//.test(file.type || '');
       if (!img && !(vid && g.kind === 'residence')) throw new Error(g.kind === 'residence' ? 'envie apenas imagens ou vídeos' : 'envie apenas imagens');
@@ -134,10 +133,68 @@ async function uploadImages(form) {
       const j = await resp.json(); if (!resp.ok) throw new Error((j.error && j.error.message) || 'erro no envio');
       const { error } = await sb.from('images').insert({ residence_id: g.resId, kind: g.kind, ref_id: g.refId || null, url: j.secure_url, public_id: j.public_id, ...(vid ? { media_type: 'video' } : {}) });
       if (error) throw error; ok++;
-    } catch (e) { toast(`Falha em "${file.name}": ${e.message}`, 1); }
+    } catch (e) { toast(`Falha em "${file.name}": ${e.message}`, 1); failed.push(file); }
   }
-  if (ok) toast(ok + (ok === 1 ? ' arquivo salvo.' : ' arquivos salvos.'));
+  if (msg) msg.textContent = '';
+  return { ok, failed };
+}
+const savedMsg = n => n + (n === 1 ? ' arquivo salvo.' : ' arquivos salvos.');
+async function uploadImages(form) {   // galeria das manutenções
+  const r = await uploadFiles([...form.imgs.files], S.gal, $('#galmsg'));
+  if (r.ok) toast(savedMsg(r.ok));
   await gallery(); render();
+}
+
+// ---------- tela de upload (Residências): arrastar e soltar ou escolher no computador
+function openUpload(resId) {
+  const r = S.res.find(x => x.id === resId); if (!r) return;
+  S.up = { resId, files: [] };
+  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Upload de imagens e vídeos"><div class="sheethead"><b>Upload de imagens e vídeos — ${esc(r.name)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
+    (CLOUD_OK ? '<div id="drop" class="dropzone"><p><b>Arraste imagens ou vídeos para cá</b></p><p class="mute">ou</p><button type="button" data-pickfiles>Selecionar arquivos do computador</button><input id="fileIn" type="file" accept="image/*,video/*" multiple hidden></div><div id="stage"></div><button type="button" data-savefiles disabled>Salvar</button><p class="mute" id="galmsg"></p><p class="notice">Imagens até 10 MB e vídeos até 100 MB. Você pode adicionar quantos arquivos quiser.</p>' : cloudMissing()) + '</div>';
+  $('#modal').hidden = false;
+}
+function renderStage() {
+  const f = S.up.files, st = $('#stage'); if (!st) return;
+  st.innerHTML = f.length ? `<h3>${f.length} ${f.length === 1 ? 'arquivo' : 'arquivos'} para salvar</h3>` + f.map((x, i) => `<div class="stagerow">${/^image\//.test(x.type) ? `<img src="${URL.createObjectURL(x)}" alt="">` : '<span class="vthumb">▶</span>'}<span class="sname">${esc(x.name)} <small class="mute">· ${(x.size / 1048576).toFixed(1)} MB</small></span><button type="button" class="x" data-unstage="${i}" aria-label="Remover da lista">×</button></div>`).join('') : '';
+  const b = $('[data-savefiles]'); if (b) b.disabled = !f.length;
+}
+function stageFiles(list) {
+  if (!S.up) return;
+  list.forEach(f => {
+    const vid = /^video\//.test(f.type), img = /^image\//.test(f.type);
+    if (!img && !vid) return toast(`"${f.name}" não é imagem nem vídeo.`, 1);
+    const max = vid ? 100 : 10; if (f.size > max * 1024 * 1024) return toast(`"${f.name}" é maior que ${max} MB.`, 1);
+    S.up.files.push(f);
+  });
+  renderStage();
+}
+async function saveStaged() {
+  const u = S.up; if (!u || !u.files.length) return;
+  const b = $('[data-savefiles]'); b.disabled = true;
+  const r = await uploadFiles(u.files, { kind: 'residence', refId: null, resId: u.resId }, $('#galmsg'));
+  if (r.ok) toast(savedMsg(r.ok));
+  u.files = r.failed;
+  if (!r.failed.length) { if (!S.cur || S.cur.id !== u.resId) { S.cur = S.res.find(x => x.id === u.resId); $('#resSel').value = u.resId; } S.mTab = 'all'; closeModal(); await render(); } else renderStage();
+}
+
+// ---------- imagens e vídeos da residência selecionada (tela Residências): abas, seleção e exclusão em lote
+async function loadMedia() {
+  if (!S.cur) { S.mediaRows = []; return; }
+  const { data, error } = await sb.from('images').select('*').eq('residence_id', S.cur.id).eq('kind', 'residence').order('created_at', { ascending: false });
+  S.mediaRows = data || []; S.mediaErr = error;
+}
+const resetSel = () => { S.sel = { on: false, ids: new Set() }; };
+const renderMedia = () => { const b = $('#mediabox'); if (b) b.innerHTML = mediaPanel(); };
+function mediaPanel() {
+  const list = S.mediaRows || [], vids = list.filter(isVid), pics = list.filter(x => !isVid(x)), tab = S.mTab || 'all', shown = { all: list, img: pics, vid: vids }[tab] || list, sel = S.sel, n = sel.ids.size;
+  const tile = x => { const ck = sel.ids.has(x.id);
+    const media = isVid(x) ? `<video controls playsinline preload="metadata" poster="${esc(vposter(x.url))}" src="${esc(vsrc(x.url))}"></video><span class="badge vb">Vídeo</span>` : `<a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>`;
+    return `<div class="gtile${ck ? ' picked' : ''}"><div class="mwrap">${media}${sel.on ? `<div class="cover" data-selid="${x.id}"></div><input type="checkbox" class="selbox" data-selid="${x.id}" ${ck ? 'checked' : ''} aria-label="Selecionar ${isVid(x) ? 'vídeo' : 'imagem'}">` : ''}</div>${x.visible === false ? '<span class="badge">Oculto do cliente</span>' : ''}${acts(`<button class="link" data-mvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`)}</div>`; };
+  const tabs = `<div class="tabs three" role="tablist">${[['all', 'Todos', list.length], ['img', 'Imagens', pics.length], ['vid', 'Vídeos', vids.length]].map(([k, l, c]) => `<button type="button" role="tab" aria-selected="${tab === k}" class="${tab === k ? 'on' : ''}" data-mtab="${k}">${l} (${c})</button>`).join('')}</div>`;
+  const tools = `<div class="mtools"><span class="mute">${shown.length} ${shown.length === 1 ? 'item' : 'itens'}</span><span class="mbtns">${sel.on ? `<button type="button" class="btn-danger" data-seldel ${n ? '' : 'disabled'}>Excluir${n ? ` (${n})` : ''}</button><button type="button" class="ghost2" data-selmode>Cancelar</button>` : `<button type="button" class="ghost2" data-selmode ${shown.length ? '' : 'disabled'}>Selecionar</button>`}</span></div>`;
+  const empty = tab === 'img' ? 'Nenhuma imagem enviada ainda.' : tab === 'vid' ? 'Nenhum vídeo enviado ainda.' : 'Nada enviado ainda. Use "Upload de imagens e vídeos".';
+  return `<div class="pagehead mhead"><div><h3 style="margin:0">Imagens e vídeos</h3><p class="mute">Residência: <b>${esc(S.cur.name)}</b> — ${esc(S.cur.code)}</p></div><button type="button" class="up" data-upl="res:${S.cur.id}">Upload de imagens e vídeos</button></div>` +
+    (S.mediaErr ? '<p class="empty">Rode o schema_v6.sql (e o v7) no Supabase para habilitar as imagens e vídeos.</p>' : tabs + tools + `<div class="gallery">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div>`);
 }
 
 // ---------- páginas
@@ -157,10 +214,10 @@ async function listPage(k) {
 
 const PAGES = {
   async res() {
-    const { data: im } = await sb.from('images').select('*').eq('kind', 'residence').order('created_at');
-    const by = {}; (im || []).forEach(x => (by[x.residence_id] = by[x.residence_id] || []).push(x));
-    view.innerHTML = head('Residências', 'res', false) + (S.res.map(r => { const g = by[r.id] || []; return `<div class="card"><b>${esc(r.name)}</b> ${S.cur && S.cur.id === r.id ? '<span class="badge ok">Selecionada</span>' : ''}<span class="mute">${esc(r.code)} · ${esc(r.address || '')}</span><p class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</p>${thumbsOf(g.filter(x => !isVid(x)))}${acts(`<button class="link" data-edit="res:${r.id}">Editar</button>`, `<button class="link" data-gal="res:${r.id}">Imagens e vídeos (${g.length})</button>`, !(S.cur && S.cur.id === r.id) && `<button class="link" data-pick="${r.id}">Selecionar</button>`)}</div>`; }).join('') || '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>') +
-      '<p class="notice">A residência marcada como "Selecionada" é a que os demais menus (documentos, garantias, manutenções...) estão editando. As imagens da residência aparecem para o cliente no Início e em Minha casa.</p>';
+    resetSel(); await loadMedia();
+    view.innerHTML = head('Residências', 'res', false) + (S.res.map(r => `<div class="card"><b>${esc(r.name)}</b> ${S.cur && S.cur.id === r.id ? '<span class="badge ok">Selecionada</span>' : ''}<span class="mute">${esc(r.code)} · ${esc(r.address || '')}</span><p class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</p>${acts(`<button class="link" data-edit="res:${r.id}">Editar</button>`, `<button class="link" data-upl="res:${r.id}">Upload de imagens e vídeos</button>`, !(S.cur && S.cur.id === r.id) && `<button class="link" data-pick="${r.id}">Selecionar</button>`)}</div>`).join('') || '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>') +
+      (S.cur ? `<div id="mediabox">${mediaPanel()}</div>` : '') +
+      '<p class="notice">A residência marcada como "Selecionada" é a que os demais menus (documentos, garantias, manutenções...) estão editando, e é a que aparece nas imagens e vídeos acima. O cliente vê esse material no app.</p>';
   },
   async own() {
     const [{ data: cl }, { data: lk }] = await Promise.all([sb.from('client_cpfs').select('id,name,cpf_mask,claimed_by,expected_email').order('name'), sb.from('cpf_residences').select('cpf_id,residence_id')]);
@@ -271,11 +328,26 @@ sb.auth.onAuthStateChange((ev, s) => {
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
-  const el = e.target.closest('[data-oedit],[data-oadd],[data-unlink],[data-ounlink],[data-gtab],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-oedit],[data-oadd],[data-unlink],[data-ounlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { closeModal(); await render(); if (S.back) { const b = S.back; S.back = null; openOwnerEdit(b); } }
-  if (d.gtab) { S.galTab = d.gtab; galleryRender(); }
-  if (d.gal) { S.galTab = 'all'; const [t, id] = d.gal.split(':'); if (t === 'res') S.gal = { kind: 'residence', refId: null, resId: id, title: S.res.find(x => x.id === id).name }; else S.gal = { kind: 'maintenance', refId: id, resId: S.cur.id, title: S.rows.maintenance_tasks.find(x => x.id === id).name }; gallery(); }
+  if (d.gal) { const [, id] = d.gal.split(':'); S.gal = { kind: 'maintenance', refId: id, resId: S.cur.id, title: S.rows.maintenance_tasks.find(x => x.id === id).name }; gallery(); }
+  if (d.upl) openUpload(d.upl.split(':')[1]);
+  if (d.pickfiles !== undefined) $('#fileIn').click();
+  if (d.unstage !== undefined) { S.up.files.splice(+d.unstage, 1); renderStage(); }
+  if (d.savefiles !== undefined) saveStaged();
+  if (d.mtab) { S.mTab = d.mtab; resetSel(); renderMedia(); }
+  if (d.selmode !== undefined) { S.sel = { on: !S.sel.on, ids: new Set() }; renderMedia(); }
+  if (d.selid) { const s = S.sel.ids; if (s.has(d.selid)) s.delete(d.selid); else s.add(d.selid); renderMedia(); }
+  if (d.seldel !== undefined && S.sel.ids.size) {
+    const ids = [...S.sel.ids];
+    if (confirm(`Excluir ${ids.length} ${ids.length === 1 ? 'item selecionado' : 'itens selecionados'}? Eles deixam de aparecer no app. Os arquivos continuam guardados no Cloudinary.`)) {
+      const { error } = await sb.from('images').delete().in('id', ids);
+      if (error) toast('Não foi possível excluir.', 1); else toast(ids.length === 1 ? 'Item excluído.' : ids.length + ' itens excluídos.');
+      resetSel(); await loadMedia(); renderMedia();
+    }
+  }
+  if (d.mvis) { const x = S.mediaRows.find(i => i.id === d.mvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await loadMedia(); renderMedia(); }
   if (d.gvis) { const x = S.imgs.find(i => i.id === d.gvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await gallery(); }
   if (d.gdel && confirm('Excluir esta imagem do sistema? O arquivo continua guardado no Cloudinary.')) { const { error } = await sb.from('images').delete().eq('id', d.gdel); if (error) toast('Não foi possível excluir.', 1); else toast('Imagem excluída.'); await gallery(); }
   if (d.add) openAdd(d.add);
@@ -304,7 +376,13 @@ document.addEventListener('click', async e => {
   if (d.hclear !== undefined) { S.hf = {}; render(); }
   if (d.out !== undefined) sb.auth.signOut();
 });
-document.addEventListener('change', e => { if (e.target.id === 'planSel') { S.planId = e.target.value; render(); } });
+document.addEventListener('change', e => {
+  if (e.target.id === 'planSel') { S.planId = e.target.value; render(); }
+  if (e.target.id === 'fileIn') { stageFiles([...e.target.files]); e.target.value = ''; }
+});
+document.addEventListener('dragover', e => { if ($('#modal').hidden) return; e.preventDefault(); const z = $('#drop'); if (z) z.classList.toggle('over', !!(e.target.closest && e.target.closest('#drop'))); });
+document.addEventListener('dragleave', e => { const z = $('#drop'); if (z && !e.relatedTarget) z.classList.remove('over'); });
+document.addEventListener('drop', e => { if ($('#modal').hidden) return; e.preventDefault(); const z = $('#drop'); if (z) z.classList.remove('over'); if (e.target.closest && e.target.closest('#drop') && e.dataTransfer) stageFiles([...e.dataTransfer.files]); });
 document.addEventListener('input', e => { const t = e.target; if (t.classList && t.classList.contains('cpf')) t.value = cpfMask(t.value); });
 
 document.addEventListener('submit', async e => {
