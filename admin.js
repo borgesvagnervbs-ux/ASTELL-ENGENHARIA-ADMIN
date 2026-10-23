@@ -92,7 +92,7 @@ function openOwnerEdit(id) {
   const c = (S.owners || []).find(x => x.id === id); if (!c) return;
   const blocks = (S.links || []).filter(x => x.cpf_id === id).map(x => x.residence_id).map(rid => {
     const r = S.res.find(x => x.id === rid), co = S.links.filter(x => x.residence_id === rid).map(x => S.owners.find(o => o.id === x.cpf_id)).filter(Boolean);
-    return `<div class="card"><b>${esc(r ? r.name : 'Residência')}</b> <span class="mute">${esc(r ? r.code : '')}</span><p class="mute">Proprietários: ${co.map(o => esc(o.name) + (o.id === id ? ' (este)' : '')).join(', ')}</p>${acts(`<button type="button" class="link" data-oadd="${rid}">+ Adicionar proprietário a esta residência</button>`, `<button type="button" class="link danger" data-ounlink="${id}:${rid}">Desvincular</button>`)}</div>`;
+    return `<div class="card"><b>${esc(r ? r.name : 'Residência')}</b> <span class="mute">${esc(r ? r.code : '')}</span><p class="mute">Proprietários: ${co.map(o => esc(o.name) + (o.id === id ? ' (este)' : '')).join(', ')}</p>${acts(`<button type="button" class="link danger" data-ounlink="${id}:${rid}">Desvincular</button>`)}</div>`;
   }).join('') || '<p class="empty">Este proprietário ainda não está vinculado a nenhuma residência. Use "Vincular à residência selecionada" na lista.</p>';
   modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label><h3>Residências vinculadas</h3>${blocks}`, `data-form="edit:own" data-id="${id}"`, 'Salvar alterações');
 }
@@ -149,7 +149,7 @@ async function uploadImages(form) {   // galeria das manutenções
 function openUpload(resId) {
   const r = S.res.find(x => x.id === resId); if (!r) return;
   S.up = { resId, files: [] };
-  $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Upload de imagens e vídeos"><div class="sheethead"><b>Upload de imagens e vídeos — ${esc(r.name)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
+  $('#modal').innerHTML = `<div class="sheet big" role="dialog" aria-modal="true" aria-label="Upload de imagens e vídeos"><div class="sheethead"><b>Upload de imagens e vídeos — ${esc(r.name)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>` +
     (CLOUD_OK ? '<div id="drop" class="dropzone"><p><b>Arraste imagens ou vídeos para cá</b></p><p class="mute">ou</p><button type="button" data-pickfiles>Selecionar arquivos do computador</button><input id="fileIn" type="file" accept="image/*,video/*" multiple hidden></div><div id="stage"></div><button type="button" data-savefiles disabled>Salvar</button><p class="mute" id="galmsg"></p><p class="notice">Imagens até 10 MB e vídeos até 100 MB. Você pode adicionar quantos arquivos quiser.</p>' : cloudMissing()) + '</div>';
   $('#modal').hidden = false;
 }
@@ -214,7 +214,7 @@ function resCards() {
   if (!S.res.length) return '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>';
   const list = S.res.filter(resMatches);
   if (!list.length) return `<p class="empty">Nenhuma residência ou proprietário encontrado para “${esc(S.q.trim())}”.</p>`;
-  return list.map(r => { const ow = S.ownersByRes[r.id] || []; return `<a class="card rescard" href="#res/${r.id}"><b>${esc(r.name)}</b>${S.cur && S.cur.id === r.id ? ' <span class="badge ok">Selecionada</span>' : ''}<span class="mute">${esc(r.code)} · ${esc(r.address || 'sem endereço')}</span><span class="mute">Proprietários: ${ow.length ? ow.map(o => esc(o.name)).join(', ') : '—'}</span><span class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</span></a>`; }).join('');
+  return list.map(r => { const ow = S.ownersByRes[r.id] || []; return `<a class="card rescard" href="#res/${r.id}"><b>${esc(r.name)}</b><span class="mute">${esc(r.code)} · ${esc(r.address || 'sem endereço')}</span><span class="mute">Proprietários: ${ow.length ? ow.map(o => esc(o.name)).join(', ') : '—'}</span><span class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</span></a>`; }).join('');
 }
 function filterRes() { const c = $('#rescards'); if (!c) return; c.innerHTML = resCards(); const n = $('#rescount'); if (n) n.textContent = countText(); }
 async function resList() {
@@ -359,7 +359,7 @@ sb.auth.onAuthStateChange((ev, s) => {
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
-  const el = e.target.closest('[data-oedit],[data-oadd],[data-unlink],[data-ounlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-oedit],[data-unlink],[data-ounlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { closeModal(); await render(); if (S.back) { const b = S.back; S.back = null; openOwnerEdit(b); } }
   if (d.gal) { const [, id] = d.gal.split(':'); S.gal = { kind: 'maintenance', refId: id, resId: S.cur.id, title: S.rows.maintenance_tasks.find(x => x.id === id).name }; gallery(); }
@@ -395,7 +395,6 @@ document.addEventListener('click', async e => {
     done(error && 'Não foi possível registrar.', 'Execução registrada.');
   }
   if (d.oedit) openOwnerEdit(d.oedit);
-  if (d.oadd) { const fm = el.closest('form'); S.back = fm && fm.dataset ? fm.dataset.id : null; openOwnerAdd(d.oadd); }
   if (d.unlink && confirm('Desvincular este proprietário da residência selecionada? Ele perde o acesso a ela.')) { const { error } = await sb.rpc('admin_unlink_cpf', { p_cpf: d.unlink, p_res: S.cur.id }); done(error && 'Não foi possível desvincular.', 'Proprietário desvinculado.'); }
   if (d.ounlink && confirm('Desvincular este proprietário desta residência? Ele perde o acesso a ela.')) { const [oid, rid] = d.ounlink.split(':'); const { error } = await sb.rpc('admin_unlink_cpf', { p_cpf: oid, p_res: rid }); if (error) toast('Não foi possível desvincular.', 1); else toast('Proprietário desvinculado.'); await render(); openOwnerEdit(oid); }
   if (d.link) { const { error } = await sb.rpc('admin_link_cpf', { p_cpf: d.link, p_res: S.cur.id }); done(error && 'Não foi possível vincular.', 'Proprietário vinculado à residência.'); }

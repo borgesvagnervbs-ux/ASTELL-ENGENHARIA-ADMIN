@@ -69,10 +69,6 @@ header .menubtn:hover{background:#16283a;filter:none}
 @media(min-width:620px){.mhead .up{flex:none}}
 .card .badge.ok{margin-right:8px}
 
-/* Pesquisa no cabeçalho */
-header input[type=search]{flex:1 1 100%;min-height:44px;margin:0;background:#16283a;color:#fff;border:1px solid #2a4157;border-radius:10px;padding:10px 14px;font-size:.95rem}
-header input[type=search]::placeholder{color:#7f93a1}
-header input[type=search]:focus-visible{outline:3px solid #8fc6cc;outline-offset:1px}
 /* Cards de residência e tela de cadastro */
 .golda{color:var(--gold)}
 .rescard{display:block;color:var(--ink);text-decoration:none;cursor:pointer;transition:border-color .15s}
@@ -90,4 +86,18 @@ main#view.wide{max-width:1240px}
 .info b{font-weight:500;overflow-wrap:anywhere;white-space:pre-line}
 main#view.wide .gallery{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
 
-header input[type=search]{max-width:640px}
+
+/* Barra de pesquisa: logo abaixo do cabeçalho (some junto com ele na tela de login) */
+#searchbar{max-width:980px;margin:0 auto;padding:14px 16px 0}
+#top[hidden]+#searchbar{display:none}
+#searchbar input[type=search]{display:block;width:100%;max-width:640px;margin:0 auto;min-height:44px;background:#16283a;color:#fff;border:1px solid #2a4157;border-radius:10px;padding:10px 14px;font-size:.95rem}
+#searchbar input[type=search]::placeholder{color:#7f93a1}
+#searchbar input[type=search]:focus-visible{outline:3px solid #8fc6cc;outline-offset:1px}
+/* Tela de upload com o dobro do tamanho */
+.sheet.big{max-width:1040px;max-height:94vh;padding:28px}
+.sheet.big .sheethead{margin-bottom:12px}.sheet.big .sheethead b{font-size:1.2rem}
+.sheet.big .dropzone{padding:56px 24px;min-height:260px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.sheet.big .dropzone p{font-size:1.15rem}.sheet.big .dropzone button{width:auto;min-width:340px;min-height:52px;font-size:1rem}
+.sheet.big .stagerow{gap:14px;padding:12px 0}.sheet.big .stagerow img,.sheet.big .vthumb{width:64px;height:64px}
+.sheet.big .sname{font-size:1.02rem}.sheet.big [data-savefiles]{min-height:52px;font-size:1.05rem}
+@media(max-width:520px){.sheet.big{padding:18px}.sheet.big .dropzone{padding:32px 14px;min-height:200px}.sheet.big .dropzone button{width:100%;min-width:0}}
