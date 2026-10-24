@@ -12,7 +12,7 @@ const fail = m => { view.innerHTML = '<div class="card" style="margin:16px"><b>N
 if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo config.js e preencha SUPABASE_URL e SUPABASE_KEY.'); throw new Error('Supabase não configurado'); }
 addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
 
-const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {} };
+const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
 // Aceita CLOUDINARY_UPLOAD_PRESET ou CLOUDINARY_PRESET no config.js
 const CLD_NAME = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? String(CLOUDINARY_CLOUD_NAME).trim() : '';
 const CLD_PRESET = typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' ? String(CLOUDINARY_UPLOAD_PRESET).trim() : (typeof CLOUDINARY_PRESET !== 'undefined' ? String(CLOUDINARY_PRESET).trim() : '');
@@ -49,7 +49,7 @@ const fld = ([k, l, t = 'text', req], v = {}) => {
   return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}>`}</label>`;
 };
 const RES_F = [['code', 'Código (ex.: AST-2026-002)', 'text', true], ['name', 'Nome da residência', 'text', true], ['address', 'Endereço'], ['area_m2', 'Área construída (m²)', 'number'], ['floors', 'Pavimentos', 'number'], ['build_system', 'Sistema construtivo'], ['project_no', 'Nº do projeto'], ['start_date', 'Início da obra', 'date', false], ['delivery_date', 'Entrega', 'date', false], ['tech_lead', 'Responsável técnico'], ['notes', 'Observações', 'textarea']];
-const DOC_F = [['title', 'Título'], ['category', 'Categoria', DOC_CATS], ['version', 'Versão'], ['description', 'Descrição']];
+const DOC_F = [['title', 'Título'], ['category', 'Categoria', DOC_CATS], ['version', 'Versão'], ['description', 'Descrição', 'text', false]];
 const T = {
   warranties: { label: 'Garantias', order: 'start_date', f: [['system', 'Sistema ou componente'], ['coverage', 'Descrição da cobertura'], ['start_date', 'Data inicial', 'date'], ['months', 'Prazo (meses)', 'number'], ['notes', 'Condições e exclusões', 'textarea']],
     row: r => { const [s, c, end] = wState(r); return `<b>${esc(r.system)}</b> <span class="badge ${c}">${s}</span><p>${esc(r.coverage)}</p><span class="mute">${fmt(r.start_date)} até ${end.toLocaleDateString('pt-BR')}</span><p class="mute">${esc(r.notes)}</p>`; },
@@ -61,7 +61,7 @@ const T = {
   history_events: { label: 'Histórico', f: [['event_date', 'Data', 'date'], ['category', 'Categoria'], ['description', 'Descrição', 'textarea']], row: () => '' },
   contacts: { label: 'Contatos', f: [['name', 'Nome / empresa'], ['specialty', 'Especialidade'], ['phone', 'Telefone'], ['whatsapp', 'WhatsApp'], ['email', 'E-mail'], ['hours', 'Horário de atendimento'], ['notes', 'Instruções', 'textarea']],
     row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.specialty)}</span><p>${esc(r.phone)} ${esc(r.whatsapp)} ${esc(r.email)}</p><span class="mute">${esc(r.hours)} ${esc(r.notes)}</span>` },
-  building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais']], ['title', 'Título'], ['description', 'Descrição', 'textarea'], ['highlights', 'Destaques (um por linha)', 'textarea']],
+  building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais']], ['title', 'Título'], ['description', 'Descrição', 'textarea', false], ['highlights', 'Destaques (um por linha)', 'textarea']],
     row: r => `<b>${esc(r.title)}</b> <span class="badge">${esc(r.category)}</span><p class="mute">${esc(r.description)}</p><p>${esc((r.highlights || '').split('\n').filter(Boolean).join(' · '))}</p>` },
 };
 const fieldsFor = k => k === 'res' ? RES_F : k === 'documents' ? DOC_F : T[k].f;
@@ -71,36 +71,63 @@ function cpfDigits(v) { return String(v || '').replace(/\D/g, '').slice(0, 11); 
 function cpfMask(v) { return cpfDigits(v).replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1-$2'); }
 function cpfOk(d) { if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false; for (let t = 9; t < 11; t++) { let s = 0; for (let i = 0; i < t; i++) s += d[i] * (t + 1 - i); if ((s * 10) % 11 % 10 != d[t]) return false; } return true; }
 
-// ---------- janela de formulário
+// telefone (celular/WhatsApp): máscara (00) 00000-0000
+function telDigits(v) { return String(v || '').replace(/\D/g, '').slice(0, 11); }
+function telMask(v) { const d = telDigits(v); if (!d) return ''; if (d.length <= 2) return '(' + d; if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`; if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`; return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; }
+const telOk = v => !v || [10, 11].includes(telDigits(v).length);
+
+
+// ---------- janela de formulário (com pilha: o botão "Cadastrar" abre outra janela por cima e, ao terminar, volta ao formulário de origem com tudo preenchido)
 function modal(title, body, attrs, btn = 'Salvar') {
   $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sheethead"><b>${esc(title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div><form ${attrs}>${body}<button>${btn}</button><button type="button" class="ghost2" data-close>Cancelar</button></form></div>`;
-  $('#modal').hidden = false;
+  $('#modal').hidden = false; document.querySelectorAll('#modal .ownpick').forEach(refreshOwnPick);
 }
-const closeModal = () => { $('#modal').hidden = true; $('#modal').innerHTML = ''; };
+const hardClose = () => { S.stack = []; $('#modal').hidden = true; $('#modal').innerHTML = ''; };
+function pushModal(after) { const sheet = $('#modal').firstElementChild; if (sheet) $('#modal').removeChild(sheet); S.stack.push({ sheet, after }); }
+function popModal(result) { const f = S.stack.pop(); $('#modal').innerHTML = ''; if (f && f.sheet) $('#modal').appendChild(f.sheet); $('#modal').hidden = false; if (f && f.after && result) f.after(result); }
+const closeModal = () => S.stack.length ? popModal(null) : hardClose();
+
+// escolha obrigatória de residência (com botão Cadastrar ao lado)
+const byName = (a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR');
+const resOpts = sel => [...S.res].sort(byName).map(r => `<option value="${r.id}" ${r.id === sel ? 'selected' : ''}>${esc(r.name)} — ${esc(r.code)}</option>`).join('');
+const resSelect = (sel = '') => `<div class="field"><span class="lbl">Residência *</span><div class="selrow"><select name="residence_id" required aria-label="Residência"><option value="">Selecione a residência…</option>${resOpts(sel)}</select><button type="button" class="ghost2" data-newres>Cadastrar</button></div>${S.res.length ? '' : '<p class="mute">Nenhuma residência cadastrada ainda. Use "Cadastrar" para criar a primeira.</p>'}</div>`;
+
+// escolha opcional de proprietários já cadastrados (com botão Cadastrar ao lado)
+const ownPickHtml = ids => `<div class="ownpick field"><span class="lbl">Proprietários (opcional)</span><div class="selrow"><select data-ownsel aria-label="Proprietários já cadastrados"></select><button type="button" class="ghost2" data-newown>Cadastrar</button></div><div class="chips" data-chips></div><input type="hidden" name="owner_ids" value="${ids.join(',')}"></div>`;
+function refreshOwnPick(box) {
+  const hid = box.querySelector('[name=owner_ids]'), ids = hid.value ? hid.value.split(',') : [], sel = box.querySelector('[data-ownsel]');
+  const free = [...S.owners].filter(o => !ids.includes(o.id)).sort(byName);
+  sel.innerHTML = `<option value="">${free.length ? 'Selecione um proprietário já cadastrado…' : (S.owners.length ? 'Todos os proprietários já foram selecionados' : 'Nenhum proprietário cadastrado ainda')}</option>` + free.map(o => `<option value="${o.id}">${esc(o.name)} — ${esc(o.cpf_mask)}</option>`).join('');
+  box.querySelector('[data-chips]').innerHTML = ids.map(id => S.owners.find(x => x.id === id)).filter(Boolean).map(o => `<span class="chip">${esc(o.name)}<button type="button" data-chipx="${o.id}" aria-label="Remover ${esc(o.name)}">×</button></span>`).join('') || '<span class="mute">Nenhum proprietário selecionado.</span>';
+}
+const resFormBody = (row = {}, ownerIds = []) => RES_F.map(f => fld(f, row)).join('') + ownPickHtml(ownerIds);
+
 const ADD = {
-  res: () => modal('Nova residência', RES_F.map(f => fld(f)).join(''), 'data-form="add:res"', 'Criar residência'),
-  own: () => { S.back = null; openOwnerAdd(S.cur && S.cur.id); },
-  docs: () => modal('Enviar documento', '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f)).join(''), 'data-form="add:docs"', 'Enviar'),
-  qr: () => modal('Novo QR Code', `<label>Nome da etiqueta<input name="label" required></label>${fld(['target', 'Ao ler, abre', Object.keys(QR_T)])}`, 'data-form="add:qr"', 'Gerar'),
-  pl: () => modal('Enviar planta (imagem PNG ou JPG)', '<label>Título<input name="title" required></label><label>Imagem<input name="file" type="file" accept="image/*" required></label>', 'data-form="add:pl"', 'Enviar'),
+  res: () => modal('Nova residência', resFormBody(), 'data-form="add:res"', 'Criar residência'),
+  own: () => openOwnerAdd(false),
+  docs: () => modal('Enviar documento', resSelect() + '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f)).join(''), 'data-form="add:docs"', 'Enviar'),
+  qr: () => modal('Novo QR Code', resSelect() + `<label>Nome da etiqueta<input name="label" required></label>${fld(['target', 'Ao ler, abre', Object.keys(QR_T)])}`, 'data-form="add:qr"', 'Gerar'),
+  pl: () => modal('Enviar planta (imagem PNG ou JPG)', resSelect() + '<label>Título<input name="title" required></label><label>Imagem<input name="file" type="file" accept="image/*" required></label>', 'data-form="add:pl"', 'Enviar'),
 };
-function openOwnerAdd(resId) {
-  const r = resId && S.res.find(x => x.id === resId);
-  modal('Novo proprietário', `<label>Nome<input name="name" required></label><label>CPF<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required></label><label>E-mail do proprietário (opcional, recomendado)<input name="email" type="email"></label>${r ? `<label class="chk"><input type="checkbox" name="res_id" value="${r.id}" checked> Vincular à residência ${esc(r.name)}</label>` : ''}`, 'data-form="add:own"', 'Cadastrar');
+const telField = (name, label, v = '') => `<label>${label}<input name="${name}" class="tel" type="tel" inputmode="tel" placeholder="(00) 00000-0000" maxlength="15" value="${esc(v)}"></label>`;
+function openOwnerAdd(nested) {   // nested = aberto de dentro do cadastro de residência (o vínculo é feito quando a residência for salva)
+  modal('Novo proprietário', `<label>Nome<input name="name" required></label><label>CPF<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required></label><label>E-mail do proprietário (opcional, recomendado)<input name="email" type="email"></label>${telField('phone', 'Celular')}${telField('whatsapp', 'WhatsApp')}${nested ? '' : resSelect()}`, `data-form="add:own"${nested ? ' data-nested="1"' : ''}`, 'Cadastrar');
 }
 function openOwnerEdit(id) {
   const c = (S.owners || []).find(x => x.id === id); if (!c) return;
   const blocks = (S.links || []).filter(x => x.cpf_id === id).map(x => x.residence_id).map(rid => {
     const r = S.res.find(x => x.id === rid), co = S.links.filter(x => x.residence_id === rid).map(x => S.owners.find(o => o.id === x.cpf_id)).filter(Boolean);
     return `<div class="card"><b>${esc(r ? r.name : 'Residência')}</b> <span class="mute">${esc(r ? r.code : '')}</span><p class="mute">Proprietários: ${co.map(o => esc(o.name) + (o.id === id ? ' (este)' : '')).join(', ')}</p>${acts(`<button type="button" class="link danger" data-ounlink="${id}:${rid}">Desvincular</button>`)}</div>`;
-  }).join('') || '<p class="empty">Este proprietário ainda não está vinculado a nenhuma residência. Use "Vincular à residência selecionada" na lista.</p>';
-  modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label><h3>Residências vinculadas</h3>${blocks}`, `data-form="edit:own" data-id="${id}"`, 'Salvar alterações');
+  }).join('') || '<p class="empty">Este proprietário ainda não está vinculado a nenhuma residência. O vínculo é feito no cadastro da residência (menu Residências).</p>';
+  modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label>${telField('phone', 'Celular', c.phone || '')}${telField('whatsapp', 'WhatsApp', c.whatsapp || '')}<h3>Residências vinculadas</h3>${blocks}`, `data-form="edit:own" data-id="${id}"`, 'Salvar alterações');
 }
-function openAdd(k) { if (ADD[k]) return ADD[k](); modal('Adicionar — ' + T[k].label, T[k].f.map(f => fld(f)).join(''), `data-form="add:${k}"`); }
+function openAdd(k) { if (ADD[k]) return ADD[k](); modal('Adicionar — ' + T[k].label, resSelect() + T[k].f.map(f => fld(f)).join(''), `data-form="add:${k}"`); }
 function openEdit(k, id) {
-  const row = k === 'res' ? S.res.find(r => r.id === id) : (S.rows[k] || []).find(r => r.id === id); if (!row) return;
-  modal('Editar', fieldsFor(k).map(f => fld(f, row)).join(''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
+  if (k === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; return modal('Editar cadastro', resFormBody(r, (S.ownersByRes[id] || []).map(o => o.id)), `data-form="edit:res" data-id="${id}"`, 'Salvar alterações'); }
+  const row = (S.rows[k] || []).find(r => r.id === id); if (!row) return;
+  modal('Editar', `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` + fieldsFor(k).map(f => fld(f, row)).join(''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
 }
+
 
 // ---------- galeria de imagens das manutenções (Cloudinary; só imagens)
 async function gallery() {
@@ -197,14 +224,35 @@ function mediaPanel() {
     (S.mediaErr ? '<p class="empty">Rode o schema_v6.sql (e o v7) no Supabase para habilitar as imagens e vídeos.</p>' : tabs + tools + `<div class="gallery">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div>`);
 }
 
-// ---------- Residências: lista de cards com pesquisa e tela de cadastro de cada residência
+
+// ---------- dados auxiliares: residências e proprietários
 const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+async function reloadRes() { const { data } = await sb.from('residences').select('*').order('created_at'); S.res = data || []; }
 async function loadOwners() {
-  const [{ data: cl }, { data: lk }] = await Promise.all([sb.from('client_cpfs').select('id,name,cpf_mask,claimed_by,expected_email').order('name'), sb.from('cpf_residences').select('cpf_id,residence_id')]);
+  const [{ data: cl }, { data: lk }] = await Promise.all([sb.from('client_cpfs').select('*').order('created_at', { ascending: true }), sb.from('cpf_residences').select('cpf_id,residence_id')]);
   S.owners = cl || []; S.links = lk || []; S.ownersByRes = {};
   S.links.forEach(l => { const c = S.owners.find(x => x.id === l.cpf_id); if (c) (S.ownersByRes[l.residence_id] = S.ownersByRes[l.residence_id] || []).push(c); });
 }
-// pesquisa: nome da residência, código ou nome de qualquer proprietário (sem diferenciar maiúsculas nem acentos)
+const resName = id => { const r = S.res.find(x => x.id === id); return r ? r.name : '—'; };
+const ownNames = rid => (S.ownersByRes[rid] || []).map(o => esc(o.name)).join(', ') || '—';
+// linhas que todo card de elemento mostra abaixo do título: a residência e, abaixo dela, o(s) proprietário(s)
+const metaHtml = rid => `<span class="mute meta">Residência: ${esc(resName(rid))}</span><span class="mute meta">Proprietários: ${ownNames(rid)}</span>`;
+const hayOf = (rid, ...extra) => { const r = S.res.find(x => x.id === rid) || {}; return norm([...extra, r.name, r.code, ...(S.ownersByRes[rid] || []).map(o => o.name)].join(' ')); };
+
+// ---------- pesquisa dos módulos: cada tela registra seus itens e a barra de pesquisa filtra por residência, proprietário e título
+const SHELL = '<p class="mute" id="mcount"></p><div id="mlist"></div>';
+function paintItems() {
+  const q = norm(S.q).trim(), raw = S.q.trim();
+  Object.entries(S.items || {}).forEach(([id, items], n) => {
+    const el = $('#' + id); if (!el) return;
+    const list = q ? items.filter(i => i.hay.includes(q)) : items;
+    el.innerHTML = list.length ? list.map(i => i.html).join('') : `<p class="empty">${items.length ? `Nada encontrado para “${esc(raw)}”.` : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
+    const c = n === 0 && $('#mcount'); if (c) c.textContent = q ? `${list.length} de ${items.length} ${items.length === 1 ? 'item' : 'itens'}` : `${items.length} ${items.length === 1 ? 'item' : 'itens'}`;
+  });
+}
+const setItems = (map, empties = {}) => { S.items = map; S.empties = empties; };
+
+// ---------- Residências: lista de cards com pesquisa e tela de cadastro de cada residência
 function resMatches(r) {
   const q = norm(S.q).trim(); if (!q) return true;
   return norm(r.name).includes(q) || norm(r.code).includes(q) || (S.ownersByRes[r.id] || []).some(o => norm(o.name).includes(q));
@@ -214,13 +262,14 @@ function resCards() {
   if (!S.res.length) return '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>';
   const list = S.res.filter(resMatches);
   if (!list.length) return `<p class="empty">Nenhuma residência ou proprietário encontrado para “${esc(S.q.trim())}”.</p>`;
-  return list.map(r => { const ow = S.ownersByRes[r.id] || []; return `<a class="card rescard" href="#res/${r.id}"><b>${esc(r.name)}</b><span class="mute">${esc(r.code)} · ${esc(r.address || 'sem endereço')}</span><span class="mute">Proprietários: ${ow.length ? ow.map(o => esc(o.name)).join(', ') : '—'}</span><span class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</span></a>`; }).join('');
+  return list.map(r => `<a class="card rescard" href="#res/${r.id}"><b>${esc(r.name)}</b><span class="mute">${esc(r.code)} · ${esc(r.address || 'sem endereço')}</span><span class="mute">Proprietários: ${ownNames(r.id)}</span><span class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</span></a>`).join('');
 }
 function filterRes() { const c = $('#rescards'); if (!c) return; c.innerHTML = resCards(); const n = $('#rescount'); if (n) n.textContent = countText(); }
 async function resList() {
   await loadOwners();
-  view.innerHTML = head('Residências', 'res', false) + `<p class="mute" id="rescount">${countText()}</p><div id="rescards" class="rescards">${resCards()}</div>`;
+  view.innerHTML = head('Residências', 'res') + `<p class="mute" id="rescount">${countText()}</p><div id="rescards" class="rescards">${resCards()}</div>`;
 }
+const contactLine = c => `${c.phone ? `<span class="mute meta">Celular: ${esc(c.phone)}</span>` : ''}${c.whatsapp ? `<span class="mute meta">WhatsApp: <a class="golda" href="https://wa.me/55${telDigits(c.whatsapp)}" target="_blank" rel="noopener">${esc(c.whatsapp)}</a></span>` : ''}`;
 async function resDetail(id) {
   const r = S.res.find(x => x.id === id);
   if (!r) { view.innerHTML = '<p class="empty">Residência não encontrada.</p><p><a class="golda" href="#res">← Voltar para Residências</a></p>'; return; }
@@ -229,94 +278,119 @@ async function resDetail(id) {
   const info = [['Código', r.code], ['Nome da residência', r.name], ['Endereço', r.address], ['Área construída', r.area_m2 != null && r.area_m2 !== '' ? r.area_m2 + ' m²' : ''], ['Pavimentos', r.floors], ['Sistema construtivo', r.build_system], ['Nº do projeto', r.project_no], ['Início da obra', r.start_date ? fmt(r.start_date) : ''], ['Entrega', r.delivery_date ? fmt(r.delivery_date) : ''], ['Responsável técnico', r.tech_lead], ['Observações', r.notes]];
   view.innerHTML = `<p><a class="golda" href="#res">← Residências</a></p><div class="pagehead"><div><h2>${esc(r.name)}</h2><p class="mute">${esc(r.code)}</p></div><button type="button" class="up" data-edit="res:${r.id}">Editar cadastro</button></div>` +
     `<div class="detailgrid"><section class="card"><h3 style="margin-top:0">Cadastro</h3><div class="info">${info.map(([l, x]) => `<div><span class="mute">${l}</span><b>${v(x)}</b></div>`).join('')}</div></section>` +
-    `<section class="card"><h3 style="margin-top:0">Proprietários (${ow.length})</h3>${ow.map(o => `<p><b>${esc(o.name)}</b><span class="mute">${esc(o.cpf_mask)} · ${o.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}</span></p>`).join('') || '<p class="empty">Nenhum proprietário vinculado.</p>'}<a class="golda" href="#own">Gerenciar proprietários</a></section></div>` +
+    `<section class="card"><h3 style="margin-top:0">Proprietários (${ow.length})</h3>${ow.map(o => `<p><b>${esc(o.name)}</b><span class="mute">${esc(o.cpf_mask)} · ${o.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}</span>${contactLine(o)}</p>`).join('') || '<p class="empty">Nenhum proprietário vinculado.</p>'}<a class="golda" href="#own">Gerenciar proprietários</a></section></div>` +
     `<div id="mediabox">${mediaPanel()}</div>`;
 }
 
-// ---------- páginas
-const head = (t, add, ctx = true) => `<div class="pagehead"><div><h2>${t}</h2>${ctx && S.cur ? `<p class="mute">Residência: <b>${esc(S.cur.name)}</b> — ${esc(S.cur.code)} · <a class="golda" href="#res">trocar</a></p>` : ''}</div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`;
+// ---------- páginas dos módulos (independentes: mostram tudo, por ordem de cadastro, de todas as residências)
+const head = (t, add) => `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`;
 const acts = (...b) => `<div class="acts">${b.filter(Boolean).join('')}</div>`;
 const visBtn = (k, r) => `<button class="link" data-vis="${k}:${r.id}">${r.visible ? 'Ocultar do cliente' : 'Mostrar ao cliente'}</button>`;
 const hid = r => r.visible === false ? '<p><span class="badge">Oculto do cliente</span></p>' : '';
+const TITLE = { warranties: r => r.system, maintenance_tasks: r => r.name, equipment: r => r.name, contacts: r => r.name, building_items: r => r.title };
 
 async function listPage(k) {
   const c = T[k];
-  const { data, error } = await sb.from(k).select('*').eq('residence_id', S.cur.id).order(c.order || 'created_at', { ascending: false });
+  await loadOwners();
+  const { data, error } = await sb.from(k).select('*').order('created_at', { ascending: true });
   if (error) throw error; S.rows[k] = data;
   const im = {};
-  if (k === 'maintenance_tasks') { const { data: ii } = await sb.from('images').select('url,ref_id').eq('residence_id', S.cur.id).eq('kind', 'maintenance').order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
-  view.innerHTML = head(c.label, k) + (data.length ? data.map(r => `<div class="card">${c.row(r)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>`).join('') : '<p class="empty">Nada cadastrado ainda. Toque em + para adicionar.</p>') + (c.note ? `<p class="notice">${c.note}</p>` : '');
+  if (k === 'maintenance_tasks') { const { data: ii } = await sb.from('images').select('url,ref_id').eq('kind', 'maintenance').order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
+  setItems({ mlist: data.map(r => {
+    const raw = c.row(r), i = raw.indexOf('</b>') + 4;
+    return { hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
+  }) });
+  view.innerHTML = head(c.label, k) + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
+  paintItems();
+}
+
+async function plantaDetail(id) {
+  await loadOwners();
+  const { data: fp } = await sb.from('floorplans').select('*').eq('id', id), cur = (fp || [])[0];
+  if (!cur) { view.innerHTML = '<p class="empty">Planta não encontrada.</p><p><a class="golda" href="#pl">← Plantas técnicas</a></p>'; return; }
+  S.curPlan = cur;
+  const [{ data: u }, { data: pts }] = await Promise.all([sb.storage.from('documents').createSignedUrl(cur.path, 3600), sb.from('plan_points').select('*').eq('floorplan_id', id).order('created_at')]);
+  view.innerHTML = `<p><a class="golda" href="#pl">← Plantas técnicas</a></p><div class="pagehead"><div><h2>${esc(cur.title)}</h2>${metaHtml(cur.residence_id)}</div></div>` +
+    acts(`<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}|${esc(cur.path)}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
+    `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${(pts || []).map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div><h3>Pontos cadastrados</h3>` +
+    ((pts || []).map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>');
 }
 
 const PAGES = {
   async res() { if (S.arg) return resDetail(S.arg); return resList(); },
   async own() {
-    const [{ data: cl }, { data: lk }] = await Promise.all([sb.from('client_cpfs').select('id,name,cpf_mask,claimed_by,expected_email').order('name'), sb.from('cpf_residences').select('cpf_id,residence_id')]);
-    S.owners = cl || []; S.links = lk || [];
-    const here = new Set(S.links.filter(x => S.cur && x.residence_id === S.cur.id).map(x => x.cpf_id));
-    const card = c => `<div class="card"><b>${esc(c.name)}</b><span class="mute">${esc(c.cpf_mask)} · ${c.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}${c.expected_email ? ' · ' + esc(c.expected_email) : ''}</span>${acts(`<button class="link" data-oedit="${c.id}">Editar</button>`, S.cur && !here.has(c.id) && `<button class="link" data-link="${c.id}">Vincular à residência selecionada</button>`, S.cur && here.has(c.id) && `<button class="link danger" data-unlink="${c.id}">Desvincular desta residência</button>`, c.claimed_by && `<button class="link danger" data-rel="${c.id}">Liberar CPF</button>`)}</div>`;
-    const mine = S.owners.filter(c => here.has(c.id)), other = S.owners.filter(c => !here.has(c.id));
-    view.innerHTML = head('Proprietários', 'own', !!S.cur) + (S.cur ? `<h3>Proprietários desta residência (${mine.length})</h3>` + (mine.map(card).join('') || '<p class="empty">Nenhum proprietário vinculado ainda. Toque em + para adicionar quantos forem necessários.</p>') : '') +
-      `<h3>${S.cur ? 'Outros proprietários cadastrados' : 'Proprietários cadastrados'}</h3>` + (other.map(card).join('') || '<p class="empty">Nenhum outro proprietário cadastrado.</p>') +
-      '<p class="notice">Uma residência pode ter vários proprietários, cada um com o seu CPF. Cada um cria a própria conta no app e informa o CPF para ver a casa. Se você cadastrar o e-mail do proprietário, só a conta com esse e-mail consegue usar o CPF.</p>';
+    await loadOwners();
+    setItems({ mlist: S.owners.map(c => {
+      const rs = S.links.filter(l => l.cpf_id === c.id).map(l => S.res.find(r => r.id === l.residence_id)).filter(Boolean);
+      return { hay: norm([c.name, ...rs.map(r => r.name + ' ' + r.code)].join(' ')), html: `<div class="card"><b>${esc(c.name)}</b><span class="mute meta">Residências: ${rs.map(r => esc(r.name)).join(', ') || '—'}</span><span class="mute meta">${esc(c.cpf_mask)} · ${c.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}${c.expected_email ? ' · ' + esc(c.expected_email) : ''}</span>${contactLine(c)}${acts(`<button class="link" data-oedit="${c.id}">Editar</button>`, c.claimed_by && `<button class="link danger" data-rel="${c.id}">Liberar CPF</button>`)}</div>` };
+    }) });
+    view.innerHTML = head('Proprietários', 'own') + SHELL + '<p class="notice">Uma residência pode ter vários proprietários, cada um com o seu CPF. Cada um cria a própria conta no app e informa o CPF para ver a casa. Se você cadastrar o e-mail do proprietário, só a conta com esse e-mail consegue usar o CPF.</p>';
+    paintItems();
   },
   async docs() {
-    const { data } = await sb.from('documents').select('*').eq('residence_id', S.cur.id).order('created_at', { ascending: false }); S.rows.documents = data || [];
-    view.innerHTML = head('Documentos', 'docs') + ((data || []).map(d => `<div class="card"><b>${esc(d.title)}</b><span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhum documento. Toque em + para enviar o primeiro.</p>');
+    await loadOwners();
+    const { data } = await sb.from('documents').select('*').order('created_at', { ascending: true }); S.rows.documents = data || [];
+    setItems({ mlist: (data || []).map(d => ({ hay: hayOf(d.residence_id, d.title), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>` })) });
+    view.innerHTML = head('Documentos', 'docs') + SHELL; paintItems();
   },
   eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), ctt: () => listPage('contacts'), bld: () => listPage('building_items'),
   async ast() {
-    const { data } = await sb.from('service_requests').select('*').eq('residence_id', S.cur.id).order('created_at', { ascending: false });
-    view.innerHTML = head('Assistência técnica', null) + ((data || []).map(r => `<div class="card"><b>${esc(r.protocol)}</b> <span class="badge">${esc(r.status)}</span><p>${esc(r.category)} · ${esc(r.place)} · urgência ${esc(r.urgency)}</p><p>${esc(r.description)}</p><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p>
-      <form class="statusform" data-form="ast" data-id="${r.id}">${fld(['status', 'Alterar situação', STATUS], r)}<label>Comentário para o cliente<input name="staff_note" value="${esc(r.staff_note || '')}"></label><button>Atualizar</button></form></div>`).join('') || '<p class="empty">Nenhuma solicitação de assistência.</p>');
+    await loadOwners();
+    const { data } = await sb.from('service_requests').select('*').order('created_at', { ascending: true });
+    setItems({ mlist: (data || []).map(r => ({ hay: hayOf(r.residence_id, r.protocol, r.category), html: `<div class="card"><b>${esc(r.protocol)} — ${esc(r.category)}</b>${metaHtml(r.residence_id)}<span class="badge">${esc(r.status)}</span><p>${esc(r.place)} · urgência ${esc(r.urgency)}</p><p>${esc(r.description)}</p><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p>
+      <form class="statusform" data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}">${fld(['status', 'Alterar situação', STATUS], r)}<label>Comentário para o cliente<input name="staff_note" value="${esc(r.staff_note || '')}"></label><button>Atualizar</button></form></div>` })) }, { mlist: 'Nenhuma solicitação de assistência.' });
+    view.innerHTML = head('Assistência técnica', null) + SHELL; paintItems();
   },
   async his() {
-    const rid = S.cur.id, f = S.hf;
-    let q = sb.from('history_events').select('*').eq('residence_id', rid).order('event_date', { ascending: false }).limit(200);
-    let a = sb.from('audit_log').select('*').eq('residence_id', rid).order('at', { ascending: false }).limit(100);
+    await loadOwners();
+    const f = S.hf;
+    let q = sb.from('history_events').select('*').order('created_at', { ascending: true }).limit(500);
+    let a = sb.from('audit_log').select('*').order('at', { ascending: false }).limit(300);
     if (f.cat) q = q.ilike('category', '%' + f.cat + '%');
     if (f.from) { q = q.gte('event_date', f.from); a = a.gte('at', f.from); }
     if (f.to) { q = q.lte('event_date', f.to); a = a.lte('at', f.to + 'T23:59:59'); }
     const [{ data: ev }, { data: au, error }, { data: pr }] = await Promise.all([q, a, sb.from('profiles').select('id,name')]);
     const who = Object.fromEntries((pr || []).map(p => [p.id, p.name]));
     const what = x => { const n = x.new_data || x.old_data || {}; if (x.action === 'UPDATE') return 'campos: ' + Object.keys(n).filter(k => k !== 'created_at' && JSON.stringify((x.old_data || {})[k]) !== JSON.stringify(n[k])).join(', '); return n.title || n.name || n.system || n.protocol || n.label || n.description || ''; };
-    view.innerHTML = head('Histórico', 'history_events') + `<form class="card" data-form="hf"><b>Filtros</b><label>Categoria contém<input name="cat" value="${esc(f.cat || '')}"></label><label>De<input name="from" type="date" value="${esc(f.from || '')}"></label><label>Até<input name="to" type="date" value="${esc(f.to || '')}"></label><button>Filtrar</button><button type="button" class="ghost2" data-hclear>Limpar filtros</button></form><h3>Linha do tempo da residência</h3>` +
-      ((ev || []).map(e => `<div class="card"><b>${fmt(e.event_date)}</b><span class="mute">${esc(e.category)}</span><p>${esc(e.description)}</p>${acts(`<button class="link danger" data-del="history_events:${e.id}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhum evento no período.</p>') +
-      '<h3>Alterações registradas no sistema</h3>' + (error ? '<p class="empty">O registro de alterações ainda não está disponível. Rode o schema_v5.sql.</p>' : ((au || []).map(x => `<div class="card"><b>${esc(who[x.user_id] || 'Sistema')} ${ACT[x.action] || ''} ${esc((TBL[x.table_name] || x.table_name).toLowerCase())}</b><span class="mute">${new Date(x.at).toLocaleString('pt-BR')}</span><p class="mute">${esc(what(x))}</p></div>`).join('') || '<p class="empty">Nenhuma alteração registrada.</p>'));
+    const items = { mlist: (ev || []).map(e => ({ hay: hayOf(e.residence_id, e.category, e.description), html: `<div class="card"><b>${fmt(e.event_date)} — ${esc(e.category)}</b>${metaHtml(e.residence_id)}<p>${esc(e.description)}</p>${acts(`<button class="link danger" data-del="history_events:${e.id}">Excluir</button>`)}</div>` })) };
+    if (!error) items.mlist2 = (au || []).slice().reverse().map(x => ({ hay: hayOf(x.residence_id, who[x.user_id], TBL[x.table_name], what(x)), html: `<div class="card"><b>${esc(who[x.user_id] || 'Sistema')} ${ACT[x.action] || ''} ${esc((TBL[x.table_name] || x.table_name).toLowerCase())}</b>${metaHtml(x.residence_id)}<span class="mute">${new Date(x.at).toLocaleString('pt-BR')}</span><p class="mute">${esc(what(x))}</p></div>` }));
+    setItems(items, { mlist: 'Nenhum evento no período.', mlist2: 'Nenhuma alteração registrada.' });
+    view.innerHTML = head('Histórico', 'history_events') + `<form class="card" data-form="hf"><b>Filtros</b><label>Categoria contém<input name="cat" value="${esc(f.cat || '')}"></label><label>De<input name="from" type="date" value="${esc(f.from || '')}"></label><label>Até<input name="to" type="date" value="${esc(f.to || '')}"></label><button>Filtrar</button><button type="button" class="ghost2" data-hclear>Limpar filtros</button></form><h3>Linha do tempo</h3>${SHELL}` +
+      '<h3>Alterações registradas no sistema</h3>' + (error ? '<p class="empty">O registro de alterações ainda não está disponível. Rode o schema_v5_corrigido.sql.</p>' : '<div id="mlist2"></div>');
+    paintItems();
   },
   async qr() {
-    const { data } = await sb.from('qr_codes').select('*').eq('residence_id', S.cur.id).order('created_at');
+    await loadOwners();
+    const { data } = await sb.from('qr_codes').select('*').order('created_at', { ascending: true });
     const base = new URL('index.html', location.href.split('#')[0]).href;
     const svg = t => { const q = qrcode(0, 'M'); q.addData(base + '#qr/' + t); q.make(); return q.createSvgTag(5, 0); };
-    view.innerHTML = head('QR Codes', 'qr') + acts('<button class="link" data-print>Imprimir etiquetas</button>') + '<div class="grid">' + ((data || []).map(q => `<div class="card qr">${svg(q.token)}<b>${esc(q.label)}</b><span class="mute">Astell Home · ${esc(S.cur.code)}</span>${acts(`<button class="link danger" data-del="qr_codes:${q.id}">Excluir</button>`)}</div>`).join('') || '<p class="empty">Nenhum QR Code. Toque em + para gerar.</p>') + '</div><p class="notice">O QR leva ao app do cliente (index.html). Quem ler precisa entrar com a conta vinculada à casa para ver qualquer informação.</p>';
+    setItems({ mlist: (data || []).map(q => ({ hay: hayOf(q.residence_id, q.label), html: `<div class="card qr">${svg(q.token)}<b>${esc(q.label)}</b>${metaHtml(q.residence_id)}<span class="mute qrcode">Astell Home · ${esc((S.res.find(r => r.id === q.residence_id) || {}).code || '')}</span>${acts(`<button class="link danger" data-del="qr_codes:${q.id}">Excluir</button>`)}</div>` })) }, { mlist: 'Nenhum QR Code. Toque em + para gerar.' });
+    view.innerHTML = head('QR Codes', 'qr') + acts('<button class="link" data-print>Imprimir etiquetas</button>') + '<p class="mute" id="mcount"></p><div id="mlist" class="grid"></div><p class="notice">O QR leva ao app do cliente (index.html). Quem ler precisa entrar com a conta vinculada à casa para ver qualquer informação.</p>';
+    paintItems();
   },
   async pl() {
-    const rid = S.cur.id;
-    const [{ data: fp }, { data: pts }] = await Promise.all([sb.from('floorplans').select('*').eq('residence_id', rid).order('created_at'), sb.from('plan_points').select('*').eq('residence_id', rid)]);
-    if (!(fp || []).length) return view.innerHTML = head('Planta técnica', 'pl') + '<p class="empty">Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.</p>';
-    const cur = fp.find(p => p.id === S.planId) || fp[0]; S.planId = cur.id;
-    const { data: u } = await sb.storage.from('documents').createSignedUrl(cur.path, 3600);
-    const mine = (pts || []).filter(p => p.floorplan_id === cur.id);
-    view.innerHTML = head('Planta técnica', 'pl') + `<label>Planta<select id="planSel">${fp.map(p => `<option value="${p.id}" ${p.id === cur.id ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}</select></label>` +
-      acts(`<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}|${esc(cur.path)}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
-      `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${mine.map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div><h3>Pontos cadastrados</h3>` +
-      (mine.map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>');
+    if (S.arg) return plantaDetail(S.arg);
+    await loadOwners();
+    const { data } = await sb.from('floorplans').select('*').order('created_at', { ascending: true });
+    setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title), html: `<a class="card rescard" href="#pl/${p.id}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}</a>` })) }, { mlist: 'Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.' });
+    view.innerHTML = head('Planta técnica', 'pl') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
   },
 };
 
 async function render() {
   if (!S.profile || S.profile.role !== 'admin') return;
   const [key, arg] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
-  S.arg = S.menu === 'res' ? (arg || null) : null; view.classList.toggle('wide', !!S.arg);
+  S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; view.classList.toggle('wide', !!S.arg);
+  if (S.lastMenu !== S.menu) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = S.menu; }   // cada módulo começa com a pesquisa vazia
   document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
-  if (!S.cur && !['res', 'own'].includes(S.menu)) return view.innerHTML = '<p class="empty">Crie ou selecione uma residência no menu Residências.</p>';
+  S.items = null;
   try { await PAGES[S.menu](); } catch (e) { view.innerHTML = '<p class="empty">Não foi possível carregar esta tela. ' + esc(e.message || '') + '</p>'; }
 }
 async function loadRes(pick) {
-  const { data } = await sb.from('residences').select('*').order('created_at');
-  S.res = data || []; S.cur = S.res.find(r => r.id === pick) || S.res.find(r => S.cur && r.id === S.cur.id) || S.res[0] || null;
-  render();
+  await reloadRes();
+  S.cur = S.res.find(r => r.id === pick) || S.res.find(r => S.cur && r.id === S.cur.id) || S.res[0] || null; render();
 }
+
 
 // ---------- menu lateral
 function buildDrawer() {
@@ -325,7 +399,10 @@ function buildDrawer() {
 function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').hidden = !open; $('#menuBtn').setAttribute('aria-expanded', open); }
 $('#menuBtn').onclick = () => drawer(!$('#drawer').classList.contains('open'));
 $('#scrim').onclick = () => drawer(false);
-$('#resSearch').addEventListener('input', e => { S.q = e.target.value; if ((location.hash.slice(1) || 'res') === 'res') filterRes(); else location.hash = '#res'; });
+$('#resSearch').addEventListener('input', e => {   // filtra a lista do módulo aberto (residências, ou os cards de cada módulo)
+  S.q = e.target.value; const key = location.hash.slice(1) || 'res', [mod] = key.split('/');
+  if (key.includes('/')) location.hash = '#' + mod; else if (mod === 'res') filterRes(); else paintItems();
+});
 addEventListener('hashchange', () => { drawer(false); S.place = false; render(); });
 addEventListener('keydown', e => { if (e.key === 'Escape') { drawer(false); closeModal(); } });
 
@@ -356,13 +433,19 @@ sb.auth.onAuthStateChange((ev, s) => {
   if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT') setTimeout(() => start(s), 0);
 });
 
+
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
-  const el = e.target.closest('[data-oedit],[data-unlink],[data-ounlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-pick],[data-link],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-newres],[data-newown],[data-chipx],[data-oedit],[data-ounlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
-  if (d.close !== undefined) { closeModal(); await render(); if (S.back) { const b = S.back; S.back = null; openOwnerEdit(b); } }
-  if (d.gal) { const [, id] = d.gal.split(':'); S.gal = { kind: 'maintenance', refId: id, resId: S.cur.id, title: S.rows.maintenance_tasks.find(x => x.id === id).name }; gallery(); }
+  if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
+  // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
+  if (d.newres !== undefined) { const sel = el.closest('.selrow').querySelector('select'); pushModal(r => { if (![...sel.options].some(o => o.value === r.id)) sel.add(new Option(`${r.name} — ${r.code}`, r.id)); sel.value = r.id; }); ADD.res(); }
+  // botão "Cadastrar" ao lado dos proprietários (dentro do cadastro de residência)
+  if (d.newown !== undefined) { const box = el.closest('.ownpick'), hid = box.querySelector('[name=owner_ids]'); pushModal(o => { hid.value = [...(hid.value ? hid.value.split(',') : []), o.id].join(','); refreshOwnPick(box); }); openOwnerAdd(true); }
+  if (d.chipx) { const box = el.closest('.ownpick'), hid = box.querySelector('[name=owner_ids]'); hid.value = hid.value.split(',').filter(x => x && x !== d.chipx).join(','); refreshOwnPick(box); }
+  if (d.gal) { const [, id] = d.gal.split(':'), t = S.rows.maintenance_tasks.find(x => x.id === id); S.gal = { kind: 'maintenance', refId: id, resId: t.residence_id, title: t.name }; gallery(); }
   if (d.upl) openUpload(d.upl.split(':')[1]);
   if (d.pickfiles !== undefined) $('#fileIn').click();
   if (d.unstage !== undefined) { S.up.files.splice(+d.unstage, 1); renderStage(); }
@@ -386,18 +469,16 @@ document.addEventListener('click', async e => {
   if (d.vis) { const [k, id] = d.vis.split(':'), r = S.rows[k].find(x => x.id === id); const { error } = await sb.from(k).update({ visible: !r.visible }).eq('id', id); done(error && 'Não foi possível alterar.', r.visible ? 'Oculto do cliente.' : 'Visível ao cliente.'); }
   if (d.del && confirm('Excluir este registro?')) { const [k, id] = d.del.split(':'); const { error } = await sb.from(k).delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
   if (d.deldoc && confirm('Excluir este documento?')) { const [id, p] = d.deldoc.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('documents').delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Documento excluído.'); }
-  if (d.delplan && confirm('Excluir esta planta e todos os pontos marcados nela?')) { const [id, p] = d.delplan.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('floorplans').delete().eq('id', id); S.planId = null; done(error && 'Não foi possível excluir.', 'Planta excluída.'); }
+  if (d.delplan && confirm('Excluir esta planta e todos os pontos marcados nela?')) { const [id, p] = d.delplan.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('floorplans').delete().eq('id', id); if (error) toast('Não foi possível excluir.', 1); else { toast('Planta excluída.'); location.hash = '#pl'; } }
   if (d.open) { const { data, error } = await sb.storage.from('documents').createSignedUrl(d.open, 60); error ? toast('Não foi possível abrir.', 1) : window.open(data.signedUrl, '_blank', 'noopener'); }
   if (d.done) {
     const t = S.rows.maintenance_tasks.find(x => x.id === d.done), today = new Date().toISOString().slice(0, 10), nx = t.interval_months ? addMonths(today, +t.interval_months).toISOString().slice(0, 10) : null;
     const { error } = await sb.from('maintenance_tasks').update({ last_done: today, next_due: nx, status: nx ? 'Pendente' : 'Concluída' }).eq('id', t.id);
-    if (!error) await sb.from('history_events').insert({ residence_id: S.cur.id, category: 'Manutenção', description: 'Manutenção executada: ' + t.name });
+    if (!error) await sb.from('history_events').insert({ residence_id: t.residence_id, category: 'Manutenção', description: 'Manutenção executada: ' + t.name });
     done(error && 'Não foi possível registrar.', 'Execução registrada.');
   }
   if (d.oedit) openOwnerEdit(d.oedit);
-  if (d.unlink && confirm('Desvincular este proprietário da residência selecionada? Ele perde o acesso a ela.')) { const { error } = await sb.rpc('admin_unlink_cpf', { p_cpf: d.unlink, p_res: S.cur.id }); done(error && 'Não foi possível desvincular.', 'Proprietário desvinculado.'); }
   if (d.ounlink && confirm('Desvincular este proprietário desta residência? Ele perde o acesso a ela.')) { const [oid, rid] = d.ounlink.split(':'); const { error } = await sb.rpc('admin_unlink_cpf', { p_cpf: oid, p_res: rid }); if (error) toast('Não foi possível desvincular.', 1); else toast('Proprietário desvinculado.'); await render(); openOwnerEdit(oid); }
-  if (d.link) { const { error } = await sb.rpc('admin_link_cpf', { p_cpf: d.link, p_res: S.cur.id }); done(error && 'Não foi possível vincular.', 'Proprietário vinculado à residência.'); }
   if (d.rel && confirm('Liberar este CPF? O acesso atual do cliente será removido e outro cadastro poderá usá-lo.')) { const { error } = await sb.rpc('admin_release_cpf', { p_cpf: d.rel }); done(error && 'Não foi possível liberar.', 'CPF liberado.'); }
   if (d.place !== undefined) { S.place = !S.place; render(); }
   if (d.plan && S.place) { const b = el.getBoundingClientRect(); S.pend = { x: +((e.clientX - b.left) / b.width * 100).toFixed(2), y: +((e.clientY - b.top) / b.height * 100).toFixed(2) }; modal('Novo ponto na planta', fld(['category', 'Categoria', PT_CATS]) + '<label>Identificação<input name="label" required></label><label>Detalhes<textarea name="description" rows="3"></textarea></label>', 'data-form="add:pt"', 'Salvar ponto'); }
@@ -406,31 +487,65 @@ document.addEventListener('click', async e => {
   if (d.out !== undefined) sb.auth.signOut();
 });
 document.addEventListener('change', e => {
-  if (e.target.id === 'planSel') { S.planId = e.target.value; render(); }
   if (e.target.id === 'fileIn') { stageFiles([...e.target.files]); e.target.value = ''; }
+  if (e.target.matches && e.target.matches('[data-ownsel]') && e.target.value) { const box = e.target.closest('.ownpick'), hid = box.querySelector('[name=owner_ids]'); hid.value = [...(hid.value ? hid.value.split(',') : []), e.target.value].join(','); refreshOwnPick(box); }
 });
 document.addEventListener('dragover', e => { if ($('#modal').hidden) return; e.preventDefault(); const z = $('#drop'); if (z) z.classList.toggle('over', !!(e.target.closest && e.target.closest('#drop'))); });
 document.addEventListener('dragleave', e => { const z = $('#drop'); if (z && !e.relatedTarget) z.classList.remove('over'); });
 document.addEventListener('drop', e => { if ($('#modal').hidden) return; e.preventDefault(); const z = $('#drop'); if (z) z.classList.remove('over'); if (e.target.closest && e.target.closest('#drop') && e.dataTransfer) stageFiles([...e.dataTransfer.files]); });
-document.addEventListener('input', e => { const t = e.target; if (t.classList && t.classList.contains('cpf')) t.value = cpfMask(t.value); });
+document.addEventListener('input', e => { const t = e.target; if (!t.classList) return; if (t.classList.contains('cpf')) t.value = cpfMask(t.value); if (t.classList.contains('tel')) t.value = telMask(t.value); });
 
+const ownerParams = (o, cpf) => ({ p_name: o.name, p_cpf: cpf, p_email: o.email || null, ...(o.phone ? { p_phone: o.phone } : {}), ...(o.whatsapp ? { p_whatsapp: o.whatsapp } : {}) });
+const sameSet = (a, b) => a.length === b.length && a.every(x => b.includes(x));
 document.addEventListener('submit', async e => {
   const f = e.target, id = f.dataset.form; if (!id) return; e.preventDefault();
   if (id === 'gal') return uploadImages(f);
-  const o = clean(Object.fromEntries(new FormData(f))), rid = S.cur && S.cur.id, [op, k] = id.split(':'); let r;
+  const o = clean(Object.fromEntries(new FormData(f))), [op, k] = id.split(':'), nested = S.stack.length > 0; let r;
   if (id === 'hf') { S.hf = o; return render(); }
-  if (id === 'ast') { r = await sb.from('service_requests').update({ status: o.status, staff_note: o.staff_note }).eq('id', f.dataset.id); if (!r.error) await sb.from('history_events').insert({ residence_id: rid, category: 'Assistência', description: 'Solicitação atualizada: ' + o.status }); }
-  else if (id === 'add:res') { r = await sb.from('residences').insert(o).select().single(); if (!r.error) { closeModal(); await loadRes(r.data.id); location.hash = '#res/' + r.data.id; return toast('Residência criada. Complete o cadastro e envie as imagens e vídeos.'); } }
-  else if (id === 'edit:res') { r = await sb.from('residences').update(o).eq('id', f.dataset.id); if (!r.error) { closeModal(); await loadRes(f.dataset.id); return toast('Dados da residência salvos.'); } }
-  else if (id === 'add:own') { const cpf = cpfDigits(o.cpf); if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1); r = await sb.rpc('admin_register_cpf', { p_name: o.name, p_cpf: cpf, p_email: o.email || null }); if (!r.error && o.res_id) r = await sb.rpc('admin_link_cpf', { p_cpf: r.data, p_res: o.res_id }); }
-  else if (id === 'edit:own') { const cpf = cpfDigits(o.cpf || ''); if (cpf && !cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1); r = await sb.rpc('admin_update_cpf', { p_id: f.dataset.id, p_name: o.name, p_email: o.email || null, p_cpf: cpf || null }); }
-  else if (id === 'add:docs') { const file = f.file.files[0]; delete o.file; const path = `${rid}/${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('documents').insert({ ...o, residence_id: rid, path }); }
+  if (op === 'add' && (T[k] || ['docs', 'qr', 'pl'].includes(k) || (k === 'own' && f.dataset.nested !== '1')) && !o.residence_id) return toast('Selecione a residência (ou cadastre uma nova ao lado).', 1);
+  const rid = o.residence_id;
+  if (id === 'ast') { r = await sb.from('service_requests').update({ status: o.status, staff_note: o.staff_note }).eq('id', f.dataset.id); if (!r.error) await sb.from('history_events').insert({ residence_id: f.dataset.rid, category: 'Assistência', description: 'Solicitação atualizada: ' + o.status }); }
+  else if (id === 'add:res') {
+    const { owner_ids, ...fields } = o; r = await sb.from('residences').insert(fields).select().single();
+    if (!r.error) {
+      const ids = (owner_ids || '').split(',').filter(Boolean); let linkErr = false;
+      for (const oid of ids) { const l = await sb.rpc('admin_link_cpf', { p_cpf: oid, p_res: r.data.id }); if (l.error) linkErr = true; }
+      await reloadRes(); const novo = r.data;
+      if (linkErr) toast('Residência cadastrada, mas não foi possível vincular todos os proprietários.', 1);
+      if (nested) { popModal(novo); if (!linkErr) toast('Residência cadastrada e selecionada.'); return; }
+      closeModal(); await loadRes(novo.id); location.hash = '#res/' + novo.id; if (!linkErr) toast('Residência cadastrada. Complete o cadastro e envie as imagens e vídeos.'); return;
+    }
+  }
+  else if (id === 'edit:res') {
+    const { owner_ids, ...fields } = o; r = await sb.from('residences').update(fields).eq('id', f.dataset.id);
+    if (!r.error) {
+      const antes = (S.ownersByRes[f.dataset.id] || []).map(x => x.id), depois = (owner_ids || '').split(',').filter(Boolean);
+      for (const oid of depois.filter(x => !antes.includes(x))) await sb.rpc('admin_link_cpf', { p_cpf: oid, p_res: f.dataset.id });
+      for (const oid of antes.filter(x => !depois.includes(x))) await sb.rpc('admin_unlink_cpf', { p_cpf: oid, p_res: f.dataset.id });
+      closeModal(); await loadRes(f.dataset.id); return toast('Dados da residência salvos.');
+    }
+  }
+  else if (id === 'add:own') {
+    const cpf = cpfDigits(o.cpf); if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1);
+    if (!telOk(o.phone) || !telOk(o.whatsapp)) return toast('Celular ou WhatsApp inválido. Use DDD + número.', 1);
+    r = await sb.rpc('admin_register_cpf', ownerParams(o, cpf));
+    if (!r.error) {
+      const newId = r.data;
+      if (f.dataset.nested === '1') { S.owners.push({ id: newId, name: o.name, cpf_mask: '***.***.***-' + cpf.slice(-2), claimed_by: null, phone: o.phone || null, whatsapp: o.whatsapp || null }); popModal({ id: newId }); return toast('Proprietário cadastrado e selecionado.'); }
+      r = await sb.rpc('admin_link_cpf', { p_cpf: newId, p_res: rid });
+    }
+  }
+  else if (id === 'edit:own') {
+    const cpf = cpfDigits(o.cpf || ''); if (cpf && !cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1);
+    if (!telOk(o.phone) || !telOk(o.whatsapp)) return toast('Celular ou WhatsApp inválido. Use DDD + número.', 1);
+    r = await sb.rpc('admin_update_cpf', { p_id: f.dataset.id, ...ownerParams(o, null), p_cpf: cpf || null });
+  }
+  else if (id === 'add:docs') { const file = f.file.files[0]; delete o.file; const path = `${rid}/${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('documents').insert({ ...o, path }); }
   else if (id === 'add:qr') r = await sb.from('qr_codes').insert({ residence_id: rid, label: o.label, target_hash: QR_T[o.target] });
   else if (id === 'add:pl') { const file = f.file.files[0], path = `${rid}/planta_${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path }); }
-  else if (id === 'add:pt') r = await sb.from('plan_points').insert({ ...o, residence_id: rid, floorplan_id: S.planId, x: S.pend.x, y: S.pend.y });
-  else if (op === 'add') r = await sb.from(k).insert({ ...o, residence_id: rid });
+  else if (id === 'add:pt') r = await sb.from('plan_points').insert({ ...o, residence_id: S.curPlan.residence_id, floorplan_id: S.curPlan.id, x: S.pend.x, y: S.pend.y });
+  else if (op === 'add') r = await sb.from(k).insert(o);
   else if (op === 'edit') r = await sb.from(k).update(o).eq('id', f.dataset.id);
   if (r && r.error) return toast('Não foi possível salvar: ' + r.error.message, 1);
   closeModal(); toast('Salvo com sucesso.'); await render();
-  if (id === 'add:own' && S.back) { const b = S.back; S.back = null; openOwnerEdit(b); }
 });
