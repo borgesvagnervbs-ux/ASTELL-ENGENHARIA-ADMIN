@@ -9,7 +9,6 @@ header .menubtn:hover{background:#16283a;filter:none}
 /* Menu lateral */
 #drawer{position:fixed;top:0;bottom:0;left:0;z-index:30;width:290px;max-width:86vw;background:var(--navy);display:flex;flex-direction:column;transform:translateX(-102%);transition:transform .25s ease;box-shadow:4px 0 24px #0008}
 #drawer.open{transform:none}
-#scrim{position:fixed;inset:0;z-index:25;background:#000a}
 .dhead{padding:18px 20px;border-bottom:1px solid #1d3145;color:#fff}
 .dnav{flex:1;overflow:auto;padding:10px}
 #drawer a{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:10px;color:#b9c9d3;text-decoration:none}
@@ -33,7 +32,7 @@ header .menubtn:hover{background:#16283a;filter:none}
 #toast{z-index:50}
 .statusform{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
 @media(min-width:900px){#drawer{width:300px}}
-@media print{#drawer,#scrim,#modal,.pagehead,.acts{display:none!important}}
+@media print{#drawer,#modal,.pagehead,.acts,.pager,.crumbs{display:none!important}}
 @media(prefers-reduced-motion:reduce){#drawer{transition:none}}
 
 .gtile{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px}
@@ -114,3 +113,53 @@ main#view.wide .gallery{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)
 .chip button{min-height:28px;width:28px;padding:0;margin:0;border-radius:50%;background:transparent;color:var(--ink);font-size:1.1rem;line-height:1}
 .meta{display:block;margin-top:2px}
 @media print{.qr .meta{display:none}}
+
+/* Menu lateral: só fecha pelo X (amarelo); em telas largas empurra o conteúdo para não cobrir a página */
+.dhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.dclose{width:44px;min-height:44px;margin:0;padding:0;border-radius:50%;font-size:1.7rem;line-height:1;flex:none;display:grid;place-items:center}
+@media(min-width:900px){body.nav-open{padding-left:300px}}
+
+/* Pesquisa de residência / proprietário nos formulários (substitui o select) e botões Cadastrar amarelos */
+.comboin{position:relative;flex:1;min-width:0}
+.comboin .comboq{width:100%}
+.combolist{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;margin:0;padding:4px;list-style:none;max-height:240px;overflow:auto;background:var(--card);border:1px solid #2a4157;border-radius:12px;box-shadow:0 10px 30px #000a}
+.combolist li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer}
+.combolist li.on,.combolist li:hover{background:#16283a}
+.combolist li.none{color:var(--mute);cursor:default;display:block}
+.combolist li b{font-weight:500}.combolist li .mute{font-size:.78rem;flex:none}
+.combohint{font-size:.8rem;margin:6px 0 0}
+
+/* Campo de data com calendário amarelo */
+.dateinp{position:relative;display:flex;gap:8px}
+.datetxt{flex:1;min-width:0}
+.calbtn{width:48px;min-height:44px;margin:0;padding:0;display:grid;place-items:center;flex:none}
+.calpop{position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:300px;max-width:calc(100vw - 56px);background:var(--card);border:1px solid #2a4157;border-radius:14px;padding:12px;box-shadow:0 10px 30px #000a}
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.calhead b{flex:1;text-align:center;font-size:.95rem}
+.calhead button{width:34px;min-height:34px;margin:0;padding:0;border-radius:8px;font-size:1.1rem;line-height:1}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0}
+.calgrid i{font-style:normal;text-align:center;color:var(--mute);font-size:.75rem;padding:4px 0}
+.day{margin:0;min-height:34px;padding:0;border-radius:8px;background:transparent;color:var(--ink);font-weight:500}
+.day:hover{background:#16283a;filter:none}
+.day.today{box-shadow:inset 0 0 0 2px var(--gold)}
+.day.sel{background:var(--gold);color:#1b1409}
+.calfoot{display:flex;justify-content:space-between;gap:8px}
+.calfoot button{margin:0;min-height:38px;padding:0 16px}
+
+/* Paginação */
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0 8px}
+.pgnums{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pgnums .dots{color:var(--mute);padding:0 2px}
+.pgbtn{min-width:40px;min-height:40px;margin:0;padding:0 10px}
+.pgbtn.cur{background:#16283a;color:var(--gold);box-shadow:inset 0 0 0 2px var(--gold)}
+.pgbtn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.pp{display:flex;align-items:center;gap:8px;margin:0;color:var(--mute)}
+.pp select{width:auto;min-height:40px;padding:8px 10px}
+.pginfo{font-size:.85rem}
+
+/* Migalhas de pão */
+.crumbs ol{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;padding:0;font-size:.85rem}
+.crumbs li{overflow-wrap:anywhere}
+.crumbs li+li::before{content:"›";margin-right:6px;color:var(--mute)}
+.crumbs a{color:var(--gold);text-decoration:none}.crumbs a:hover{text-decoration:underline}
+.crumbs [aria-current]{color:var(--ink)}

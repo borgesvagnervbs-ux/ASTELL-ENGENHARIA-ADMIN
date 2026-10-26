@@ -12,7 +12,7 @@ const fail = m => { view.innerHTML = '<div class="card" style="margin:16px"><b>N
 if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo config.js e preencha SUPABASE_URL e SUPABASE_KEY.'); throw new Error('Supabase não configurado'); }
 addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
 
-const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
+const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, pp: 10, pages: {}, noun: null, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
 // Aceita CLOUDINARY_UPLOAD_PRESET ou CLOUDINARY_PRESET no config.js
 const CLD_NAME = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? String(CLOUDINARY_CLOUD_NAME).trim() : '';
 const CLD_PRESET = typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' ? String(CLOUDINARY_UPLOAD_PRESET).trim() : (typeof CLOUDINARY_PRESET !== 'undefined' ? String(CLOUDINARY_PRESET).trim() : '');
@@ -45,6 +45,7 @@ const ACT = { INSERT: 'criou', UPDATE: 'alterou', DELETE: 'excluiu' };
 const DEFREQ = ['system', 'name', 'description', 'months', 'start_date', 'event_date', 'title'];
 const fld = ([k, l, t = 'text', req], v = {}) => {
   const val = v[k] ?? '', r = (req ?? DEFREQ.includes(k)) ? 'required' : '';
+  if (t === 'date') return dateField(k, l, val, r === 'required');
   if (Array.isArray(t)) return `<label>${l}<select name="${k}">${t.map(o => `<option ${o === val ? 'selected' : ''}>${o}</option>`).join('')}</select></label>`;
   return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}>`}</label>`;
 };
@@ -74,13 +75,15 @@ function cpfOk(d) { if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false; fo
 // telefone (celular/WhatsApp): máscara (00) 00000-0000
 function telDigits(v) { return String(v || '').replace(/\D/g, '').slice(0, 11); }
 function telMask(v) { const d = telDigits(v); if (!d) return ''; if (d.length <= 2) return '(' + d; if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`; if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`; return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`; }
+const PP = [10, 25, 50];
+try { const v = +localStorage.getItem('astell_pp'); if (PP.includes(v)) S.pp = v; } catch (e) { /* sem armazenamento: usa 10 */ }
 const telOk = v => !v || [10, 11].includes(telDigits(v).length);
 
 
 // ---------- janela de formulário (com pilha: o botão "Cadastrar" abre outra janela por cima e, ao terminar, volta ao formulário de origem com tudo preenchido)
 function modal(title, body, attrs, btn = 'Salvar') {
   $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sheethead"><b>${esc(title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div><form ${attrs}>${body}<button>${btn}</button><button type="button" class="ghost2" data-close>Cancelar</button></form></div>`;
-  $('#modal').hidden = false; document.querySelectorAll('#modal .ownpick').forEach(refreshOwnPick);
+  $('#modal').hidden = false; document.querySelectorAll('#modal .ownpick').forEach(refreshOwnPick); initCombos();
 }
 const hardClose = () => { S.stack = []; $('#modal').hidden = true; $('#modal').innerHTML = ''; };
 function pushModal(after) { const sheet = $('#modal').firstElementChild; if (sheet) $('#modal').removeChild(sheet); S.stack.push({ sheet, after }); }
@@ -89,16 +92,56 @@ const closeModal = () => S.stack.length ? popModal(null) : hardClose();
 
 // escolha obrigatória de residência (com botão Cadastrar ao lado)
 const byName = (a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR');
-const resOpts = sel => [...S.res].sort(byName).map(r => `<option value="${r.id}" ${r.id === sel ? 'selected' : ''}>${esc(r.name)} — ${esc(r.code)}</option>`).join('');
-const resSelect = (sel = '') => `<div class="field"><span class="lbl">Residência *</span><div class="selrow"><select name="residence_id" required aria-label="Residência"><option value="">Selecione a residência…</option>${resOpts(sel)}</select><button type="button" class="ghost2" data-newres>Cadastrar</button></div>${S.res.length ? '' : '<p class="mute">Nenhuma residência cadastrada ainda. Use "Cadastrar" para criar a primeira.</p>'}</div>`;
-
-// escolha opcional de proprietários já cadastrados (com botão Cadastrar ao lado)
-const ownPickHtml = ids => `<div class="ownpick field"><span class="lbl">Proprietários (opcional)</span><div class="selrow"><select data-ownsel aria-label="Proprietários já cadastrados"></select><button type="button" class="ghost2" data-newown>Cadastrar</button></div><div class="chips" data-chips></div><input type="hidden" name="owner_ids" value="${ids.join(',')}"></div>`;
+const resSelect = () => `<div class="field combo" data-combo="res"><span class="lbl">Residência *</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar residência pelo nome…" autocomplete="off" required role="combobox" aria-expanded="false" aria-label="Pesquisar residência"><input type="hidden" name="residence_id"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newres>Cadastrar</button></div><p class="mute combohint">Digite parte do nome e escolha a residência na lista.</p>${S.res.length ? '' : '<p class="mute">Nenhuma residência cadastrada ainda. Use “Cadastrar” para criar a primeira.</p>'}</div>`;
+const ownPickHtml = ids => `<div class="ownpick field combo" data-combo="own"><span class="lbl">Proprietários (opcional)</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar proprietário pelo nome…" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar proprietário"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newown>Cadastrar</button></div><div class="chips" data-chips></div><input type="hidden" name="owner_ids" value="${ids.join(',')}"></div>`;
 function refreshOwnPick(box) {
-  const hid = box.querySelector('[name=owner_ids]'), ids = hid.value ? hid.value.split(',') : [], sel = box.querySelector('[data-ownsel]');
-  const free = [...S.owners].filter(o => !ids.includes(o.id)).sort(byName);
-  sel.innerHTML = `<option value="">${free.length ? 'Selecione um proprietário já cadastrado…' : (S.owners.length ? 'Todos os proprietários já foram selecionados' : 'Nenhum proprietário cadastrado ainda')}</option>` + free.map(o => `<option value="${o.id}">${esc(o.name)} — ${esc(o.cpf_mask)}</option>`).join('');
+  const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean);
   box.querySelector('[data-chips]').innerHTML = ids.map(id => S.owners.find(x => x.id === id)).filter(Boolean).map(o => `<span class="chip">${esc(o.name)}<button type="button" data-chipx="${o.id}" aria-label="Remover ${esc(o.name)}">×</button></span>`).join('') || '<span class="mute">Nenhum proprietário selecionado.</span>';
+}
+// lista de resultados da pesquisa: só o NOME da residência (ou do proprietário) é considerado
+function comboList(box) {
+  const type = box.dataset.combo, inp = box.querySelector('.comboq'), ul = box.querySelector('.combolist'); let q = norm(inp.value).trim(), items;
+  if (type === 'res') {
+    const cur = S.res.find(r => r.id === box.querySelector('[name=residence_id]').value); if (cur && cur.name === inp.value) q = '';
+    items = S.res.filter(r => !q || norm(r.name).includes(q)).sort(byName).map(r => ({ id: r.id, label: r.name, sub: r.code }));
+  } else {
+    const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean);
+    items = S.owners.filter(o => !ids.includes(o.id) && (!q || norm(o.name).includes(q))).sort(byName).map(o => ({ id: o.id, label: o.name, sub: o.cpf_mask }));
+  }
+  ul.innerHTML = items.length ? items.map((it, i) => `<li role="option" data-opt="${it.id}" class="${i ? '' : 'on'}"><b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span></li>`).join('') : `<li class="none">${type === 'res' ? 'Nenhuma residência encontrada com esse nome.' : 'Nenhum proprietário encontrado com esse nome.'} Use “Cadastrar”.</li>`;
+  ul.hidden = false; inp.setAttribute('aria-expanded', 'true');
+}
+function comboClose(box) { box.querySelector('.combolist').hidden = true; box.querySelector('.comboq').setAttribute('aria-expanded', 'false'); }
+function comboPick(box, id) {
+  const inp = box.querySelector('.comboq');
+  if (box.dataset.combo === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; box.querySelector('[name=residence_id]').value = id; inp.value = r.name; inp.setCustomValidity(''); }
+  else { const h = box.querySelector('[name=owner_ids]'); h.value = [...h.value.split(',').filter(Boolean), id].join(','); inp.value = ''; refreshOwnPick(box); }
+  comboClose(box);
+}
+const initCombos = () => document.querySelectorAll('#modal .combo[data-combo=res] .comboq').forEach(q => q.setCustomValidity('Escolha uma residência da lista.'));
+
+// calendário amarelo (o do navegador não aceita cor): digitar dd/mm/aaaa ou abrir o calendário
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const isoOf = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+const brOf = iso => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '';
+function parseBr(t) { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t || ''); if (!m) return null; const d = new Date(+m[3], +m[2] - 1, +m[1]); return d.getFullYear() === +m[3] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[1] ? `${m[3]}-${m[2]}-${m[1]}` : null; }
+const CAL_SVG = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+const dateField = (name, label, iso = '', req = false) => `<div class="field"><span class="lbl">${label}${req ? ' *' : ''}</span><div class="dateinp" data-date><input class="datetxt" type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" autocomplete="off" value="${esc(brOf(iso))}" aria-label="${esc(label)}" ${req ? 'required' : ''}><button type="button" class="calbtn" data-cal aria-label="Abrir calendário — ${esc(label)}">${CAL_SVG}</button><input type="hidden" name="${name}" value="${esc(iso || '')}"><div class="calpop" hidden></div></div></div>`;
+function calSet(box, iso) { box.querySelector('[type=hidden]').value = iso || ''; const t = box.querySelector('.datetxt'); t.value = brOf(iso); t.setCustomValidity(''); }
+function calRender(box, y, m) {
+  const pop = box.querySelector('.calpop'), sel = box.querySelector('[type=hidden]').value, n = new Date(), hoje = isoOf(n.getFullYear(), n.getMonth(), n.getDate());
+  const ini = new Date(y, m, 1).getDay(), dias = new Date(y, m + 1, 0).getDate(); let cells = '<span></span>'.repeat(ini);
+  for (let d = 1; d <= dias; d++) { const iso = isoOf(y, m, d); cells += `<button type="button" class="day${iso === sel ? ' sel' : ''}${iso === hoje ? ' today' : ''}" data-day="${iso}" aria-label="${d} de ${MESES[m]} de ${y}">${d}</button>`; }
+  pop.dataset.y = y; pop.dataset.m = m;
+  pop.innerHTML = `<div class="calhead"><button type="button" data-calnav="-12" aria-label="Ano anterior">«</button><button type="button" data-calnav="-1" aria-label="Mês anterior">‹</button><b>${MESES[m]} ${y}</b><button type="button" data-calnav="1" aria-label="Próximo mês">›</button><button type="button" data-calnav="12" aria-label="Próximo ano">»</button></div><div class="calgrid">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(x => `<i>${x}</i>`).join('')}${cells}</div><div class="calfoot"><button type="button" data-caltoday>Hoje</button><button type="button" data-calclear>Limpar</button></div>`;
+}
+function calOpen(box) { closeFloating(box); const v = box.querySelector('[type=hidden]').value, d = v ? new Date(v + 'T00:00') : new Date(); calRender(box, d.getFullYear(), d.getMonth()); box.querySelector('.calpop').hidden = false; }
+// fecha calendários e listas de pesquisa abertos (menos o que contém `except`); devolve se fechou algo
+function closeFloating(except) {
+  let any = false;
+  document.querySelectorAll('.calpop:not([hidden])').forEach(p => { if (!except || !p.closest('[data-date]').contains(except)) { p.hidden = true; any = true; } });
+  document.querySelectorAll('.combolist:not([hidden])').forEach(u => { const b = u.closest('.combo'); if (!except || !b.contains(except)) { comboClose(b); any = true; } });
+  return any;
 }
 const resFormBody = (row = {}, ownerIds = []) => RES_F.map(f => fld(f, row)).join('') + ownPickHtml(ownerIds);
 
@@ -227,9 +270,9 @@ function mediaPanel() {
 
 // ---------- dados auxiliares: residências e proprietários
 const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-async function reloadRes() { const { data } = await sb.from('residences').select('*').order('created_at'); S.res = data || []; }
+async function reloadRes() { const { data } = await sb.from('residences').select('*').order('created_at', { ascending: false }); S.res = data || []; }
 async function loadOwners() {
-  const [{ data: cl }, { data: lk }] = await Promise.all([sb.from('client_cpfs').select('*').order('created_at', { ascending: true }), sb.from('cpf_residences').select('cpf_id,residence_id')]);
+  const [{ data: cl }, { data: lk }] = await Promise.all([sb.from('client_cpfs').select('*').order('created_at', { ascending: false }), sb.from('cpf_residences').select('cpf_id,residence_id')]);
   S.owners = cl || []; S.links = lk || []; S.ownersByRes = {};
   S.links.forEach(l => { const c = S.owners.find(x => x.id === l.cpf_id); if (c) (S.ownersByRes[l.residence_id] = S.ownersByRes[l.residence_id] || []).push(c); });
 }
@@ -240,50 +283,48 @@ const metaHtml = rid => `<span class="mute meta">Residência: ${esc(resName(rid)
 const hayOf = (rid, ...extra) => { const r = S.res.find(x => x.id === rid) || {}; return norm([...extra, r.name, r.code, ...(S.ownersByRes[rid] || []).map(o => o.name)].join(' ')); };
 
 // ---------- pesquisa dos módulos: cada tela registra seus itens e a barra de pesquisa filtra por residência, proprietário e título
-const SHELL = '<p class="mute" id="mcount"></p><div id="mlist"></div>';
+const SHELL = '<p class="mute" id="mcount"></p><div id="mlist"></div><div id="pg-mlist"></div>';
+function pagerHtml(id, total, pg, pages) {
+  const set = [...new Set([1, pages, pg - 2, pg - 1, pg, pg + 1, pg + 2].filter(n => n >= 1 && n <= pages))].sort((x, y) => x - y); let prev = 0; const nums = [];
+  set.forEach(n => { if (n - prev > 1) nums.push('<span class="dots">…</span>'); nums.push(`<button type="button" class="pgbtn${n === pg ? ' cur' : ''}" data-pg="${id}:${n}" ${n === pg ? 'aria-current="page"' : ''} aria-label="Página ${n}">${n}</button>`); prev = n; });
+  return `<div class="pager" role="navigation" aria-label="Paginação"><span class="mute pginfo">${(pg - 1) * S.pp + 1}–${Math.min(total, pg * S.pp)} de ${total}</span><div class="pgnums"><button type="button" class="pgbtn" data-pg="${id}:${pg - 1}" ${pg === 1 ? 'disabled' : ''} aria-label="Página anterior">‹</button>${nums.join('')}<button type="button" class="pgbtn" data-pg="${id}:${pg + 1}" ${pg === pages ? 'disabled' : ''} aria-label="Próxima página">›</button></div><label class="pp">Por página <select data-pp aria-label="Itens por página">${PP.map(n => `<option ${n === S.pp ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>`;
+}
 function paintItems() {
-  const q = norm(S.q).trim(), raw = S.q.trim();
+  const q = norm(S.q).trim(), raw = S.q.trim(), noun = S.noun || ['item', 'itens'];
   Object.entries(S.items || {}).forEach(([id, items], n) => {
     const el = $('#' + id); if (!el) return;
-    const list = q ? items.filter(i => i.hay.includes(q)) : items;
-    el.innerHTML = list.length ? list.map(i => i.html).join('') : `<p class="empty">${items.length ? `Nada encontrado para “${esc(raw)}”.` : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
-    const c = n === 0 && $('#mcount'); if (c) c.textContent = q ? `${list.length} de ${items.length} ${items.length === 1 ? 'item' : 'itens'}` : `${items.length} ${items.length === 1 ? 'item' : 'itens'}`;
+    const list = q ? items.filter(i => i.hay.includes(q)) : items, pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
+    S.pages[id] = pg;
+    el.innerHTML = list.length ? list.slice((pg - 1) * S.pp, pg * S.pp).map(i => i.html).join('') : `<p class="empty">${items.length ? `Nada encontrado para “${esc(raw)}”.` : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
+    const bar = $('#pg-' + id); if (bar) bar.innerHTML = list.length ? pagerHtml(id, list.length, pg, pages) : '';
+    const c = n === 0 && $('#mcount'); if (c) c.textContent = q ? `${list.length} de ${items.length} ${items.length === 1 ? noun[0] : noun[1]}` : `${items.length} ${items.length === 1 ? noun[0] : noun[1]}`;
   });
 }
 const setItems = (map, empties = {}) => { S.items = map; S.empties = empties; };
 
 // ---------- Residências: lista de cards com pesquisa e tela de cadastro de cada residência
-function resMatches(r) {
-  const q = norm(S.q).trim(); if (!q) return true;
-  return norm(r.name).includes(q) || norm(r.code).includes(q) || (S.ownersByRes[r.id] || []).some(o => norm(o.name).includes(q));
-}
-const countText = () => { const t = S.res.length, m = S.res.filter(resMatches).length; return S.q.trim() ? `${m} de ${t} ${t === 1 ? 'residência' : 'residências'}` : `${t} ${t === 1 ? 'residência cadastrada' : 'residências cadastradas'}`; };
-function resCards() {
-  if (!S.res.length) return '<p class="empty">Nenhuma residência cadastrada. Toque em + para adicionar a primeira.</p>';
-  const list = S.res.filter(resMatches);
-  if (!list.length) return `<p class="empty">Nenhuma residência ou proprietário encontrado para “${esc(S.q.trim())}”.</p>`;
-  return list.map(r => `<a class="card rescard" href="#res/${r.id}"><b>${esc(r.name)}</b><span class="mute">${esc(r.code)} · ${esc(r.address || 'sem endereço')}</span><span class="mute">Proprietários: ${ownNames(r.id)}</span><span class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</span></a>`).join('');
-}
-function filterRes() { const c = $('#rescards'); if (!c) return; c.innerHTML = resCards(); const n = $('#rescount'); if (n) n.textContent = countText(); }
 async function resList() {
   await loadOwners();
-  view.innerHTML = head('Residências', 'res') + `<p class="mute" id="rescount">${countText()}</p><div id="rescards" class="rescards">${resCards()}</div>`;
+  setItems({ mlist: S.res.map(r => ({ hay: norm([r.name, r.code, ...(S.ownersByRes[r.id] || []).map(o => o.name)].join(' ')), html: `<a class="card rescard" href="#res/${r.id}"><b>${esc(r.name)}</b><span class="mute">${esc(r.code)} · ${esc(r.address || 'sem endereço')}</span><span class="mute">Proprietários: ${ownNames(r.id)}</span><span class="mute">Obra: ${fmt(r.start_date)} → ${fmt(r.delivery_date)}</span></a>` })) }, { mlist: 'Nenhuma residência cadastrada. Toque em + para adicionar a primeira.' });
+  S.noun = ['residência', 'residências'];
+  view.innerHTML = head('Residências', 'res') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
 }
 const contactLine = c => `${c.phone ? `<span class="mute meta">Celular: ${esc(c.phone)}</span>` : ''}${c.whatsapp ? `<span class="mute meta">WhatsApp: <a class="golda" href="https://wa.me/55${telDigits(c.whatsapp)}" target="_blank" rel="noopener">${esc(c.whatsapp)}</a></span>` : ''}`;
 async function resDetail(id) {
   const r = S.res.find(x => x.id === id);
-  if (!r) { view.innerHTML = '<p class="empty">Residência não encontrada.</p><p><a class="golda" href="#res">← Voltar para Residências</a></p>'; return; }
+  if (!r) { view.innerHTML = '<p class="empty">Residência não encontrada.</p>'; view.insertAdjacentHTML('afterbegin', crumbs([['Painel', '#res'], ['Residências', '#res'], ['Não encontrada']])); return; }
   S.cur = r; resetSel(); await Promise.all([loadMedia(), loadOwners()]);
   const ow = S.ownersByRes[r.id] || [], v = x => esc(x == null || x === '' ? '—' : x);
   const info = [['Código', r.code], ['Nome da residência', r.name], ['Endereço', r.address], ['Área construída', r.area_m2 != null && r.area_m2 !== '' ? r.area_m2 + ' m²' : ''], ['Pavimentos', r.floors], ['Sistema construtivo', r.build_system], ['Nº do projeto', r.project_no], ['Início da obra', r.start_date ? fmt(r.start_date) : ''], ['Entrega', r.delivery_date ? fmt(r.delivery_date) : ''], ['Responsável técnico', r.tech_lead], ['Observações', r.notes]];
-  view.innerHTML = `<p><a class="golda" href="#res">← Residências</a></p><div class="pagehead"><div><h2>${esc(r.name)}</h2><p class="mute">${esc(r.code)}</p></div><button type="button" class="up" data-edit="res:${r.id}">Editar cadastro</button></div>` +
+  view.innerHTML = crumbs([['Painel', '#res'], ['Residências', '#res'], [r.name]]) + `<div class="pagehead"><div><h2>${esc(r.name)}</h2><p class="mute">${esc(r.code)}</p></div><button type="button" class="up" data-edit="res:${r.id}">Editar cadastro</button></div>` +
     `<div class="detailgrid"><section class="card"><h3 style="margin-top:0">Cadastro</h3><div class="info">${info.map(([l, x]) => `<div><span class="mute">${l}</span><b>${v(x)}</b></div>`).join('')}</div></section>` +
     `<section class="card"><h3 style="margin-top:0">Proprietários (${ow.length})</h3>${ow.map(o => `<p><b>${esc(o.name)}</b><span class="mute">${esc(o.cpf_mask)} · ${o.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}</span>${contactLine(o)}</p>`).join('') || '<p class="empty">Nenhum proprietário vinculado.</p>'}<a class="golda" href="#own">Gerenciar proprietários</a></section></div>` +
     `<div id="mediabox">${mediaPanel()}</div>`;
 }
 
 // ---------- páginas dos módulos (independentes: mostram tudo, por ordem de cadastro, de todas as residências)
-const head = (t, add) => `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`;
+const crumbs = items => `<div class="crumbs" role="navigation" aria-label="Caminho de navegação"><ol>${items.map(([l, h], i) => i === items.length - 1 ? `<li aria-current="page">${esc(l)}</li>` : `<li><a href="${h}">${esc(l)}</a></li>`).join('')}</ol></div>`;
+const head = (t, add, trail) => crumbs(trail || [['Painel', '#res'], [t]]) + `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`;
 const acts = (...b) => `<div class="acts">${b.filter(Boolean).join('')}</div>`;
 const visBtn = (k, r) => `<button class="link" data-vis="${k}:${r.id}">${r.visible ? 'Ocultar do cliente' : 'Mostrar ao cliente'}</button>`;
 const hid = r => r.visible === false ? '<p><span class="badge">Oculto do cliente</span></p>' : '';
@@ -292,7 +333,7 @@ const TITLE = { warranties: r => r.system, maintenance_tasks: r => r.name, equip
 async function listPage(k) {
   const c = T[k];
   await loadOwners();
-  const { data, error } = await sb.from(k).select('*').order('created_at', { ascending: true });
+  const { data, error } = await sb.from(k).select('*').order('created_at', { ascending: false });
   if (error) throw error; S.rows[k] = data;
   const im = {};
   if (k === 'maintenance_tasks') { const { data: ii } = await sb.from('images').select('url,ref_id').eq('kind', 'maintenance').order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
@@ -307,10 +348,10 @@ async function listPage(k) {
 async function plantaDetail(id) {
   await loadOwners();
   const { data: fp } = await sb.from('floorplans').select('*').eq('id', id), cur = (fp || [])[0];
-  if (!cur) { view.innerHTML = '<p class="empty">Planta não encontrada.</p><p><a class="golda" href="#pl">← Plantas técnicas</a></p>'; return; }
+  if (!cur) { view.innerHTML = crumbs([['Painel', '#res'], ['Planta técnica', '#pl'], ['Não encontrada']]) + '<p class="empty">Planta não encontrada.</p>'; return; }
   S.curPlan = cur;
   const [{ data: u }, { data: pts }] = await Promise.all([sb.storage.from('documents').createSignedUrl(cur.path, 3600), sb.from('plan_points').select('*').eq('floorplan_id', id).order('created_at')]);
-  view.innerHTML = `<p><a class="golda" href="#pl">← Plantas técnicas</a></p><div class="pagehead"><div><h2>${esc(cur.title)}</h2>${metaHtml(cur.residence_id)}</div></div>` +
+  view.innerHTML = crumbs([['Painel', '#res'], ['Planta técnica', '#pl'], [cur.title]]) + `<div class="pagehead"><div><h2>${esc(cur.title)}</h2>${metaHtml(cur.residence_id)}</div></div>` +
     acts(`<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}|${esc(cur.path)}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
     `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${(pts || []).map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div><h3>Pontos cadastrados</h3>` +
     ((pts || []).map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>');
@@ -329,14 +370,14 @@ const PAGES = {
   },
   async docs() {
     await loadOwners();
-    const { data } = await sb.from('documents').select('*').order('created_at', { ascending: true }); S.rows.documents = data || [];
+    const { data } = await sb.from('documents').select('*').order('created_at', { ascending: false }); S.rows.documents = data || [];
     setItems({ mlist: (data || []).map(d => ({ hay: hayOf(d.residence_id, d.title), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>` })) });
     view.innerHTML = head('Documentos', 'docs') + SHELL; paintItems();
   },
   eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), ctt: () => listPage('contacts'), bld: () => listPage('building_items'),
   async ast() {
     await loadOwners();
-    const { data } = await sb.from('service_requests').select('*').order('created_at', { ascending: true });
+    const { data } = await sb.from('service_requests').select('*').order('created_at', { ascending: false });
     setItems({ mlist: (data || []).map(r => ({ hay: hayOf(r.residence_id, r.protocol, r.category), html: `<div class="card"><b>${esc(r.protocol)} — ${esc(r.category)}</b>${metaHtml(r.residence_id)}<span class="badge">${esc(r.status)}</span><p>${esc(r.place)} · urgência ${esc(r.urgency)}</p><p>${esc(r.description)}</p><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p>
       <form class="statusform" data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}">${fld(['status', 'Alterar situação', STATUS], r)}<label>Comentário para o cliente<input name="staff_note" value="${esc(r.staff_note || '')}"></label><button>Atualizar</button></form></div>` })) }, { mlist: 'Nenhuma solicitação de assistência.' });
     view.innerHTML = head('Assistência técnica', null) + SHELL; paintItems();
@@ -344,7 +385,7 @@ const PAGES = {
   async his() {
     await loadOwners();
     const f = S.hf;
-    let q = sb.from('history_events').select('*').order('created_at', { ascending: true }).limit(500);
+    let q = sb.from('history_events').select('*').order('created_at', { ascending: false }).limit(500);
     let a = sb.from('audit_log').select('*').order('at', { ascending: false }).limit(300);
     if (f.cat) q = q.ilike('category', '%' + f.cat + '%');
     if (f.from) { q = q.gte('event_date', f.from); a = a.gte('at', f.from); }
@@ -353,25 +394,25 @@ const PAGES = {
     const who = Object.fromEntries((pr || []).map(p => [p.id, p.name]));
     const what = x => { const n = x.new_data || x.old_data || {}; if (x.action === 'UPDATE') return 'campos: ' + Object.keys(n).filter(k => k !== 'created_at' && JSON.stringify((x.old_data || {})[k]) !== JSON.stringify(n[k])).join(', '); return n.title || n.name || n.system || n.protocol || n.label || n.description || ''; };
     const items = { mlist: (ev || []).map(e => ({ hay: hayOf(e.residence_id, e.category, e.description), html: `<div class="card"><b>${fmt(e.event_date)} — ${esc(e.category)}</b>${metaHtml(e.residence_id)}<p>${esc(e.description)}</p>${acts(`<button class="link danger" data-del="history_events:${e.id}">Excluir</button>`)}</div>` })) };
-    if (!error) items.mlist2 = (au || []).slice().reverse().map(x => ({ hay: hayOf(x.residence_id, who[x.user_id], TBL[x.table_name], what(x)), html: `<div class="card"><b>${esc(who[x.user_id] || 'Sistema')} ${ACT[x.action] || ''} ${esc((TBL[x.table_name] || x.table_name).toLowerCase())}</b>${metaHtml(x.residence_id)}<span class="mute">${new Date(x.at).toLocaleString('pt-BR')}</span><p class="mute">${esc(what(x))}</p></div>` }));
+    if (!error) items.mlist2 = (au || []).map(x => ({ hay: hayOf(x.residence_id, who[x.user_id], TBL[x.table_name], what(x)), html: `<div class="card"><b>${esc(who[x.user_id] || 'Sistema')} ${ACT[x.action] || ''} ${esc((TBL[x.table_name] || x.table_name).toLowerCase())}</b>${metaHtml(x.residence_id)}<span class="mute">${new Date(x.at).toLocaleString('pt-BR')}</span><p class="mute">${esc(what(x))}</p></div>` }));
     setItems(items, { mlist: 'Nenhum evento no período.', mlist2: 'Nenhuma alteração registrada.' });
-    view.innerHTML = head('Histórico', 'history_events') + `<form class="card" data-form="hf"><b>Filtros</b><label>Categoria contém<input name="cat" value="${esc(f.cat || '')}"></label><label>De<input name="from" type="date" value="${esc(f.from || '')}"></label><label>Até<input name="to" type="date" value="${esc(f.to || '')}"></label><button>Filtrar</button><button type="button" class="ghost2" data-hclear>Limpar filtros</button></form><h3>Linha do tempo</h3>${SHELL}` +
-      '<h3>Alterações registradas no sistema</h3>' + (error ? '<p class="empty">O registro de alterações ainda não está disponível. Rode o schema_v5_corrigido.sql.</p>' : '<div id="mlist2"></div>');
+    view.innerHTML = head('Histórico', 'history_events') + `<form class="card" data-form="hf"><b>Filtros</b><label>Categoria contém<input name="cat" value="${esc(f.cat || '')}"></label>${dateField('from', 'De', f.from || '')}${dateField('to', 'Até', f.to || '')}<button>Filtrar</button><button type="button" class="ghost2" data-hclear>Limpar filtros</button></form><h3>Linha do tempo</h3>${SHELL}` +
+      '<h3>Alterações registradas no sistema</h3>' + (error ? '<p class="empty">O registro de alterações ainda não está disponível. Rode o schema_v5_corrigido.sql.</p>' : '<div id="mlist2"></div><div id="pg-mlist2"></div>');
     paintItems();
   },
   async qr() {
     await loadOwners();
-    const { data } = await sb.from('qr_codes').select('*').order('created_at', { ascending: true });
+    const { data } = await sb.from('qr_codes').select('*').order('created_at', { ascending: false });
     const base = new URL('index.html', location.href.split('#')[0]).href;
     const svg = t => { const q = qrcode(0, 'M'); q.addData(base + '#qr/' + t); q.make(); return q.createSvgTag(5, 0); };
     setItems({ mlist: (data || []).map(q => ({ hay: hayOf(q.residence_id, q.label), html: `<div class="card qr">${svg(q.token)}<b>${esc(q.label)}</b>${metaHtml(q.residence_id)}<span class="mute qrcode">Astell Home · ${esc((S.res.find(r => r.id === q.residence_id) || {}).code || '')}</span>${acts(`<button class="link danger" data-del="qr_codes:${q.id}">Excluir</button>`)}</div>` })) }, { mlist: 'Nenhum QR Code. Toque em + para gerar.' });
-    view.innerHTML = head('QR Codes', 'qr') + acts('<button class="link" data-print>Imprimir etiquetas</button>') + '<p class="mute" id="mcount"></p><div id="mlist" class="grid"></div><p class="notice">O QR leva ao app do cliente (index.html). Quem ler precisa entrar com a conta vinculada à casa para ver qualquer informação.</p>';
+    view.innerHTML = head('QR Codes', 'qr') + acts('<button class="link" data-print>Imprimir etiquetas</button>') + '<p class="mute" id="mcount"></p><div id="mlist" class="grid"></div><div id="pg-mlist"></div><p class="notice">O QR leva ao app do cliente (index.html). Quem ler precisa entrar com a conta vinculada à casa para ver qualquer informação.</p>';
     paintItems();
   },
   async pl() {
     if (S.arg) return plantaDetail(S.arg);
     await loadOwners();
-    const { data } = await sb.from('floorplans').select('*').order('created_at', { ascending: true });
+    const { data } = await sb.from('floorplans').select('*').order('created_at', { ascending: false });
     setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title), html: `<a class="card rescard" href="#pl/${p.id}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}</a>` })) }, { mlist: 'Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.' });
     view.innerHTML = head('Planta técnica', 'pl') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
   },
@@ -381,7 +422,8 @@ async function render() {
   if (!S.profile || S.profile.role !== 'admin') return;
   const [key, arg] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
   S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; view.classList.toggle('wide', !!S.arg);
-  if (S.lastMenu !== S.menu) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = S.menu; }   // cada módulo começa com a pesquisa vazia
+  if (S.lastMenu !== S.menu) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = S.menu; S.pages = {}; }
+  S.noun = null;   // cada módulo começa com a pesquisa vazia
   document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
   S.items = null;
   try { await PAGES[S.menu](); } catch (e) { view.innerHTML = '<p class="empty">Não foi possível carregar esta tela. ' + esc(e.message || '') + '</p>'; }
@@ -394,17 +436,16 @@ async function loadRes(pick) {
 
 // ---------- menu lateral
 function buildDrawer() {
-  $('#drawer').innerHTML = `<div class="dhead"><strong class="logo">ASTELL<span>PAINEL ADMINISTRATIVO</span></strong></div><div class="dnav">${MENU.map(([k, l, i]) => `<a href="#${k}" data-m="${k}">${ico(IC[i])}<span>${l}</span></a>`).join('')}</div><div class="dfoot"><a href="index.html">${ico(IC.casa)}<span>Ver app do cliente</span></a><button type="button" class="ghost" data-out>Sair</button></div>`;
+  $('#drawer').innerHTML = `<div class="dhead"><strong class="logo">ASTELL<span>PAINEL ADMINISTRATIVO</span></strong><button type="button" class="dclose" data-dclose aria-label="Fechar menu">×</button></div><div class="dnav">${MENU.map(([k, l, i]) => `<a href="#${k}" data-m="${k}">${ico(IC[i])}<span>${l}</span></a>`).join('')}</div><div class="dfoot"><a href="index.html">${ico(IC.casa)}<span>Ver app do cliente</span></a><button type="button" class="ghost" data-out>Sair</button></div>`;
 }
-function drawer(open) { $('#drawer').classList.toggle('open', open); $('#scrim').hidden = !open; $('#menuBtn').setAttribute('aria-expanded', open); }
-$('#menuBtn').onclick = () => drawer(!$('#drawer').classList.contains('open'));
-$('#scrim').onclick = () => drawer(false);
+function drawer(open) { $('#drawer').classList.toggle('open', open); document.body.classList.toggle('nav-open', open); $('#drawer').setAttribute('aria-hidden', !open); $('#menuBtn').setAttribute('aria-expanded', open); if (open) { const x = $('#drawer .dclose'); if (x) x.focus(); } }
+$('#menuBtn').onclick = () => drawer(true);   // o menu só abre aqui; para fechar é preciso clicar no X
 $('#resSearch').addEventListener('input', e => {   // filtra a lista do módulo aberto (residências, ou os cards de cada módulo)
   S.q = e.target.value; const key = location.hash.slice(1) || 'res', [mod] = key.split('/');
-  if (key.includes('/')) location.hash = '#' + mod; else if (mod === 'res') filterRes(); else paintItems();
+  if (key.includes('/')) location.hash = '#' + mod; else { S.pages = {}; paintItems(); }
 });
-addEventListener('hashchange', () => { drawer(false); S.place = false; render(); });
-addEventListener('keydown', e => { if (e.key === 'Escape') { drawer(false); closeModal(); } });
+addEventListener('hashchange', () => { S.place = false; render(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') { if (!closeFloating()) closeModal(); } });
 
 // ---------- acesso
 function loginScreen() {
@@ -437,11 +478,20 @@ sb.auth.onAuthStateChange((ev, s) => {
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
-  const el = e.target.closest('[data-newres],[data-newown],[data-chipx],[data-oedit],[data-ounlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
+  closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
+  const el = e.target.closest('[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-chipx],[data-oedit],[data-ounlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
-  if (d.newres !== undefined) { const sel = el.closest('.selrow').querySelector('select'); pushModal(r => { if (![...sel.options].some(o => o.value === r.id)) sel.add(new Option(`${r.name} — ${r.code}`, r.id)); sel.value = r.id; }); ADD.res(); }
+  if (d.newres !== undefined) { const box = el.closest('.combo'); pushModal(r => comboPick(box, r.id)); ADD.res(); }
+  if (d.dclose !== undefined) drawer(false);
+  if (d.cal !== undefined) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'); if (pop.hidden) calOpen(box); else pop.hidden = true; }
+  if (d.calnav) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'), dt = new Date(+pop.dataset.y, +pop.dataset.m + +d.calnav, 1); calRender(box, dt.getFullYear(), dt.getMonth()); }
+  if (d.day) { const box = el.closest('[data-date]'); calSet(box, d.day); box.querySelector('.calpop').hidden = true; }
+  if (d.caltoday !== undefined) { const box = el.closest('[data-date]'), n = new Date(); calSet(box, isoOf(n.getFullYear(), n.getMonth(), n.getDate())); box.querySelector('.calpop').hidden = true; }
+  if (d.calclear !== undefined) { const box = el.closest('[data-date]'); calSet(box, ''); box.querySelector('.calpop').hidden = true; }
+  if (d.pg) { const [id, n] = d.pg.split(':'); S.pages[id] = +n; paintItems(); const t = $('#' + id); if (t) window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + scrollY - 160), behavior: 'smooth' }); }
   // botão "Cadastrar" ao lado dos proprietários (dentro do cadastro de residência)
   if (d.newown !== undefined) { const box = el.closest('.ownpick'), hid = box.querySelector('[name=owner_ids]'); pushModal(o => { hid.value = [...(hid.value ? hid.value.split(',') : []), o.id].join(','); refreshOwnPick(box); }); openOwnerAdd(true); }
   if (d.chipx) { const box = el.closest('.ownpick'), hid = box.querySelector('[name=owner_ids]'); hid.value = hid.value.split(',').filter(x => x && x !== d.chipx).join(','); refreshOwnPick(box); }
@@ -488,12 +538,32 @@ document.addEventListener('click', async e => {
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'fileIn') { stageFiles([...e.target.files]); e.target.value = ''; }
-  if (e.target.matches && e.target.matches('[data-ownsel]') && e.target.value) { const box = e.target.closest('.ownpick'), hid = box.querySelector('[name=owner_ids]'); hid.value = [...(hid.value ? hid.value.split(',') : []), e.target.value].join(','); refreshOwnPick(box); }
+  if (e.target.matches && e.target.matches('[data-pp]')) { S.pp = +e.target.value; try { localStorage.setItem('astell_pp', S.pp); } catch (x) { /* ok */ } S.pages = {}; paintItems(); }
 });
 document.addEventListener('dragover', e => { if ($('#modal').hidden) return; e.preventDefault(); const z = $('#drop'); if (z) z.classList.toggle('over', !!(e.target.closest && e.target.closest('#drop'))); });
 document.addEventListener('dragleave', e => { const z = $('#drop'); if (z && !e.relatedTarget) z.classList.remove('over'); });
 document.addEventListener('drop', e => { if ($('#modal').hidden) return; e.preventDefault(); const z = $('#drop'); if (z) z.classList.remove('over'); if (e.target.closest && e.target.closest('#drop') && e.dataTransfer) stageFiles([...e.dataTransfer.files]); });
-document.addEventListener('input', e => { const t = e.target; if (!t.classList) return; if (t.classList.contains('cpf')) t.value = cpfMask(t.value); if (t.classList.contains('tel')) t.value = telMask(t.value); });
+document.addEventListener('input', e => {
+  const t = e.target; if (!t.classList) return;
+  if (t.classList.contains('cpf')) t.value = cpfMask(t.value);
+  if (t.classList.contains('tel')) t.value = telMask(t.value);
+  if (t.classList.contains('datetxt')) {   // dd/mm/aaaa
+    const box = t.closest('[data-date]'), d = t.value.replace(/\D/g, '').slice(0, 8);
+    t.value = d.length > 4 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+    const iso = parseBr(t.value); box.querySelector('[type=hidden]').value = iso || ''; t.setCustomValidity(t.value && !iso ? 'Data inválida. Use dd/mm/aaaa.' : '');
+    if (iso && !box.querySelector('.calpop').hidden) calRender(box, +iso.slice(0, 4), +iso.slice(5, 7) - 1);
+  }
+  if (t.classList.contains('comboq')) { const box = t.closest('.combo'); if (box.dataset.combo === 'res') { box.querySelector('[name=residence_id]').value = ''; t.setCustomValidity('Escolha uma residência da lista.'); } comboList(box); }
+});
+document.addEventListener('focusin', e => { if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo')); });
+document.addEventListener('mousedown', e => { const li = e.target.closest && e.target.closest('.combolist li[data-opt]'); if (li) { e.preventDefault(); comboPick(li.closest('.combo'), li.dataset.opt); } });
+document.addEventListener('keydown', e => {   // setas, Enter e Esc dentro da pesquisa de residência/proprietário
+  const q = e.target.classList && e.target.classList.contains('comboq') ? e.target : null; if (!q) return;
+  const box = q.closest('.combo'), ul = box.querySelector('.combolist'), lis = [...ul.querySelectorAll('li[data-opt]')]; let i = lis.findIndex(l => l.classList.contains('on'));
+  if (e.key === 'Escape' && !ul.hidden) { e.preventDefault(); comboClose(box); e.stopPropagation(); return; }   // preventDefault: o Esc nativo do campo de busca apagaria o texto
+  if (e.key === 'Enter') { e.preventDefault(); if (!ul.hidden && i >= 0) comboPick(box, lis[i].dataset.opt); return; }
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && lis.length) { e.preventDefault(); if (ul.hidden) return comboList(box); if (i >= 0) lis[i].classList.remove('on'); i = (i + (e.key === 'ArrowDown' ? 1 : -1) + lis.length) % lis.length; lis[i].classList.add('on'); lis[i].scrollIntoView({ block: 'nearest' }); }
+});
 
 const ownerParams = (o, cpf) => ({ p_name: o.name, p_cpf: cpf, p_email: o.email || null, ...(o.phone ? { p_phone: o.phone } : {}), ...(o.whatsapp ? { p_whatsapp: o.whatsapp } : {}) });
 const sameSet = (a, b) => a.length === b.length && a.every(x => b.includes(x));
