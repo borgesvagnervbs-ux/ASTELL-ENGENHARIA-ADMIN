@@ -163,3 +163,15 @@ main#view.wide .gallery{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)
 .crumbs li+li::before{content:"›";margin-right:6px;color:var(--mute)}
 .crumbs a{color:var(--gold);text-decoration:none}.crumbs a:hover{text-decoration:underline}
 .crumbs [aria-current]{color:var(--ink)}
+
+/* Residências do proprietário: botão Adicionar em cada resultado e lista numerada com Editar / Desvincular */
+.combolist li .lname{display:flex;flex-direction:column;min-width:0}
+.combolist li .lname .mute{font-size:.78rem}
+.combolist li button{margin:0;min-height:34px;padding:0 14px;font-size:.85rem;flex:none}
+.reshead{margin:14px 0 4px;font-size:.95rem;font-weight:600}
+p.reshead{font-weight:400}
+.reslist{margin:6px 0 0;padding-left:26px}
+.reslist>li{padding:8px 0;border-bottom:1px solid var(--line)}
+.reslist>li:last-child{border-bottom:0}
+.reslist .rname b{display:block}.reslist .rname .mute{display:block;font-size:.85rem}
+.reslist .acts{margin-top:4px}
