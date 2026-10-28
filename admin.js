@@ -101,8 +101,9 @@ function refreshOwnPick(box) {
 // lista de resultados da pesquisa: só o NOME da residência (ou do proprietário) é considerado
 function comboList(box) {
   const type = box.dataset.combo, inp = box.querySelector('.comboq'), ul = box.querySelector('.combolist'); let q = norm(inp.value).trim(), items;
+  if (!q) return comboClose(box);   // sem caracteres digitados: nenhuma sugestão
   if (type === 'res') {
-    const cur = S.res.find(r => r.id === box.querySelector('[name=residence_id]').value); if (cur && cur.name === inp.value) q = '';
+    const cur = S.res.find(r => r.id === box.querySelector('[name=residence_id]').value); if (cur && cur.name === inp.value) return comboClose(box);   // já escolhida: nada a sugerir
     items = S.res.filter(r => !q || norm(r.name).includes(q)).sort(byName).map(r => ({ id: r.id, label: r.name, sub: r.code }));
   } else if (type === 'resmulti') {   // residências do proprietário: não repete as que já estão na lista
     const ids = box.querySelector('[name=res_ids]').value.split(',').filter(Boolean);
@@ -111,13 +112,14 @@ function comboList(box) {
     const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean);
     items = S.owners.filter(o => !ids.includes(o.id) && (!q || norm(o.name).includes(q))).sort(byName).map(o => ({ id: o.id, label: o.name, sub: o.cpf_mask }));
   }
-  ul.innerHTML = items.length ? items.map((it, i) => `<li role="option" data-opt="${it.id}" class="${i ? '' : 'on'}">${type === 'resmulti' ? `<span class="lname"><b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span></span><button type="button" data-addopt="${it.id}">Adicionar</button>` : `<b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span>`}</li>`).join('') : `<li class="none">${type !== 'own' ? 'Nenhuma residência encontrada com esse nome.' : 'Nenhum proprietário encontrado com esse nome.'} Use “Cadastrar”.</li>`;
+  if (!items.length) return comboClose(box);   // nenhuma opção contém o que foi digitado: a caixa não aparece
+  ul.innerHTML = items.map((it, i) => `<li role="option" data-opt="${it.id}" class="${i ? '' : 'on'}">${type === 'resmulti' ? `<span class="lname"><b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span></span><button type="button" data-addopt="${it.id}">Adicionar</button>` : `<b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span>`}</li>`).join('');
   ul.hidden = false; inp.setAttribute('aria-expanded', 'true');
 }
-function comboClose(box) { box.querySelector('.combolist').hidden = true; box.querySelector('.comboq').setAttribute('aria-expanded', 'false'); }
-function comboPick(box, id, keepOpen) {
+function comboClose(box) { const ul = box.querySelector('.combolist'); ul.hidden = true; ul.innerHTML = ''; box.querySelector('.comboq').setAttribute('aria-expanded', 'false'); }
+function comboPick(box, id) {
   const inp = box.querySelector('.comboq');
-  if (box.dataset.combo === 'resmulti') { const h = box.querySelector('[name=res_ids]'); h.value = [...h.value.split(',').filter(Boolean), id].join(','); refreshResMulti(box); if (keepOpen) comboList(box); else comboClose(box); return; }
+  if (box.dataset.combo === 'resmulti') { const h = box.querySelector('[name=res_ids]'); h.value = [...h.value.split(',').filter(Boolean), id].join(','); inp.value = ''; refreshResMulti(box); comboClose(box); return; }
   if (box.dataset.combo === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; box.querySelector('[name=residence_id]').value = id; inp.value = r.name; inp.setCustomValidity(''); }
   else { const h = box.querySelector('[name=owner_ids]'); h.value = [...h.value.split(',').filter(Boolean), id].join(','); inp.value = ''; refreshOwnPick(box); }
   comboClose(box);
@@ -535,7 +537,7 @@ document.addEventListener('click', async e => {
     done(error && 'Não foi possível registrar.', 'Execução registrada.');
   }
   if (d.oedit) openOwnerEdit(d.oedit);
-  if (d.addopt) comboPick(el.closest('.combo'), d.addopt, true);
+  if (d.addopt) comboPick(el.closest('.combo'), d.addopt);
   if (d.reunlink) { const box = el.closest('.resmulti'), h = box.querySelector('[name=res_ids]'); h.value = h.value.split(',').filter(x => x && x !== d.reunlink).join(','); refreshResMulti(box); }
   if (d.reedit) { const box = el.closest('.resmulti'); pushModal(() => refreshResMulti(box)); openEdit('res', d.reedit, { fromOwner: true }); }
   if (d.rel && confirm('Liberar este CPF? O acesso atual do cliente será removido e outro cadastro poderá usá-lo.')) { const { error } = await sb.rpc('admin_release_cpf', { p_cpf: d.rel }); done(error && 'Não foi possível liberar.', 'CPF liberado.'); }
@@ -570,8 +572,8 @@ document.addEventListener('keydown', e => {   // setas, Enter e Esc dentro da pe
   const q = e.target.classList && e.target.classList.contains('comboq') ? e.target : null; if (!q) return;
   const box = q.closest('.combo'), ul = box.querySelector('.combolist'), lis = [...ul.querySelectorAll('li[data-opt]')]; let i = lis.findIndex(l => l.classList.contains('on'));
   if (e.key === 'Escape' && !ul.hidden) { e.preventDefault(); comboClose(box); e.stopPropagation(); return; }   // preventDefault: o Esc nativo do campo de busca apagaria o texto
-  if (e.key === 'Enter') { e.preventDefault(); if (!ul.hidden && i >= 0) comboPick(box, lis[i].dataset.opt, box.dataset.combo === 'resmulti'); return; }
-  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && lis.length) { e.preventDefault(); if (ul.hidden) return comboList(box); if (i >= 0) lis[i].classList.remove('on'); i = (i + (e.key === 'ArrowDown' ? 1 : -1) + lis.length) % lis.length; lis[i].classList.add('on'); lis[i].scrollIntoView({ block: 'nearest' }); }
+  if (e.key === 'Enter') { e.preventDefault(); if (!ul.hidden && i >= 0) comboPick(box, lis[i].dataset.opt); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (ul.hidden) return comboList(box); if (!lis.length) return; if (i >= 0) lis[i].classList.remove('on'); i = (i + (e.key === 'ArrowDown' ? 1 : -1) + lis.length) % lis.length; lis[i].classList.add('on'); lis[i].scrollIntoView({ block: 'nearest' }); }
 });
 
 const ownerParams = (o, cpf) => ({ p_name: o.name, p_cpf: cpf, p_email: o.email || null, ...(o.phone ? { p_phone: o.phone } : {}), ...(o.whatsapp ? { p_whatsapp: o.whatsapp } : {}) });
