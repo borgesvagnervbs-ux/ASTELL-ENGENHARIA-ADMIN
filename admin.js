@@ -93,10 +93,10 @@ const closeModal = () => S.stack.length ? popModal(null) : hardClose();
 // escolha obrigatória de residência (com botão Cadastrar ao lado)
 const byName = (a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR');
 const resSelect = () => `<div class="field combo" data-combo="res"><span class="lbl">Residência *</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar residência pelo nome…" autocomplete="off" required role="combobox" aria-expanded="false" aria-label="Pesquisar residência"><input type="hidden" name="residence_id"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newres>Cadastrar</button></div><p class="mute combohint">Digite parte do nome e escolha a residência na lista.</p>${S.res.length ? '' : '<p class="mute">Nenhuma residência cadastrada ainda. Use “Cadastrar” para criar a primeira.</p>'}</div>`;
-const ownPickHtml = ids => `<div class="ownpick field combo" data-combo="own"><span class="lbl">Proprietários (opcional)</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar proprietário pelo nome…" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar proprietário"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newown>Cadastrar</button></div><div class="chips" data-chips></div><input type="hidden" name="owner_ids" value="${ids.join(',')}"></div>`;
-function refreshOwnPick(box) {
-  const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean);
-  box.querySelector('[data-chips]').innerHTML = ids.map(id => S.owners.find(x => x.id === id)).filter(Boolean).map(o => `<span class="chip">${esc(o.name)}<button type="button" data-chipx="${o.id}" aria-label="Remover ${esc(o.name)}">×</button></span>`).join('') || '<span class="mute">Nenhum proprietário selecionado.</span>';
+const ownPickHtml = ids => `<div class="ownpick field combo" data-combo="own"><span class="lbl">Proprietários vinculados (opcional)</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar proprietário pelo nome…" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar proprietário"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newown>Cadastrar</button></div><div class="reslinked" data-ownlist></div><input type="hidden" name="owner_ids" value="${ids.join(',')}"></div>`;
+function refreshOwnPick(box) {   // lista numerada dos proprietários escolhidos (a gravação acontece ao salvar a residência)
+  const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean), os = ids.map(id => S.owners.find(x => x.id === id)).filter(Boolean);
+  box.querySelector('[data-ownlist]').innerHTML = os.length ? `<h4 class="reshead">Proprietários vinculados (${os.length})</h4><ol class="reslist">${os.map(o => `<li><div class="rname"><b>${esc(o.name)}</b><span class="mute">${esc(o.cpf_mask)}</span></div>${acts(`<button type="button" class="link" data-ownedit="${o.id}">Editar</button>`, `<button type="button" class="link danger" data-ownunlink="${o.id}">Desvincular</button>`)}</li>`).join('')}</ol>` : '<p class="mute reshead">Nenhum proprietário vinculado.</p>';
 }
 // lista de resultados da pesquisa: só o NOME da residência (ou do proprietário) é considerado
 function comboList(box) {
@@ -113,7 +113,7 @@ function comboList(box) {
     items = S.owners.filter(o => !ids.includes(o.id) && (!q || norm(o.name).includes(q))).sort(byName).map(o => ({ id: o.id, label: o.name, sub: o.cpf_mask }));
   }
   if (!items.length) return comboClose(box);   // nenhuma opção contém o que foi digitado: a caixa não aparece
-  ul.innerHTML = items.map((it, i) => `<li role="option" data-opt="${it.id}" class="${i ? '' : 'on'}">${type === 'resmulti' ? `<span class="lname"><b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span></span><button type="button" data-addopt="${it.id}">Adicionar</button>` : `<b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span>`}</li>`).join('');
+  ul.innerHTML = items.map((it, i) => `<li role="option" data-opt="${it.id}" class="${i ? '' : 'on'}">${type === 'resmulti' || type === 'own' ? `<span class="lname"><b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span></span><button type="button" data-addopt="${it.id}">Adicionar</button>` : `<b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span>`}</li>`).join('');
   ul.hidden = false; inp.setAttribute('aria-expanded', 'true');
 }
 function comboClose(box) { const ul = box.querySelector('.combolist'); ul.hidden = true; ul.innerHTML = ''; box.querySelector('.comboq').setAttribute('aria-expanded', 'false'); }
@@ -168,10 +168,10 @@ const telField = (name, label, v = '') => `<label>${label}<input name="${name}" 
 function openOwnerAdd(nested) {   // nested = aberto de dentro do cadastro de residência (o vínculo é feito quando a residência for salva)
   modal('Novo proprietário', `<label>Nome<input name="name" required></label><label>CPF<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required></label><label>E-mail do proprietário (opcional, recomendado)<input name="email" type="email"></label>${telField('phone', 'Celular')}${telField('whatsapp', 'WhatsApp')}${nested ? '' : resMultiHtml([])}`, `data-form="add:own"${nested ? ' data-nested="1"' : ''}`, 'Salvar');
 }
-function openOwnerEdit(id) {
+function openOwnerEdit(id, opts = {}) {
   const c = (S.owners || []).find(x => x.id === id); if (!c) return;
   const ids = (S.links || []).filter(l => l.cpf_id === id).map(l => S.res.find(r => r.id === l.residence_id)).filter(Boolean).sort(byName).map(r => r.id);
-  modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label>${telField('phone', 'Celular', c.phone || '')}${telField('whatsapp', 'WhatsApp', c.whatsapp || '')}${resMultiHtml(ids)}`, `data-form="edit:own" data-id="${id}"`, 'Salvar');
+  modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label>${telField('phone', 'Celular', c.phone || '')}${telField('whatsapp', 'WhatsApp', c.whatsapp || '')}${opts.fromRes ? '' : resMultiHtml(ids)}`, `data-form="edit:own" data-id="${id}"`, 'Salvar');
 }
 function openAdd(k) { if (ADD[k]) return ADD[k](); modal('Adicionar — ' + T[k].label, resSelect() + T[k].f.map(f => fld(f)).join(''), `data-form="add:${k}"`); }
 function openEdit(k, id, opts = {}) {
@@ -489,7 +489,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-chipx],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -503,7 +503,8 @@ document.addEventListener('click', async e => {
   if (d.pg) { const [id, n] = d.pg.split(':'); S.pages[id] = +n; paintItems(); const t = $('#' + id); if (t) window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + scrollY - 160), behavior: 'smooth' }); }
   // botão "Cadastrar" ao lado dos proprietários (dentro do cadastro de residência)
   if (d.newown !== undefined) { const box = el.closest('.ownpick'), hid = box.querySelector('[name=owner_ids]'); pushModal(o => { hid.value = [...(hid.value ? hid.value.split(',') : []), o.id].join(','); refreshOwnPick(box); }); openOwnerAdd(true); }
-  if (d.chipx) { const box = el.closest('.ownpick'), hid = box.querySelector('[name=owner_ids]'); hid.value = hid.value.split(',').filter(x => x && x !== d.chipx).join(','); refreshOwnPick(box); }
+  if (d.ownunlink) { const box = el.closest('.ownpick'), h = box.querySelector('[name=owner_ids]'); h.value = h.value.split(',').filter(x => x && x !== d.ownunlink).join(','); refreshOwnPick(box); }
+  if (d.ownedit) { const box = el.closest('.ownpick'); pushModal(() => refreshOwnPick(box)); openOwnerEdit(d.ownedit, { fromRes: true }); }
   if (d.gal) { const [, id] = d.gal.split(':'), t = S.rows.maintenance_tasks.find(x => x.id === id); S.gal = { kind: 'maintenance', refId: id, resId: t.residence_id, title: t.name }; gallery(); }
   if (d.upl) openUpload(d.upl.split(':')[1]);
   if (d.pickfiles !== undefined) $('#fileIn').click();
@@ -567,7 +568,7 @@ document.addEventListener('input', e => {
   if (t.classList.contains('comboq')) { const box = t.closest('.combo'); if (box.dataset.combo === 'res') { box.querySelector('[name=residence_id]').value = ''; t.setCustomValidity('Escolha uma residência da lista.'); } comboList(box); }
 });
 document.addEventListener('focusin', e => { if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo')); });
-document.addEventListener('mousedown', e => { const li = e.target.closest && e.target.closest('.combolist li[data-opt]'); if (!li) return; e.preventDefault(); const box = li.closest('.combo'); if (box.dataset.combo !== 'resmulti') comboPick(box, li.dataset.opt); });   // na lista de residências do proprietário só o botão Adicionar escolhe
+document.addEventListener('mousedown', e => { const li = e.target.closest && e.target.closest('.combolist li[data-opt]'); if (!li) return; e.preventDefault(); const box = li.closest('.combo'); if (!['resmulti', 'own'].includes(box.dataset.combo)) comboPick(box, li.dataset.opt); });   // na lista de residências do proprietário só o botão Adicionar escolhe
 document.addEventListener('keydown', e => {   // setas, Enter e Esc dentro da pesquisa de residência/proprietário
   const q = e.target.classList && e.target.classList.contains('comboq') ? e.target : null; if (!q) return;
   const box = q.closest('.combo'), ul = box.querySelector('.combolist'), lis = [...ul.querySelectorAll('li[data-opt]')]; let i = lis.findIndex(l => l.classList.contains('on'));
@@ -615,7 +616,7 @@ document.addEventListener('submit', async e => {
     r = await sb.rpc('admin_register_cpf', ownerParams(o, cpf));
     if (!r.error) {
       const newId = r.data;
-      if (f.dataset.nested === '1') { S.owners.push({ id: newId, name: o.name, cpf_mask: '***.***.***-' + cpf.slice(-2), claimed_by: null, phone: o.phone || null, whatsapp: o.whatsapp || null }); popModal({ id: newId }); return toast('Proprietário cadastrado e selecionado.'); }
+      if (f.dataset.nested === '1') { S.owners.push({ id: newId, name: o.name, cpf_mask: '***.***.***-' + cpf.slice(-2), claimed_by: null, expected_email: o.email || null, phone: o.phone || null, whatsapp: o.whatsapp || null }); popModal({ id: newId }); return toast('Proprietário cadastrado e selecionado.'); }
       let falha = null;   // a residência é opcional: vincula todas as que estiverem na lista
       for (const rr of (o.res_ids || '').split(',').filter(Boolean)) { const l = await sb.rpc('admin_link_cpf', { p_cpf: newId, p_res: rr }); if (l.error) falha = l; }
       r = falha || { error: null };
@@ -625,12 +626,13 @@ document.addEventListener('submit', async e => {
     const cpf = cpfDigits(o.cpf || ''); if (cpf && !cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1);
     if (!telOk(o.phone) || !telOk(o.whatsapp)) return toast('Celular ou WhatsApp inválido. Use DDD + número.', 1);
     r = await sb.rpc('admin_update_cpf', { p_id: f.dataset.id, ...ownerParams(o, null), p_cpf: cpf || null });
-    if (!r.error) {   // vínculos: grava a diferença entre a lista de antes e a de agora
+    if (!r.error && 'res_ids' in o) {   // vínculos: grava a diferença entre a lista de antes e a de agora (a lista não existe quando o proprietário é editado a partir de uma residência)
       const antes = S.links.filter(l => l.cpf_id === f.dataset.id).map(l => l.residence_id), depois = (o.res_ids || '').split(',').filter(Boolean); let falha = null;
       for (const rr of depois.filter(x => !antes.includes(x))) { const l = await sb.rpc('admin_link_cpf', { p_cpf: f.dataset.id, p_res: rr }); if (l.error) falha = l; }
       for (const rr of antes.filter(x => !depois.includes(x))) { const l = await sb.rpc('admin_unlink_cpf', { p_cpf: f.dataset.id, p_res: rr }); if (l.error) falha = l; }
       if (falha) r = falha;
     }
+    if (!r.error && nested) { await loadOwners(); popModal({ id: f.dataset.id }); return toast('Proprietário salvo.'); }
   }
   else if (id === 'add:docs') { const file = f.file.files[0]; delete o.file; const path = `${rid}/${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('documents').insert({ ...o, path }); }
   else if (id === 'add:qr') r = await sb.from('qr_codes').insert({ residence_id: rid, label: o.label, target_hash: QR_T[o.target] });
