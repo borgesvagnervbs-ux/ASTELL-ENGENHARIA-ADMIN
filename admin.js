@@ -25,7 +25,7 @@ const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x
 
 // ---------- ícones
 const ico = d => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
-const IC = { casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15' };
+const IC = { image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15' };
 const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 
 // ---------- menus (o primeiro é a tela inicial)
@@ -92,6 +92,8 @@ const closeModal = () => S.stack.length ? popModal(null) : hardClose();
 
 // escolha obrigatória de residência (com botão Cadastrar ao lado)
 const byName = (a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR');
+const presetRes = rid => { const r = S.res.find(x => x.id === rid) || {}; return `<div class="field"><span class="lbl">Residência</span><div class="presetres"><b>${esc(r.name || '—')}</b> <span class="mute">${esc(r.code || '')}</span></div><input type="hidden" name="residence_id" value="${esc(rid)}"></div>`; };
+const resField = () => S.scope ? presetRes(S.scope) : resSelect();
 const resSelect = () => `<div class="field combo" data-combo="res"><span class="lbl">Residência *</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar residência pelo nome…" autocomplete="off" required role="combobox" aria-expanded="false" aria-label="Pesquisar residência"><input type="hidden" name="residence_id"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newres>Cadastrar</button></div><p class="mute combohint">Digite parte do nome e escolha a residência na lista.</p>${S.res.length ? '' : '<p class="mute">Nenhuma residência cadastrada ainda. Use “Cadastrar” para criar a primeira.</p>'}</div>`;
 const ownPickHtml = ids => `<div class="ownpick field combo" data-combo="own"><span class="lbl">Proprietários vinculados (opcional)</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar proprietário pelo nome…" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar proprietário"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newown>Cadastrar</button></div><div class="reslinked" data-ownlist></div><input type="hidden" name="owner_ids" value="${ids.join(',')}"></div>`;
 function refreshOwnPick(box) {   // lista numerada dos proprietários escolhidos (a gravação acontece ao salvar a residência)
@@ -160,9 +162,9 @@ const resFormBody = (row = {}, ownerIds = [], noOwners = false) => RES_F.map(f =
 const ADD = {
   res: noOwners => modal('Nova residência', resFormBody({}, [], noOwners) + (noOwners ? '<p class="mute">Ao salvar o proprietário, ele será vinculado a esta residência.</p>' : ''), 'data-form="add:res"', 'Criar residência'),
   own: () => openOwnerAdd(false),
-  docs: () => modal('Enviar documento', resSelect() + '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f)).join(''), 'data-form="add:docs"', 'Enviar'),
+  docs: () => modal('Enviar documento', resField() + '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f)).join(''), 'data-form="add:docs"', 'Enviar'),
   qr: () => modal('Novo QR Code', resSelect() + `<label>Nome da etiqueta<input name="label" required></label>${fld(['target', 'Ao ler, abre', Object.keys(QR_T)])}`, 'data-form="add:qr"', 'Gerar'),
-  pl: () => modal('Enviar planta (imagem PNG ou JPG)', resSelect() + '<label>Título<input name="title" required></label><label>Imagem<input name="file" type="file" accept="image/*" required></label>', 'data-form="add:pl"', 'Enviar'),
+  pl: () => modal('Enviar planta (imagem PNG ou JPG)', resField() + '<label>Título<input name="title" required></label><label>Imagem<input name="file" type="file" accept="image/*" required></label>', 'data-form="add:pl"', 'Enviar'),
 };
 const telField = (name, label, v = '') => `<label>${label}<input name="${name}" class="tel" type="tel" inputmode="tel" placeholder="(00) 00000-0000" maxlength="15" value="${esc(v)}"></label>`;
 function openOwnerAdd(nested) {   // nested = aberto de dentro do cadastro de residência (o vínculo é feito quando a residência for salva)
@@ -173,7 +175,7 @@ function openOwnerEdit(id, opts = {}) {
   const ids = (S.links || []).filter(l => l.cpf_id === id).map(l => S.res.find(r => r.id === l.residence_id)).filter(Boolean).sort(byName).map(r => r.id);
   modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label>${telField('phone', 'Celular', c.phone || '')}${telField('whatsapp', 'WhatsApp', c.whatsapp || '')}${opts.fromRes ? '' : resMultiHtml(ids)}`, `data-form="edit:own" data-id="${id}"`, 'Salvar');
 }
-function openAdd(k) { if (ADD[k]) return ADD[k](); modal('Adicionar — ' + T[k].label, resSelect() + T[k].f.map(f => fld(f)).join(''), `data-form="add:${k}"`); }
+function openAdd(k) { if (ADD[k]) return ADD[k](); modal('Adicionar — ' + T[k].label, resField() + T[k].f.map(f => fld(f)).join(''), `data-form="add:${k}"`); }
 function openEdit(k, id, opts = {}) {
   if (k === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; return modal('Editar cadastro', resFormBody(r, (S.ownersByRes[id] || []).map(o => o.id), !!opts.fromOwner), `data-form="edit:res" data-id="${id}"`, 'Salvar alterações'); }
   const row = (S.rows[k] || []).find(r => r.id === id); if (!row) return;
@@ -264,17 +266,26 @@ async function loadMedia() {
 }
 const resetSel = () => { S.sel = { on: false, ids: new Set() }; };
 const renderMedia = () => { const b = $('#mediabox'); if (b) b.innerHTML = mediaPanel(); };
+const mediaShown = () => { const list = S.mediaRows || [], tab = S.mTab || 'all'; return { all: list, img: list.filter(x => !isVid(x)), vid: list.filter(isVid) }[tab] || list; };
 function mediaPanel() {
-  const list = S.mediaRows || [], vids = list.filter(isVid), pics = list.filter(x => !isVid(x)), tab = S.mTab || 'all', shown = { all: list, img: pics, vid: vids }[tab] || list, sel = S.sel, n = sel.ids.size;
-  const tile = x => { const ck = sel.ids.has(x.id);
-    const media = isVid(x) ? `<video controls playsinline preload="metadata" poster="${esc(vposter(x.url))}" src="${esc(vsrc(x.url))}"></video><span class="badge vb">Vídeo</span>` : `<a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(cld(x.url, 400))}" alt="" loading="lazy"></a>`;
-    return `<div class="gtile${ck ? ' picked' : ''}"><div class="mwrap">${media}${sel.on ? `<div class="cover" data-selid="${x.id}"></div><input type="checkbox" class="selbox" data-selid="${x.id}" ${ck ? 'checked' : ''} aria-label="Selecionar ${isVid(x) ? 'vídeo' : 'imagem'}">` : ''}</div>${x.visible === false ? '<span class="badge">Oculto do cliente</span>' : ''}${acts(`<button class="link" data-mvis="${x.id}">${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}</button>`)}</div>`; };
+  const list = S.mediaRows || [], vids = list.filter(isVid), pics = list.filter(x => !isVid(x)), tab = S.mTab || 'all', shown = mediaShown(), sel = S.sel, n = sel.ids.size;
+  const tile = x => { const ck = sel.ids.has(x.id), vid = isVid(x);
+    return `<div class="gtile mtile${ck ? ' picked' : ''}"><div class="mwrap"><img src="${esc(vid ? vposter(x.url) : cld(x.url, 300))}" alt="" loading="lazy" draggable="false" data-mi="${x.id}">${vid ? '<span class="playbadge">▶</span><span class="badge vb">Vídeo</span>' : ''}${sel.on ? `<div class="cover" data-selid="${x.id}"></div><input type="checkbox" class="selbox" data-selid="${x.id}" ${ck ? 'checked' : ''} aria-label="Selecionar ${vid ? 'vídeo' : 'imagem'}">` : ''}</div><div class="mfoot">${x.visible === false ? '<span class="badge">Oculto</span>' : '<span></span>'}<button type="button" class="link" data-mvis="${x.id}" title="${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}">${x.visible === false ? 'Mostrar' : 'Ocultar'}</button></div></div>`; };
   const tabs = `<div class="tabs three" role="tablist">${[['all', 'Todos', list.length], ['img', 'Imagens', pics.length], ['vid', 'Vídeos', vids.length]].map(([k, l, c]) => `<button type="button" role="tab" aria-selected="${tab === k}" class="${tab === k ? 'on' : ''}" data-mtab="${k}">${l} (${c})</button>`).join('')}</div>`;
   const tools = `<div class="mtools"><span class="mute">${shown.length} ${shown.length === 1 ? 'item' : 'itens'}</span><span class="mbtns">${sel.on ? `<button type="button" class="btn-danger" data-seldel ${n ? '' : 'disabled'}>Excluir${n ? ` (${n})` : ''}</button><button type="button" class="ghost2" data-selmode>Cancelar</button>` : `<button type="button" class="ghost2" data-selmode ${shown.length ? '' : 'disabled'}>Selecionar</button>`}</span></div>`;
   const empty = tab === 'img' ? 'Nenhuma imagem enviada ainda.' : tab === 'vid' ? 'Nenhum vídeo enviado ainda.' : 'Nada enviado ainda. Use "Upload de imagens e vídeos".';
-  return `<div class="pagehead mhead"><div><h3 style="margin:0">Imagens e vídeos</h3><p class="mute">Residência: <b>${esc(S.cur.name)}</b> — ${esc(S.cur.code)}</p></div><button type="button" class="up" data-upl="res:${S.cur.id}">Upload de imagens e vídeos</button></div>` +
-    (S.mediaErr ? '<p class="empty">Rode o schema_v6.sql (e o v7) no Supabase para habilitar as imagens e vídeos.</p>' : tabs + tools + `<div class="gallery">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div>`);
+  return `<div class="mcenter"><button type="button" class="up" data-upl="res:${S.cur.id}">Upload de imagens e vídeos</button>` +
+    (S.mediaErr ? '<p class="empty">Rode o schema_v6.sql (e o v7) no Supabase para habilitar as imagens e vídeos.</p>' : tabs + tools + '<p class="mute mhint">Dê dois cliques em uma mídia para ampliá-la.</p>' + `<div class="mgrid">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div>`) + '</div>';
 }
+// visualizador: abre por cima da tela, na ordem da aba escolhida, com setas em carrossel
+function lbShow() {
+  const L = S.lb, x = L.list[L.i], lb = $('#lb'); lb.hidden = false;
+  const media = isVid(x) ? `<video controls autoplay playsinline src="${esc(vsrc(x.url))}" poster="${esc(vposter(x.url))}"></video>` : `<img src="${esc(cld(x.url, 1800))}" alt="">`;
+  lb.innerHTML = `<button type="button" class="lbx" data-lbx aria-label="Fechar">×</button>${L.list.length > 1 ? '<button type="button" class="lbn l" data-lbn="-1" aria-label="Mídia anterior">‹</button><button type="button" class="lbn r" data-lbn="1" aria-label="Próxima mídia">›</button>' : ''}<div class="lbbox">${media}</div><div class="lbcap">${L.i + 1} / ${L.list.length} · ${isVid(x) ? 'Vídeo' : 'Imagem'}</div>`;
+}
+const lbClose = () => { const lb = $('#lb'); lb.hidden = true; lb.innerHTML = ''; };
+function lbOpen(id) { const list = mediaShown(), i = list.findIndex(x => x.id === id); if (i < 0) return; S.lb = { list, i }; lbShow(); }
+function lbMove(n) { const L = S.lb; L.i = (L.i + n + L.list.length) % L.list.length; lbShow(); }
 
 
 // ---------- dados auxiliares: residências e proprietários
@@ -319,21 +330,30 @@ async function resList() {
   view.innerHTML = head('Residências', 'res') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
 }
 const contactLine = c => `${c.phone ? `<span class="mute meta">Celular: ${esc(c.phone)}</span>` : ''}${c.whatsapp ? `<span class="mute meta">WhatsApp: <a class="golda" href="https://wa.me/55${telDigits(c.whatsapp)}" target="_blank" rel="noopener">${esc(c.whatsapp)}</a></span>` : ''}`;
+const SECTIONS = { docs: ['Documentos', 'doc'], media: ['Mídias', 'image'], eq: ['Equipamentos', 'layers'], gar: ['Garantias', 'shield'], man: ['Manutenções', 'wrench'], ast: ['Assistências', 'phones'], bld: ['Construção', 'home'], pl: ['Plantas Técnicas', 'map'] };
 async function resDetail(id) {
   const r = S.res.find(x => x.id === id);
-  if (!r) { view.innerHTML = '<p class="empty">Residência não encontrada.</p>'; view.insertAdjacentHTML('afterbegin', crumbs([['Painel', '#res'], ['Residências', '#res'], ['Não encontrada']])); return; }
-  S.cur = r; resetSel(); await Promise.all([loadMedia(), loadOwners()]);
+  if (!r) { view.innerHTML = crumbs([['Painel', '#res'], ['Residências', '#res'], ['Não encontrada']]) + '<p class="empty">Residência não encontrada.</p>'; return; }
+  S.cur = r; await loadOwners();
   const ow = S.ownersByRes[r.id] || [], v = x => esc(x == null || x === '' ? '—' : x);
   const info = [['Código', r.code], ['Nome da residência', r.name], ['Endereço', r.address], ['Área construída', r.area_m2 != null && r.area_m2 !== '' ? r.area_m2 + ' m²' : ''], ['Pavimentos', r.floors], ['Sistema construtivo', r.build_system], ['Nº do projeto', r.project_no], ['Início da obra', r.start_date ? fmt(r.start_date) : ''], ['Entrega', r.delivery_date ? fmt(r.delivery_date) : ''], ['Responsável técnico', r.tech_lead], ['Observações', r.notes]];
   view.innerHTML = crumbs([['Painel', '#res'], ['Residências', '#res'], [r.name]]) + `<div class="pagehead"><div><h2>${esc(r.name)}</h2><p class="mute">${esc(r.code)}</p></div><button type="button" class="up" data-edit="res:${r.id}">Editar cadastro</button></div>` +
     `<div class="detailgrid"><section class="card"><h3 style="margin-top:0">Cadastro</h3><div class="info">${info.map(([l, x]) => `<div><span class="mute">${l}</span><b>${v(x)}</b></div>`).join('')}</div></section>` +
-    `<section class="card"><h3 style="margin-top:0">Proprietários (${ow.length})</h3>${ow.map(o => `<p><b>${esc(o.name)}</b><span class="mute">${esc(o.cpf_mask)} · ${o.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}</span>${contactLine(o)}</p>`).join('') || '<p class="empty">Nenhum proprietário vinculado.</p>'}<a class="golda" href="#own">Gerenciar proprietários</a></section></div>` +
-    `<div id="mediabox">${mediaPanel()}</div>`;
+    `<section class="card"><h3 style="margin-top:0">Proprietários (${ow.length})</h3>${ow.length ? `<ol class="numlist">${ow.map(o => `<li><b>${esc(o.name)}</b><span class="mute">${esc(o.cpf_mask)} · ${o.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}</span>${contactLine(o)}</li>`).join('')}</ol>` : '<p class="empty">Nenhum proprietário vinculado.</p>'}</section></div>` +
+    `<div class="modgrid">${Object.entries(SECTIONS).map(([k, [l, i]]) => `<a class="card rescard modcard" href="#res/${r.id}/${k}">${ico(IC[i])}<b>${l}</b></a>`).join('')}</div>`;
+}
+// telas de cada módulo dentro da residência: só o que é dela, com o + já com a residência definida
+async function resSection(id, sub) {
+  const r = S.res.find(x => x.id === id); if (!r) return resDetail(id);
+  S.cur = r; S.scope = id;
+  if (sub === 'media') { resetSel(); await Promise.all([loadMedia(), loadOwners()]); view.innerHTML = head('Mídias', null) + `<div id="mediabox">${mediaPanel()}</div>`; return; }
+  return ({ docs: () => PAGES.docs(), eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => listPage('building_items'), ast: () => PAGES.ast(), pl: () => plantasList() })[sub]();
 }
 
 // ---------- páginas dos módulos (independentes: mostram tudo, por ordem de cadastro, de todas as residências)
 const crumbs = items => `<div class="crumbs" role="navigation" aria-label="Caminho de navegação"><ol>${items.map(([l, h], i) => i === items.length - 1 ? `<li aria-current="page">${esc(l)}</li>` : `<li><a href="${h}">${esc(l)}</a></li>`).join('')}</ol></div>`;
-const head = (t, add, trail) => crumbs(trail || [['Painel', '#res'], [t]]) + `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`;
+const scoped = q => S.scope ? q.eq('residence_id', S.scope) : q;   // dentro de uma residência: só o que é dela
+const head = (t, add, trail) => { if (S.scope && S.sub) t = SECTIONS[S.sub][0]; return crumbs(trail || (S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], [t]] : [['Painel', '#res'], [t]])) + `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`; };
 const acts = (...b) => `<div class="acts">${b.filter(Boolean).join('')}</div>`;
 const visBtn = (k, r) => `<button class="link" data-vis="${k}:${r.id}">${r.visible ? 'Ocultar do cliente' : 'Mostrar ao cliente'}</button>`;
 const hid = r => r.visible === false ? '<p><span class="badge">Oculto do cliente</span></p>' : '';
@@ -342,10 +362,10 @@ const TITLE = { warranties: r => r.system, maintenance_tasks: r => r.name, equip
 async function listPage(k) {
   const c = T[k];
   await loadOwners();
-  const { data, error } = await sb.from(k).select('*').order('created_at', { ascending: false });
+  const { data, error } = await scoped(sb.from(k).select('*')).order('created_at', { ascending: false });
   if (error) throw error; S.rows[k] = data;
   const im = {};
-  if (k === 'maintenance_tasks') { const { data: ii } = await sb.from('images').select('url,ref_id').eq('kind', 'maintenance').order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
+  if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
     return { hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
@@ -367,7 +387,7 @@ async function plantaDetail(id) {
 }
 
 const PAGES = {
-  async res() { if (S.arg) return resDetail(S.arg); return resList(); },
+  async res() { if (S.arg) return S.sub ? resSection(S.arg, S.sub) : resDetail(S.arg); return resList(); },
   async own() {
     await loadOwners();
     setItems({ mlist: S.owners.map(c => {
@@ -379,14 +399,14 @@ const PAGES = {
   },
   async docs() {
     await loadOwners();
-    const { data } = await sb.from('documents').select('*').order('created_at', { ascending: false }); S.rows.documents = data || [];
+    const { data } = await scoped(sb.from('documents').select('*')).order('created_at', { ascending: false }); S.rows.documents = data || [];
     setItems({ mlist: (data || []).map(d => ({ hay: hayOf(d.residence_id, d.title), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>` })) });
     view.innerHTML = head('Documentos', 'docs') + SHELL; paintItems();
   },
   eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), ctt: () => listPage('contacts'), bld: () => listPage('building_items'),
   async ast() {
     await loadOwners();
-    const { data } = await sb.from('service_requests').select('*').order('created_at', { ascending: false });
+    const { data } = await scoped(sb.from('service_requests').select('*')).order('created_at', { ascending: false });
     setItems({ mlist: (data || []).map(r => ({ hay: hayOf(r.residence_id, r.protocol, r.category), html: `<div class="card"><b>${esc(r.protocol)} — ${esc(r.category)}</b>${metaHtml(r.residence_id)}<span class="badge">${esc(r.status)}</span><p>${esc(r.place)} · urgência ${esc(r.urgency)}</p><p>${esc(r.description)}</p><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p>
       <form class="statusform" data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}">${fld(['status', 'Alterar situação', STATUS], r)}<label>Comentário para o cliente<input name="staff_note" value="${esc(r.staff_note || '')}"></label><button>Atualizar</button></form></div>` })) }, { mlist: 'Nenhuma solicitação de assistência.' });
     view.innerHTML = head('Assistência técnica', null) + SHELL; paintItems();
@@ -418,20 +438,21 @@ const PAGES = {
     view.innerHTML = head('QR Codes', 'qr') + acts('<button class="link" data-print>Imprimir etiquetas</button>') + '<p class="mute" id="mcount"></p><div id="mlist" class="grid"></div><div id="pg-mlist"></div><p class="notice">O QR leva ao app do cliente (index.html). Quem ler precisa entrar com a conta vinculada à casa para ver qualquer informação.</p>';
     paintItems();
   },
-  async pl() {
-    if (S.arg) return plantaDetail(S.arg);
-    await loadOwners();
-    const { data } = await sb.from('floorplans').select('*').order('created_at', { ascending: false });
-    setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title), html: `<a class="card rescard" href="#pl/${p.id}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}</a>` })) }, { mlist: 'Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.' });
-    view.innerHTML = head('Planta técnica', 'pl') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
-  },
+  async pl() { if (S.arg) return plantaDetail(S.arg); return plantasList(); },
 };
+async function plantasList() {
+  await loadOwners();
+  const { data } = await scoped(sb.from('floorplans').select('*')).order('created_at', { ascending: false });
+  setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title), html: `<a class="card rescard" href="#pl/${p.id}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}</a>` })) }, { mlist: 'Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.' });
+  view.innerHTML = head('Planta técnica', 'pl') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
+}
 
 async function render() {
   if (!S.profile || S.profile.role !== 'admin') return;
-  const [key, arg] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
-  S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; view.classList.toggle('wide', !!S.arg);
-  if (S.lastMenu !== S.menu) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = S.menu; S.pages = {}; }
+  const [key, arg, sub] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
+  S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; S.sub = S.menu === 'res' && S.arg && SECTIONS[sub] ? sub : null; S.scope = null; view.classList.toggle('wide', !!S.arg);
+  const tela = S.menu + '|' + (S.sub || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
+  if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
   document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
   S.items = null;
@@ -450,11 +471,14 @@ function buildDrawer() {
 function drawer(open) { $('#drawer').classList.toggle('open', open); document.body.classList.toggle('nav-open', open); $('#drawer').setAttribute('aria-hidden', !open); $('#menuBtn').setAttribute('aria-expanded', open); if (open) { const x = $('#drawer .dclose'); if (x) x.focus(); } }
 $('#menuBtn').onclick = () => drawer(true);   // o menu só abre aqui; para fechar é preciso clicar no X
 $('#resSearch').addEventListener('input', e => {   // filtra a lista do módulo aberto (residências, ou os cards de cada módulo)
-  S.q = e.target.value; const key = location.hash.slice(1) || 'res', [mod] = key.split('/');
-  if (key.includes('/')) location.hash = '#' + mod; else { S.pages = {}; paintItems(); }
+  S.q = e.target.value; const parts = (location.hash.slice(1) || 'res').split('/');
+  if (parts.length === 2) location.hash = '#' + parts[0]; else { S.pages = {}; paintItems(); }
 });
 addEventListener('hashchange', () => { S.place = false; render(); });
-addEventListener('keydown', e => { if (e.key === 'Escape') { if (!closeFloating()) closeModal(); } });
+addEventListener('keydown', e => {
+  if (!$('#lb').hidden) { if (e.key === 'Escape') lbClose(); else if (e.key === 'ArrowRight') lbMove(1); else if (e.key === 'ArrowLeft') lbMove(-1); return; }
+  if (e.key === 'Escape') { if (!closeFloating()) closeModal(); }
+});
 
 // ---------- acesso
 function loginScreen() {
@@ -487,14 +511,18 @@ sb.auth.onAuthStateChange((ev, s) => {
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
+  if (e.target.id === 'lb') return lbClose();
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
   if (d.newres !== undefined) { const box = el.closest('.combo'); pushModal(r => comboPick(box, r.id)); ADD.res(box.dataset.combo === 'resmulti'); }
   if (d.dclose !== undefined) drawer(false);
+  if (d.lbx !== undefined) lbClose();
+  if (d.lbn) lbMove(+d.lbn);
+  if (d.mi && !S.sel.on) { const t = Date.now(); if (S.lastMi === d.mi && t - S.lastMiT < 450) { S.lastMi = null; lbOpen(d.mi); } else { S.lastMi = d.mi; S.lastMiT = t; } }   // dois cliques seguidos ampliam a mídia (vale também no toque do celular)
   if (d.cal !== undefined) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'); if (pop.hidden) calOpen(box); else pop.hidden = true; }
   if (d.calnav) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'), dt = new Date(+pop.dataset.y, +pop.dataset.m + +d.calnav, 1); calRender(box, dt.getFullYear(), dt.getMonth()); }
   if (d.day) { const box = el.closest('[data-date]'); calSet(box, d.day); box.querySelector('.calpop').hidden = true; }
