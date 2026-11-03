@@ -280,7 +280,7 @@ function mediaPanel() {
 // visualizador: abre por cima da tela, na ordem da aba escolhida, com setas em carrossel
 function lbShow() {
   const L = S.lb, x = L.list[L.i], lb = $('#lb'); lb.hidden = false;
-  const media = isVid(x) ? `<video controls autoplay playsinline src="${esc(vsrc(x.url))}" poster="${esc(vposter(x.url))}"></video>` : `<img src="${esc(cld(x.url, 1800))}" alt="">`;
+  const media = isVid(x) ? `<video controls playsinline preload="metadata" src="${esc(vsrc(x.url))}" poster="${esc(vposter(x.url))}"></video>` : `<img src="${esc(cld(x.url, 1800))}" alt="">`;
   lb.innerHTML = `<button type="button" class="lbx" data-lbx aria-label="Fechar">×</button>${L.list.length > 1 ? '<button type="button" class="lbn l" data-lbn="-1" aria-label="Mídia anterior">‹</button><button type="button" class="lbn r" data-lbn="1" aria-label="Próxima mídia">›</button>' : ''}<div class="lbbox">${media}</div><div class="lbcap">${L.i + 1} / ${L.list.length} · ${isVid(x) ? 'Vídeo' : 'Imagem'}</div>`;
 }
 const lbClose = () => { const lb = $('#lb'); lb.hidden = true; lb.innerHTML = ''; };
@@ -451,6 +451,7 @@ async function render() {
   if (!S.profile || S.profile.role !== 'admin') return;
   const [key, arg, sub] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
   S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; S.sub = S.menu === 'res' && S.arg && SECTIONS[sub] ? sub : null; S.scope = null; view.classList.toggle('wide', !!S.arg);
+  $('#searchbar').hidden = S.menu === 'res' && !!S.arg;   // residência já escolhida: a pesquisa não é necessária
   const tela = S.menu + '|' + (S.sub || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
   if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
