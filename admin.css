@@ -216,3 +216,5 @@ p.reshead{font-weight:400}
 #lb .lbcap{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:#b9c9d3;font-size:.9rem}
 @media(max-width:600px){#lb{padding:64px 8px 90px}#lb .lbn{top:auto;bottom:34px;transform:none}#lb .l{left:calc(50% - 64px)}#lb .r{right:calc(50% - 64px)}#lb .lbcap{bottom:6px}}
 @media print{#lb{display:none!important}}
+
+#lb.fresh *{pointer-events:none}

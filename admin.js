@@ -25,7 +25,7 @@ const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x
 
 // ---------- ícones
 const ico = d => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
-const IC = { image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15' };
+const IC = { drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15' };
 const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 
 // ---------- menus (o primeiro é a tela inicial)
@@ -175,7 +175,12 @@ function openOwnerEdit(id, opts = {}) {
   const ids = (S.links || []).filter(l => l.cpf_id === id).map(l => S.res.find(r => r.id === l.residence_id)).filter(Boolean).sort(byName).map(r => r.id);
   modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label>${telField('phone', 'Celular', c.phone || '')}${telField('whatsapp', 'WhatsApp', c.whatsapp || '')}${opts.fromRes ? '' : resMultiHtml(ids)}`, `data-form="edit:own" data-id="${id}"`, 'Salvar');
 }
-function openAdd(k) { if (ADD[k]) return ADD[k](); modal('Adicionar — ' + T[k].label, resField() + T[k].f.map(f => fld(f)).join(''), `data-form="add:${k}"`); }
+function presetCat(cat) { return `<div class="field"><span class="lbl">Tipo de construção</span><div class="presetres"><b>${cat[0]}</b></div><input type="hidden" name="category" value="${cat[2]}"></div>`; }
+function openAdd(k) {
+  if (ADD[k]) return ADD[k]();
+  const cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;   // dentro de Estruturas/Materiais/Sistemas o tipo já vem definido
+  modal('Adicionar — ' + (cat ? cat[0] : T[k].label), resField() + (cat ? presetCat(cat) : '') + T[k].f.filter(f => !(cat && f[0] === 'category')).map(f => fld(f)).join(''), `data-form="add:${k}"`);
+}
 function openEdit(k, id, opts = {}) {
   if (k === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; return modal('Editar cadastro', resFormBody(r, (S.ownersByRes[id] || []).map(o => o.id), !!opts.fromOwner), `data-form="edit:res" data-id="${id}"`, 'Salvar alterações'); }
   const row = (S.rows[k] || []).find(r => r.id === id); if (!row) return;
@@ -275,7 +280,7 @@ function mediaPanel() {
   const tools = `<div class="mtools"><span class="mute">${shown.length} ${shown.length === 1 ? 'item' : 'itens'}</span><span class="mbtns">${sel.on ? `<button type="button" class="btn-danger" data-seldel ${n ? '' : 'disabled'}>Excluir${n ? ` (${n})` : ''}</button><button type="button" class="ghost2" data-selmode>Cancelar</button>` : `<button type="button" class="ghost2" data-selmode ${shown.length ? '' : 'disabled'}>Selecionar</button>`}</span></div>`;
   const empty = tab === 'img' ? 'Nenhuma imagem enviada ainda.' : tab === 'vid' ? 'Nenhum vídeo enviado ainda.' : 'Nada enviado ainda. Use "Upload de imagens e vídeos".';
   return `<div class="mcenter"><button type="button" class="up" data-upl="res:${S.cur.id}">Upload de imagens e vídeos</button>` +
-    (S.mediaErr ? '<p class="empty">Rode o schema_v6.sql (e o v7) no Supabase para habilitar as imagens e vídeos.</p>' : tabs + tools + '<p class="mute mhint">Dê dois cliques em uma mídia para ampliá-la.</p>' + `<div class="mgrid">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div>`) + '</div>';
+    (S.mediaErr ? '<p class="empty">Rode o schema_v6.sql (e o v7) no Supabase para habilitar as imagens e vídeos.</p>' : tabs + tools + '<p class="mute mhint">Dê dois cliques em uma imagem, ou um clique em um vídeo, para ampliar.</p>' + `<div class="mgrid">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div>`) + '</div>';
 }
 // visualizador: abre por cima da tela, na ordem da aba escolhida, com setas em carrossel
 function lbShow() {
@@ -284,7 +289,11 @@ function lbShow() {
   lb.innerHTML = `<button type="button" class="lbx" data-lbx aria-label="Fechar">×</button>${L.list.length > 1 ? '<button type="button" class="lbn l" data-lbn="-1" aria-label="Mídia anterior">‹</button><button type="button" class="lbn r" data-lbn="1" aria-label="Próxima mídia">›</button>' : ''}<div class="lbbox">${media}</div><div class="lbcap">${L.i + 1} / ${L.list.length} · ${isVid(x) ? 'Vídeo' : 'Imagem'}</div>`;
 }
 const lbClose = () => { const lb = $('#lb'); lb.hidden = true; lb.innerHTML = ''; };
-function lbOpen(id) { const list = mediaShown(), i = list.findIndex(x => x.id === id); if (i < 0) return; S.lb = { list, i }; lbShow(); }
+function lbOpen(id) {
+  const list = mediaShown(), i = list.findIndex(x => x.id === id); if (i < 0) return;
+  const lb = $('#lb'), novo = lb.hidden; S.lb = { list, i }; lbShow();
+  if (novo) { lb.classList.add('fresh'); setTimeout(() => lb.classList.remove('fresh'), 600); }   // por 0,6 s ignora cliques (evita fechar ou dar play sem querer num duplo clique)
+}
 function lbMove(n) { const L = S.lb; L.i = (L.i + n + L.list.length) % L.list.length; lbShow(); }
 
 
@@ -331,6 +340,12 @@ async function resList() {
 }
 const contactLine = c => `${c.phone ? `<span class="mute meta">Celular: ${esc(c.phone)}</span>` : ''}${c.whatsapp ? `<span class="mute meta">WhatsApp: <a class="golda" href="https://wa.me/55${telDigits(c.whatsapp)}" target="_blank" rel="noopener">${esc(c.whatsapp)}</a></span>` : ''}`;
 const SECTIONS = { docs: ['Documentos', 'doc'], media: ['Mídias', 'image'], eq: ['Equipamentos', 'layers'], gar: ['Garantias', 'shield'], man: ['Manutenções', 'wrench'], ast: ['Assistências', 'phones'], bld: ['Construção', 'home'], pl: ['Plantas Técnicas', 'map'] };
+const BCATS = { est: ['Estruturas', 'home', 'Estrutura'], mat: ['Materiais', 'layers', 'Materiais'], sis: ['Sistemas', 'drop', 'Sistemas'] };   // [rótulo do card, ícone, valor gravado no banco]
+const bldTrail = () => S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], ['Construção', '#res/' + S.scope + '/bld'], [BCATS[S.cat][0]]] : [['Painel', '#res'], ['Construção', '#bld'], [BCATS[S.cat][0]]];
+function bldHub() {   // três cards: Estruturas, Materiais e Sistemas (no menu geral e dentro da residência)
+  const base = S.scope ? `#res/${S.scope}/bld` : '#bld';
+  view.innerHTML = head('Construção', 'building_items') + `<div class="modgrid">${Object.entries(BCATS).map(([k, [l, i]]) => `<a class="card rescard modcard" href="${base}/${k}">${ico(IC[i])}<b>${l}</b></a>`).join('')}</div>`;
+}
 async function resDetail(id) {
   const r = S.res.find(x => x.id === id);
   if (!r) { view.innerHTML = crumbs([['Painel', '#res'], ['Residências', '#res'], ['Não encontrada']]) + '<p class="empty">Residência não encontrada.</p>'; return; }
@@ -347,22 +362,23 @@ async function resSection(id, sub) {
   const r = S.res.find(x => x.id === id); if (!r) return resDetail(id);
   S.cur = r; S.scope = id;
   if (sub === 'media') { resetSel(); await Promise.all([loadMedia(), loadOwners()]); view.innerHTML = head('Mídias', null) + `<div id="mediabox">${mediaPanel()}</div>`; return; }
-  return ({ docs: () => PAGES.docs(), eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => listPage('building_items'), ast: () => PAGES.ast(), pl: () => plantasList() })[sub]();
+  return ({ docs: () => PAGES.docs(), eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => S.cat ? listPage('building_items') : bldHub(), ast: () => PAGES.ast(), pl: () => plantasList() })[sub]();
 }
 
 // ---------- páginas dos módulos (independentes: mostram tudo, por ordem de cadastro, de todas as residências)
 const crumbs = items => `<div class="crumbs" role="navigation" aria-label="Caminho de navegação"><ol>${items.map(([l, h], i) => i === items.length - 1 ? `<li aria-current="page">${esc(l)}</li>` : `<li><a href="${h}">${esc(l)}</a></li>`).join('')}</ol></div>`;
 const scoped = q => S.scope ? q.eq('residence_id', S.scope) : q;   // dentro de uma residência: só o que é dela
-const head = (t, add, trail) => { if (S.scope && S.sub) t = SECTIONS[S.sub][0]; return crumbs(trail || (S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], [t]] : [['Painel', '#res'], [t]])) + `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`; };
+const head = (t, add, trail) => { if (S.scope && S.sub && !S.cat) t = SECTIONS[S.sub][0]; return crumbs(trail || (S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], [t]] : [['Painel', '#res'], [t]])) + `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`; };
 const acts = (...b) => `<div class="acts">${b.filter(Boolean).join('')}</div>`;
 const visBtn = (k, r) => `<button class="link" data-vis="${k}:${r.id}">${r.visible ? 'Ocultar do cliente' : 'Mostrar ao cliente'}</button>`;
 const hid = r => r.visible === false ? '<p><span class="badge">Oculto do cliente</span></p>' : '';
 const TITLE = { warranties: r => r.system, maintenance_tasks: r => r.name, equipment: r => r.name, contacts: r => r.name, building_items: r => r.title };
 
 async function listPage(k) {
-  const c = T[k];
+  const c = T[k], cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;
   await loadOwners();
-  const { data, error } = await scoped(sb.from(k).select('*')).order('created_at', { ascending: false });
+  let qy = scoped(sb.from(k).select('*')); if (cat) qy = qy.eq('category', cat[2]);
+  const { data, error } = await qy.order('created_at', { ascending: false });
   if (error) throw error; S.rows[k] = data;
   const im = {};
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
@@ -370,7 +386,7 @@ async function listPage(k) {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
     return { hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
   }) });
-  view.innerHTML = head(c.label, k) + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
+  view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
 }
 
@@ -403,7 +419,7 @@ const PAGES = {
     setItems({ mlist: (data || []).map(d => ({ hay: hayOf(d.residence_id, d.title), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>` })) });
     view.innerHTML = head('Documentos', 'docs') + SHELL; paintItems();
   },
-  eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), ctt: () => listPage('contacts'), bld: () => listPage('building_items'),
+  eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), ctt: () => listPage('contacts'), bld: () => S.cat ? listPage('building_items') : bldHub(),
   async ast() {
     await loadOwners();
     const { data } = await scoped(sb.from('service_requests').select('*')).order('created_at', { ascending: false });
@@ -449,10 +465,12 @@ async function plantasList() {
 
 async function render() {
   if (!S.profile || S.profile.role !== 'admin') return;
-  const [key, arg, sub] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
-  S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; S.sub = S.menu === 'res' && S.arg && SECTIONS[sub] ? sub : null; S.scope = null; view.classList.toggle('wide', !!S.arg);
-  $('#searchbar').hidden = S.menu === 'res' && !!S.arg;   // residência já escolhida: a pesquisa não é necessária
-  const tela = S.menu + '|' + (S.sub || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
+  const [key, arg, sub, cat] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
+  S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; S.sub = S.menu === 'res' && S.arg && SECTIONS[sub] ? sub : null; S.scope = null;
+  S.cat = S.menu === 'bld' && BCATS[arg] ? arg : (S.sub === 'bld' && BCATS[cat] ? cat : null);   // tipo de construção aberto (est, mat ou sis)
+  view.classList.toggle('wide', !!S.arg);
+  $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
+  const tela = S.menu + '|' + (S.sub || '') + '|' + (S.cat || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
   if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
   document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
@@ -473,7 +491,7 @@ function drawer(open) { $('#drawer').classList.toggle('open', open); document.bo
 $('#menuBtn').onclick = () => drawer(true);   // o menu só abre aqui; para fechar é preciso clicar no X
 $('#resSearch').addEventListener('input', e => {   // filtra a lista do módulo aberto (residências, ou os cards de cada módulo)
   S.q = e.target.value; const parts = (location.hash.slice(1) || 'res').split('/');
-  if (parts.length === 2) location.hash = '#' + parts[0]; else { S.pages = {}; paintItems(); }
+  if (parts.length === 2 && ['res', 'pl'].includes(parts[0])) location.hash = '#' + parts[0]; else { S.pages = {}; paintItems(); }
 });
 addEventListener('hashchange', () => { S.place = false; render(); });
 addEventListener('keydown', e => {
@@ -512,7 +530,7 @@ sb.auth.onAuthStateChange((ev, s) => {
 // ---------- ações
 document.addEventListener('click', async e => {
   if (e.target.id === 'modal') return closeModal();
-  if (e.target.id === 'lb') return lbClose();
+  if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
   const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
@@ -523,7 +541,11 @@ document.addEventListener('click', async e => {
   if (d.dclose !== undefined) drawer(false);
   if (d.lbx !== undefined) lbClose();
   if (d.lbn) lbMove(+d.lbn);
-  if (d.mi && !S.sel.on) { const t = Date.now(); if (S.lastMi === d.mi && t - S.lastMiT < 450) { S.lastMi = null; lbOpen(d.mi); } else { S.lastMi = d.mi; S.lastMiT = t; } }   // dois cliques seguidos ampliam a mídia (vale também no toque do celular)
+  if (d.mi && !S.sel.on) {
+    const mx = (S.mediaRows || []).find(x => x.id === d.mi);
+    if (mx && isVid(mx)) lbOpen(d.mi);   // vídeo: um clique já amplia (sem tocar sozinho)
+    else { const t = Date.now(); if (S.lastMi === d.mi && t - S.lastMiT < 450) { S.lastMi = null; lbOpen(d.mi); } else { S.lastMi = d.mi; S.lastMiT = t; } }   // imagem: dois cliques seguidos (vale também no toque do celular)
+  }
   if (d.cal !== undefined) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'); if (pop.hidden) calOpen(box); else pop.hidden = true; }
   if (d.calnav) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'), dt = new Date(+pop.dataset.y, +pop.dataset.m + +d.calnav, 1); calRender(box, dt.getFullYear(), dt.getMonth()); }
   if (d.day) { const box = el.closest('[data-date]'); calSet(box, d.day); box.querySelector('.calpop').hidden = true; }
