@@ -207,8 +207,10 @@ p.reshead{font-weight:400}
 /* Visualizador ampliado (duplo clique): setas laterais em carrossel, botões amarelos */
 #lb{position:fixed;inset:0;z-index:70;background:#000e;display:flex;align-items:center;justify-content:center;padding:64px 88px}
 #lb[hidden]{display:none}
-#lb .lbbox{display:flex;align-items:center;justify-content:center;max-width:100%;max-height:100%}
-#lb img,#lb video{max-width:100%;max-height:calc(100vh - 150px);border-radius:10px;background:#000;display:block}
+#lb .lbbox{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+#lb img{max-width:100%;max-height:calc(100vh - 150px);border-radius:10px;background:#000;display:block}
+/* vídeo: ocupa a área grande desde a abertura (não depende do tamanho da capa nem de ter começado a tocar) */
+#lb video{width:100%;height:100%;max-height:calc(100vh - 150px);object-fit:contain;border-radius:10px;background:#000;display:block}
 #lb button{position:absolute;margin:0;padding:0;width:52px;min-height:52px;border-radius:50%;font-size:1.9rem;line-height:1;display:grid;place-items:center;background:var(--gold);color:#1b1409;border:0}
 #lb .lbx{top:14px;right:14px}
 #lb .lbn{top:50%;transform:translateY(-50%)}

@@ -20,6 +20,7 @@ const CLOUD_OK = !!(CLD_NAME && CLD_PRESET) && !/COLE_AQUI/.test(CLD_NAME + CLD_
 const isVid = x => x.media_type === 'video';
 const vsrc = u => String(u).replace('/upload/', '/upload/f_mp4,vc_h264,q_auto/').replace(/\.\w+$/, '.mp4');
 const vposter = u => String(u).replace('/upload/', '/upload/w_480,c_limit,so_0/').replace(/\.\w+$/, '.jpg');
+const vposterBig = u => String(u).replace('/upload/', '/upload/w_1600,c_limit,so_0/').replace(/\.\w+$/, '.jpg');   // capa grande para o visualizador
 const cld = (u, w) => String(u).replace('/upload/', `/upload/w_${w},c_limit,q_auto,f_auto/`);
 const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x => `<img src="${esc(cld(x.url, 240))}" alt="" loading="lazy">`).join('')}</div>` : '';
 
@@ -285,7 +286,7 @@ function mediaPanel() {
 // visualizador: abre por cima da tela, na ordem da aba escolhida, com setas em carrossel
 function lbShow() {
   const L = S.lb, x = L.list[L.i], lb = $('#lb'); lb.hidden = false;
-  const media = isVid(x) ? `<video controls playsinline preload="metadata" src="${esc(vsrc(x.url))}" poster="${esc(vposter(x.url))}"></video>` : `<img src="${esc(cld(x.url, 1800))}" alt="">`;
+  const media = isVid(x) ? `<video controls playsinline preload="metadata" src="${esc(vsrc(x.url))}" poster="${esc(vposterBig(x.url))}"></video>` : `<img src="${esc(cld(x.url, 1800))}" alt="">`;
   lb.innerHTML = `<button type="button" class="lbx" data-lbx aria-label="Fechar">×</button>${L.list.length > 1 ? '<button type="button" class="lbn l" data-lbn="-1" aria-label="Mídia anterior">‹</button><button type="button" class="lbn r" data-lbn="1" aria-label="Próxima mídia">›</button>' : ''}<div class="lbbox">${media}</div><div class="lbcap">${L.i + 1} / ${L.list.length} · ${isVid(x) ? 'Vídeo' : 'Imagem'}</div>`;
 }
 const lbClose = () => { const lb = $('#lb'); lb.hidden = true; lb.innerHTML = ''; };
