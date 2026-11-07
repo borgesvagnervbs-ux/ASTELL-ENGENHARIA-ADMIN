@@ -163,7 +163,7 @@ const ADD = {
   res: noOwners => modal('Nova residência', resFormBody({}, [], noOwners) + (noOwners ? '<p class="mute">Ao salvar o proprietário, ele será vinculado a esta residência.</p>' : ''), 'data-form="add:res"', 'Criar residência'),
   own: () => openOwnerAdd(false),
   docs: () => modal('Enviar documento', resField() + '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f)).join(''), 'data-form="add:docs"', 'Enviar'),
-  pl: () => modal('Enviar planta (imagem PNG ou JPG)', resField() + '<label>Título<input name="title" required></label><label>Imagem<input name="file" type="file" accept="image/*" required></label>', 'data-form="add:pl"', 'Enviar'),
+  pl: () => modal('Cadastrar planta técnica', resField() + plFormBody(), 'data-form="add:pl"', 'Salvar'),
 };
 const telField = (name, label, v = '') => `<label>${label}<input name="${name}" class="tel" type="tel" inputmode="tel" placeholder="(00) 00000-0000" maxlength="15" value="${esc(v)}"></label>`;
 function openOwnerAdd(nested) {   // nested = aberto de dentro do cadastro de residência (o vínculo é feito quando a residência for salva)
@@ -422,17 +422,63 @@ async function listPage(k) {
   paintItems();
 }
 
+// ---------- Planta técnica: imagem da planta (com pontos), PDFs e arquivos 3D
+const PL_3D = ['glb', 'gltf', 'obj', 'stl', 'fbx', '3ds', 'dae', 'skp', 'ifc', 'rvt', 'step', 'stp', '3dm', 'blend'];
+const PL_VIEW = ['glb', 'gltf'];   // formatos que o navegador mostra (visualizador 3D); os demais podem ser baixados
+const plExt = n => (String(n).split('.').pop() || '').toLowerCase();
+const plKind = x => x.type === 'application/pdf' || plExt(x.name) === 'pdf' ? 'pdf' : PL_3D.includes(plExt(x.name)) ? '3d' : null;
+const plSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+const plFormBody = row => `<label>Título<input name="title" value="${esc(row ? row.title : '')}" required></label>` +
+  `<label>${row ? 'Trocar a imagem da planta (opcional; PNG ou JPG, até 10 MB)' : 'Imagem da planta (opcional; PNG ou JPG, até 10 MB)'}<input name="image" type="file" accept="image/*"></label>` +
+  (row ? `<div class="field"><span class="lbl">Arquivos atuais (PDF e 3D)</span><ul class="curfiles">${(row.files || []).map((x, i) => `<li><span class="fname">${x.type === 'pdf' ? 'PDF' : '3D'} · ${esc(x.name)}</span><label class="chk"><input type="checkbox" name="rm_files" value="${i}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '') +
+  `<label>${row ? 'Adicionar mais PDFs e arquivos 3D' : 'PDFs e arquivos 3D'} (opcional; pode escolher vários)<input name="files" type="file" accept=".pdf,application/pdf,${PL_3D.map(e => '.' + e).join(',')}" multiple></label>` +
+  `<p class="mute">PDF até 25 MB. 3D até 50 MB. Formatos 3D aceitos: ${PL_3D.map(e => e.toUpperCase()).join(', ')}. Só GLB e GLTF abrem para visualização no painel; os demais ficam guardados para baixar. Prefira o GLB (arquivo único).</p>`;
+function openPlEdit(row) { modal('Editar planta técnica', `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` + plFormBody(row), `data-form="edit:pl" data-id="${row.id}" data-rid="${row.residence_id}"`, 'Salvar alterações'); }
+async function savePl(f, o, op) {
+  const img = f.elements.image.files[0], picked = [...f.elements.files.files], store = sb.storage.from('documents'), row = op === 'edit' ? S.curPlan : null;
+  if (img && (!/^image\//.test(img.type) || img.size > 10 * 1048576)) return { error: { message: `"${img.name}" precisa ser uma imagem de até 10 MB.` } };
+  for (const x of picked) { const t = plKind(x); if (!t) return { error: { message: `"${x.name}" não é PDF nem um formato 3D aceito.` } }; if (x.size > (t === 'pdf' ? 25 : 50) * 1048576) return { error: { message: `"${x.name}" é maior que ${t === 'pdf' ? 25 : 50} MB.` } }; }
+  const rid = op === 'add' ? o.residence_id : row.residence_id, rm = [...f.querySelectorAll('[name=rm_files]:checked')].map(i => +i.value), old = (row && row.files) || [];
+  const keep = old.filter((x, i) => !rm.includes(i)); if (!img && !picked.length && !(row && row.path) && !keep.length) return { error: { message: 'Envie a imagem da planta, um PDF ou um arquivo 3D.' } };
+  const up = [], safe = n => n.replace(/[^\w.-]/g, '_'), sent = []; let imgPath = null;
+  const undo = () => sent.length ? store.remove(sent) : null;
+  try {
+    if (img) { imgPath = `${rid}/plantas/img_${Date.now()}_${safe(img.name)}`; toast('Enviando a imagem…'); const r = await store.upload(imgPath, img, { contentType: img.type }); if (r.error) throw r.error; sent.push(imgPath); }
+    for (let i = 0; i < picked.length; i++) {
+      const x = picked[i], t = plKind(x), path = `${rid}/plantas/${Date.now()}_${i}_${safe(x.name)}`; toast(`Enviando arquivo ${i + 1} de ${picked.length}…`);
+      const r = await store.upload(path, x, { contentType: t === 'pdf' ? 'application/pdf' : plExt(x.name) === 'glb' ? 'model/gltf-binary' : 'application/octet-stream' }); if (r.error) throw r.error;
+      sent.push(path); up.push({ path, type: t, name: x.name, size: x.size });
+    }
+  } catch (e) { await undo(); return { error: e }; }
+  if (op === 'add') { const r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path: imgPath, files: up }); if (r.error) await undo(); return r; }
+  const r = await sb.from('floorplans').update({ title: o.title, path: imgPath || row.path, files: [...keep, ...up] }).eq('id', row.id);
+  if (r.error) await undo(); else { const gone = [...old.filter((x, i) => rm.includes(i)).map(x => x.path), ...(imgPath && row.path ? [row.path] : [])]; if (gone.length) await store.remove(gone); }
+  return r;
+}
+const MV_SRC = 'https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js';
+function loadMV() { if (window.__mvLoading) return; window.__mvLoading = true; const sc = document.createElement('script'); sc.type = 'module'; sc.src = MV_SRC; sc.onerror = () => document.querySelectorAll('.mvfail').forEach(e => { e.hidden = false; }); document.head.appendChild(sc); }
+const plFileBlock = (x, url) => {
+  const view3d = x.type === '3d' && PL_VIEW.includes(plExt(x.name));
+  const head = `<div class="pfhead"><b>${x.type === 'pdf' ? 'PDF' : '3D'} · ${esc(x.name)}</b><span class="mute">${plSize(x.size || 0)}</span></div>`;
+  const btns = acts(x.type === 'pdf' ? `<button type="button" class="link" data-open="${esc(x.path)}">Abrir em outra aba</button>` : '', `<button type="button" class="link" data-dl="${esc(x.path)}|${esc(x.name)}">Baixar</button>`);
+  const body = x.type === 'pdf' ? (url ? `<details class="pdfview"><summary>Visualizar aqui</summary><iframe title="${esc(x.name)}" src="${esc(url)}" loading="lazy"></iframe></details>` : '')
+    : view3d ? (url ? `<div class="mvbox"><model-viewer src="${esc(url)}" alt="${esc(x.name)}" camera-controls touch-action="pan-y" shadow-intensity="1" auto-rotate></model-viewer><p class="notice mvfail" hidden>Não foi possível abrir o visualizador 3D. Use “Baixar”.</p></div>` : '')
+    : `<p class="mute">Este formato (${esc(plExt(x.name).toUpperCase())}) não abre no navegador. Use “Baixar” e abra no programa próprio.</p>`;
+  return `<div class="card pfile">${head}${body}${btns}</div>`;
+};
 async function plantaDetail(id) {
   await loadOwners();
   const { data: fp } = await sb.from('floorplans').select('*').eq('id', id), cur = (fp || [])[0];
   const ptr = S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], ['Plantas Técnicas', '#res/' + S.scope + '/pl']] : [['Painel', '#res'], ['Planta técnica', '#pl']];   // dentro da residência a trilha e o "voltar" continuam nela
   if (!cur) { view.innerHTML = crumbs([...ptr, ['Não encontrada']]) + '<p class="empty">Planta não encontrada.</p>'; return; }
   S.curPlan = cur;
-  const [{ data: u }, { data: pts }] = await Promise.all([sb.storage.from('documents').createSignedUrl(cur.path, 3600), sb.from('plan_points').select('*').eq('floorplan_id', id).order('created_at')]);
+  const files = cur.files || [], [{ data: u }, { data: pts }, ...urls] = await Promise.all([cur.path ? sb.storage.from('documents').createSignedUrl(cur.path, 3600) : Promise.resolve({ data: null }), cur.path ? sb.from('plan_points').select('*').eq('floorplan_id', id).order('created_at') : Promise.resolve({ data: [] }), ...files.map(x => sb.storage.from('documents').createSignedUrl(x.path, 3600))]);
   view.innerHTML = crumbs([...ptr, [cur.title]]) + `<div class="pagehead"><div><h2>${esc(cur.title)}</h2>${metaHtml(cur.residence_id)}</div></div>` +
-    acts(`<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}|${esc(cur.path)}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
-    `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${(pts || []).map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div><h3>Pontos cadastrados</h3>` +
-    ((pts || []).map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>');
+    acts(`<button class="link" data-pledit="${cur.id}">Editar</button>`, cur.path && `<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
+    (cur.path ? `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${(pts || []).map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div>` : '') +
+    (files.length ? `<h3>Arquivos (${files.length})</h3>${files.map((x, i) => plFileBlock(x, urls[i] && urls[i].data ? urls[i].data.signedUrl : '')).join('')}` : '') +
+    (cur.path ? '<h3>Pontos cadastrados</h3>' + ((pts || []).map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>') : '');
+  if (files.some(x => x.type === '3d' && PL_VIEW.includes(plExt(x.name)))) { loadMV(); view.querySelectorAll('model-viewer').forEach(m => m.addEventListener('error', () => { const p = m.parentElement.querySelector('.mvfail'); if (p) p.hidden = false; })); }
 }
 
 // ---------- Documentos: seis pastas (cards). "Documentos gerais" é o que já existia; as outras cinco aceitam vários PDFs e imagens, com data
@@ -577,7 +623,7 @@ async function bkData(withHash, say) {
   if (!withHash) (out.client_cpfs || []).forEach(r => { delete r.cpf_hash; });
   return { meta: { sistema: 'Astell Home', gerado_em: new Date().toISOString(), formato: 1, cpf_hash_incluido: !!withHash, tabelas_nao_encontradas: missing }, ...out };
 }
-const bkPaths = d => [...new Set([...(d.documents || []).map(x => x.path), ...(d.floorplans || []).map(x => x.path), ...(d.doc_records || []).flatMap(x => (x.files || []).map(f => f.path)), ...['maintenance_tasks', 'building_items', 'equipment'].flatMap(t => (d[t] || []).flatMap(r => (r.media || []).map(m => m.path)))].filter(Boolean))];
+const bkPaths = d => [...new Set([...(d.documents || []).map(x => x.path), ...(d.floorplans || []).map(x => x.path), ...(d.floorplans || []).flatMap(x => (x.files || []).map(f => f.path)), ...(d.doc_records || []).flatMap(x => (x.files || []).map(f => f.path)), ...['maintenance_tasks', 'building_items', 'equipment'].flatMap(t => (d[t] || []).flatMap(r => (r.media || []).map(m => m.path)))].filter(Boolean))];
 async function runBackup(full, withHash) {
   const msg = $('#bkmsg'), say = t => { msg.textContent = t; }, btns = document.querySelectorAll('[data-bk]'); btns.forEach(b => b.disabled = true);
   try {
@@ -722,7 +768,7 @@ const PAGES = {
 async function plantasList() {
   await loadOwners();
   const { data } = await scoped(sb.from('floorplans').select('*')).order('created_at', { ascending: false });
-  setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title), html: `<a class="card rescard" href="${S.scope ? `#res/${S.scope}/pl/${p.id}` : `#pl/${p.id}`}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}</a>` })) }, { mlist: 'Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.' });
+  setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title), html: `<a class="card rescard" href="${S.scope ? `#res/${S.scope}/pl/${p.id}` : `#pl/${p.id}`}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}<span class="mute meta">${[p.path ? 'Imagem da planta' : '', ...[['pdf', 'PDF', 'PDFs'], ['3d', 'arquivo 3D', 'arquivos 3D']].map(([t, a, b]) => { const n = (p.files || []).filter(x => x.type === t).length; return n ? n + ' ' + (n === 1 ? a : b) : ''; })].filter(Boolean).join(' · ') || 'Sem arquivos'}</span></a>` })) }, { mlist: 'Nenhuma planta cadastrada. Toque em + para cadastrar.' });
   view.innerHTML = head('Planta técnica', 'pl') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
 }
 
@@ -798,7 +844,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-stopen],[data-stset],[data-stf],[data-bm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-bm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -849,7 +895,9 @@ document.addEventListener('click', async e => {
   if (d.vis) { const [k, id] = d.vis.split(':'), r = S.rows[k].find(x => x.id === id); const { error } = await sb.from(k).update({ visible: !r.visible }).eq('id', id); done(error && 'Não foi possível alterar.', r.visible ? 'Oculto do cliente.' : 'Visível ao cliente.'); }
   if (d.del && confirm('Excluir este registro?')) { const [k, id] = d.del.split(':'), old = ((S.rows[k] || []).find(x => x.id === id) || {}).media || []; const { error } = await sb.from(k).delete().eq('id', id); const pp = old.filter(x => x.path).map(x => x.path); if (!error && pp.length) await sb.storage.from('documents').remove(pp); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
   if (d.deldoc && confirm('Excluir este documento?')) { const [id, p] = d.deldoc.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('documents').delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Documento excluído.'); }
-  if (d.delplan && confirm('Excluir esta planta e todos os pontos marcados nela?')) { const [id, p] = d.delplan.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('floorplans').delete().eq('id', id); if (error) toast('Não foi possível excluir.', 1); else { toast('Planta excluída.'); location.hash = S.scope ? '#res/' + S.scope + '/pl' : '#pl'; } }
+  if (d.delplan && confirm('Excluir esta planta, os arquivos dela e todos os pontos marcados nela?')) { const cp = S.curPlan, paths = cp ? [cp.path, ...(cp.files || []).map(x => x.path)].filter(Boolean) : []; const { error } = await sb.from('floorplans').delete().eq('id', d.delplan); if (!error && paths.length) await sb.storage.from('documents').remove(paths); if (error) toast('Não foi possível excluir.', 1); else { toast('Planta excluída.'); location.hash = S.scope ? '#res/' + S.scope + '/pl' : '#pl'; } }
+  if (d.pledit && S.curPlan) openPlEdit(S.curPlan);
+  if (d.dl) { const [dp, dn] = d.dl.split('|'); const { data, error } = await sb.storage.from('documents').createSignedUrl(dp, 60, { download: dn }); if (error) toast('Não foi possível baixar.', 1); else { const a = document.createElement('a'); a.href = data.signedUrl; a.download = dn; document.body.appendChild(a); a.click(); a.remove(); } }
   if (d.open) { const { data, error } = await sb.storage.from('documents').createSignedUrl(d.open, 60); error ? toast('Não foi possível abrir.', 1) : window.open(data.signedUrl, '_blank', 'noopener'); }
   if (d.done) {
     const t = S.rows.maintenance_tasks.find(x => x.id === d.done), today = new Date().toISOString().slice(0, 10), nx = t.interval_months ? addMonths(today, +t.interval_months).toISOString().slice(0, 10) : null;
@@ -977,7 +1025,7 @@ document.addEventListener('submit', async e => {
   }
   else if (id === 'add:docs') { const file = f.file.files[0]; delete o.file; const path = `${rid}/${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('documents').insert({ ...o, path }); }
   else if (id === 'add:dc' || id === 'edit:dc') { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await saveDc(f, o, op); if (b) b.disabled = false; }
-  else if (id === 'add:pl') { const file = f.file.files[0], path = `${rid}/planta_${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path }); }
+  else if (id === 'add:pl' || id === 'edit:pl') { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await savePl(f, o, op); if (b) b.disabled = false; }
   else if (id === 'add:pt') r = await sb.from('plan_points').insert({ ...o, residence_id: S.curPlan.residence_id, floorplan_id: S.curPlan.id, x: S.pend.x, y: S.pend.y });
   else if (MEDIA_T[k] && (op === 'add' || op === 'edit')) { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await saveBld(f, o, op, k); if (b) b.disabled = false; }
   else if (op === 'add') r = await sb.from(k).insert(o);
