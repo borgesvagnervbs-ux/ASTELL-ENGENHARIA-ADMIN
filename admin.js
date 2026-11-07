@@ -26,7 +26,7 @@ const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x
 
 // ---------- ícones
 const ico = d => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
-const IC = { drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15', prefeitura: 'M3 21h18|M5 10v11|M9 10v11|M15 10v11|M19 10v11|M2 10l10-7 10 7z', banco: 'M2 6h20v12H2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M6 12h.01|M18 12h.01', capacete: 'M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5|M14 6a6 6 0 0 1 6 6v3|M4 15v-3a6 6 0 0 1 6-6|M3 15h18v4H3z', regua: 'M3 17L17 3l4 4L7 21z|M14 6l2 2|M11 9l2 2|M8 12l2 2|M5 15l2 2', compasso: 'M12 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z|M11 5.5L5 21|M13 5.5L19 21|M8 15h8', chart: 'M3 3v18h18|M8 17v-6|M13 17V7|M18 17v-4', star: 'M12 2l3 7 7 .6-5.3 4.6 1.7 7.3L12 17.8 5.6 21.5l1.7-7.3L2 9.6 9 9z', dbase: 'M12 8c4.4 0 8-1.1 8-2.5S16.4 3 12 3 4 4.1 4 5.5 7.6 8 12 8z|M4 5.5v6C4 12.9 7.6 14 12 14s8-1.1 8-2.5v-6|M4 11.5v6C4 18.9 7.6 20 12 20s8-1.1 8-2.5v-6' };
+const IC = { drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15', prefeitura: 'M3 21h18|M5 10v11|M9 10v11|M15 10v11|M19 10v11|M2 10l10-7 10 7z', banco: 'M2 6h20v12H2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M6 12h.01|M18 12h.01', capacete: 'M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5|M14 6a6 6 0 0 1 6 6v3|M4 15v-3a6 6 0 0 1 6-6|M3 15h18v4H3z', regua: 'M3 17L17 3l4 4L7 21z|M14 6l2 2|M11 9l2 2|M8 12l2 2|M5 15l2 2', estrada: 'M4 21L8 3|M20 21L16 3|M12 4v3|M12 11v3|M12 18v3', compasso: 'M12 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z|M11 5.5L5 21|M13 5.5L19 21|M8 15h8', chart: 'M3 3v18h18|M8 17v-6|M13 17V7|M18 17v-4', star: 'M12 2l3 7 7 .6-5.3 4.6 1.7 7.3L12 17.8 5.6 21.5l1.7-7.3L2 9.6 9 9z', dbase: 'M12 8c4.4 0 8-1.1 8-2.5S16.4 3 12 3 4 4.1 4 5.5 7.6 8 12 8z|M4 5.5v6C4 12.9 7.6 14 12 14s8-1.1 8-2.5v-6|M4 11.5v6C4 18.9 7.6 20 12 20s8-1.1 8-2.5v-6' };
 const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 
 // ---------- menus (o primeiro é a tela inicial)
@@ -56,7 +56,7 @@ const T = {
     row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> <span class="badge ${late ? 'bad' : st === 'Concluída' ? 'ok' : ''}">${late ? 'Atrasada' : st}</span><p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
   equipment: { label: 'Equipamentos', f: [['name', 'Nome'], ['category', 'Categoria'], ['maker', 'Fabricante'], ['model', 'Modelo'], ['serial', 'Nº de série'], ['location', 'Localização']],
     row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.category)} · ${esc(r.location)}</span><p>${esc(r.maker)} ${esc(r.model)} ${r.serial ? '· Série ' + esc(r.serial) : ''}</p>` },
-  building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais']], ['title', 'Título'], ['description', 'Descrição', 'textarea', false], ['highlights', 'Destaques (um por linha)', 'textarea']],
+  building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais', 'Infraestrutura']], ['title', 'Título'], ['description', 'Descrição', 'textarea', false], ['highlights', 'Destaques (um por linha)', 'textarea']],
     row: r => `<b>${esc(r.title)}</b> <span class="badge">${esc(r.category)}</span><p class="mute">${esc(r.description)}</p><p>${esc((r.highlights || '').split('\n').filter(Boolean).join(' · '))}</p>` },
 };
 const fieldsFor = k => k === 'res' ? RES_F : k === 'documents' ? DOC_F : T[k].f;
@@ -169,17 +169,40 @@ function openOwnerEdit(id, opts = {}) {
   modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label>${telField('phone', 'Celular', c.phone || '')}${telField('whatsapp', 'WhatsApp', c.whatsapp || '')}${opts.fromRes ? '' : resMultiHtml(ids)}`, `data-form="edit:own" data-id="${id}"`, 'Salvar');
 }
 function presetCat(cat) { return `<div class="field"><span class="lbl">Tipo de construção</span><div class="presetres"><b>${cat[0]}</b></div><input type="hidden" name="category" value="${cat[2]}"></div>`; }
+// imagens e vídeos nos cadastros da Construção (Cloudinary; os endereços ficam na coluna "media" de building_items)
+const bldMediaInput = row => !CLOUD_OK ? cloudMissing() : (row ? `<div class="field"><span class="lbl">Imagens e vídeos atuais</span><ul class="curfiles">${(row.media || []).map((x, i) => `<li><span class="fname">${x.type === 'video' ? 'Vídeo' : 'Imagem'} · ${esc(x.name || 'arquivo')}</span><label class="chk"><input type="checkbox" name="rm_media" value="${i}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '') + `<label>${row ? 'Adicionar mais imagens e vídeos' : 'Imagens e vídeos'} (opcional; pode escolher vários)<input name="media" type="file" accept="image/*,video/*" multiple></label><p class="mute">Imagens até 10 MB e vídeos até 100 MB.</p>`;
+const bldThumbs = r => (r.media || []).length ? `<div class="bthumbs">${r.media.map((x, i) => `<button type="button" class="bthumb" data-bm="${r.id}:${i}" aria-label="Ampliar ${x.type === 'video' ? 'vídeo' : 'imagem'}"><img src="${esc(x.type === 'video' ? vposter(x.url) : cld(x.url, 200))}" alt="" loading="lazy" draggable="false">${x.type === 'video' ? '<span class="playbadge">▶</span>' : ''}</button>`).join('')}</div>` : '';
+async function saveBld(f, o, op) {
+  const picked = f.media ? [...f.media.files] : [];
+  for (const x of picked) {
+    const vid = /^video\//.test(x.type), img = /^image\//.test(x.type);
+    if (!img && !vid) return { error: { message: `"${x.name}" não é imagem nem vídeo.` } };
+    if (x.size > (vid ? 100 : 10) * 1048576) return { error: { message: `"${x.name}" é maior que ${vid ? 100 : 10} MB.` } };
+  }
+  const { media, rm_media, ...fields } = o, row = op === 'edit' ? (S.rows.building_items || []).find(x => x.id === f.dataset.id) : null;
+  const res = S.res.find(x => x.id === (op === 'add' ? fields.residence_id : row && row.residence_id)), up = [];
+  const folder = 'astell-home/' + String(res ? res.code : 'sem-codigo').replace(/[^\w-]/g, '_') + '/construcao';
+  try {
+    for (let i = 0; i < picked.length; i++) {
+      toast(`Enviando ${i + 1} de ${picked.length}…`);
+      const j = await cldPost(picked[i], folder); up.push({ url: j.secure_url, type: /^video\//.test(picked[i].type) ? 'video' : 'image', name: picked[i].name, public_id: j.public_id });
+    }
+  } catch (e) { return { error: { message: 'falha no envio de arquivo (' + e.message + ')' } }; }
+  if (op === 'add') return sb.from('building_items').insert({ ...fields, media: up });
+  const rm = [...f.querySelectorAll('[name=rm_media]:checked')].map(i => +i.value);
+  return sb.from('building_items').update({ ...fields, media: [...((row && row.media) || []).filter((x, i) => !rm.includes(i)), ...up] }).eq('id', f.dataset.id);
+}
 function openAdd(k) {
   if (k.startsWith('dc:')) return openDc(k.slice(3));
   if (ADD[k]) return ADD[k]();
   const cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;   // dentro de Estruturas/Materiais/Sistemas o tipo já vem definido
-  modal('Adicionar — ' + (cat ? cat[0] : T[k].label), resField() + (cat ? presetCat(cat) : '') + T[k].f.filter(f => !(cat && f[0] === 'category')).map(f => fld(f)).join(''), `data-form="add:${k}"`);
+  modal('Adicionar — ' + (cat ? cat[0] : T[k].label), resField() + (cat ? presetCat(cat) : '') + T[k].f.filter(f => !(cat && f[0] === 'category')).map(f => fld(f)).join('') + (k === 'building_items' ? bldMediaInput() : ''), `data-form="add:${k}"`);
 }
 function openEdit(k, id, opts = {}) {
   if (k === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; return modal('Editar cadastro', resFormBody(r, (S.ownersByRes[id] || []).map(o => o.id), !!opts.fromOwner), `data-form="edit:res" data-id="${id}"`, 'Salvar alterações'); }
   if (k === 'dc') { const dr = (S.rows.doc_records || []).find(r => r.id === id); return dr && openDc(Object.keys(DCATS).find(x => DCATS[x].kind === dr.kind), dr); }
   const row = (S.rows[k] || []).find(r => r.id === id); if (!row) return;
-  modal('Editar', `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` + fieldsFor(k).map(f => fld(f, row)).join(''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
+  modal('Editar', `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` + fieldsFor(k).map(f => fld(f, row)).join('') + (k === 'building_items' ? bldMediaInput(row) : ''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
 }
 
 
@@ -284,8 +307,8 @@ function lbShow() {
   lb.innerHTML = `<button type="button" class="lbx" data-lbx aria-label="Fechar">×</button>${L.list.length > 1 ? '<button type="button" class="lbn l" data-lbn="-1" aria-label="Mídia anterior">‹</button><button type="button" class="lbn r" data-lbn="1" aria-label="Próxima mídia">›</button>' : ''}<div class="lbbox">${media}</div><div class="lbcap">${L.i + 1} / ${L.list.length} · ${isVid(x) ? 'Vídeo' : 'Imagem'}</div>`;
 }
 const lbClose = () => { const lb = $('#lb'); lb.hidden = true; lb.innerHTML = ''; };
-function lbOpen(id) {
-  const list = mediaShown(), i = list.findIndex(x => x.id === id); if (i < 0) return;
+function lbOpen(id) { const list = mediaShown(), i = list.findIndex(x => x.id === id); if (i >= 0) lbOpenList(list, i); }
+function lbOpenList(list, i) {
   const lb = $('#lb'), novo = lb.hidden; S.lb = { list, i }; lbShow();
   if (novo) { lb.classList.add('fresh'); setTimeout(() => lb.classList.remove('fresh'), 600); }   // por 0,6 s ignora cliques (evita fechar ou dar play sem querer num duplo clique)
 }
@@ -335,9 +358,9 @@ async function resList() {
 }
 const contactLine = c => `${c.phone ? `<span class="mute meta">Celular: ${esc(c.phone)}</span>` : ''}${c.whatsapp ? `<span class="mute meta">WhatsApp: <a class="golda" href="https://wa.me/55${telDigits(c.whatsapp)}" target="_blank" rel="noopener">${esc(c.whatsapp)}</a></span>` : ''}`;
 const SECTIONS = { docs: ['Documentos', 'doc'], media: ['Mídias', 'image'], eq: ['Equipamentos', 'layers'], gar: ['Garantias', 'shield'], man: ['Manutenções', 'wrench'], ast: ['Assistências', 'phones'], bld: ['Construção', 'home'], pl: ['Plantas Técnicas', 'map'] };
-const BCATS = { est: ['Estruturas', 'home', 'Estrutura'], mat: ['Materiais', 'layers', 'Materiais'], sis: ['Sistemas', 'drop', 'Sistemas'] };   // [rótulo do card, ícone, valor gravado no banco]
+const BCATS = { est: ['Estruturas', 'home', 'Estrutura'], mat: ['Materiais', 'layers', 'Materiais'], sis: ['Sistemas', 'drop', 'Sistemas'], inf: ['Infraestrutura', 'estrada', 'Infraestrutura'] };   // [rótulo do card, ícone, valor gravado no banco]
 const bldTrail = () => S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], ['Construção', '#res/' + S.scope + '/bld'], [BCATS[S.cat][0]]] : [['Painel', '#res'], ['Construção', '#bld'], [BCATS[S.cat][0]]];
-function bldHub() {   // três cards: Estruturas, Materiais e Sistemas (no menu geral e dentro da residência)
+function bldHub() {   // quatro cards: Estruturas, Materiais, Sistemas e Infraestrutura (no menu geral e dentro da residência)
   const base = S.scope ? `#res/${S.scope}/bld` : '#bld';
   view.innerHTML = head('Construção', 'building_items') + `<div class="modgrid">${Object.entries(BCATS).map(([k, [l, i]]) => `<a class="card rescard modcard" href="${base}/${k}">${ico(IC[i])}<b>${l}</b></a>`).join('')}</div>`;
 }
@@ -379,7 +402,7 @@ async function listPage(k) {
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
-    return { hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
+    return { hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${k === 'building_items' ? bldThumbs(r) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
   }) });
   view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
@@ -759,7 +782,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-bm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -783,6 +806,7 @@ document.addEventListener('click', async e => {
   if (d.ownunlink) { const box = el.closest('.ownpick'), h = box.querySelector('[name=owner_ids]'); h.value = h.value.split(',').filter(x => x && x !== d.ownunlink).join(','); refreshOwnPick(box); }
   if (d.ownedit) { const box = el.closest('.ownpick'); pushModal(() => refreshOwnPick(box)); openOwnerEdit(d.ownedit, { fromRes: true }); }
   if (d.gal) { const [, id] = d.gal.split(':'), t = S.rows.maintenance_tasks.find(x => x.id === id); S.gal = { kind: 'maintenance', refId: id, resId: t.residence_id, title: t.name }; gallery(); }
+  if (d.bm) { const [bid, bi] = d.bm.split(':'), row = (S.rows.building_items || []).find(x => x.id === bid); if (row) lbOpenList((row.media || []).map((x, j) => ({ id: bid + j, url: x.url, media_type: x.type === 'video' ? 'video' : 'image' })), +bi); }
   if (d.upl) openUpload(d.upl.split(':')[1]);
   if (d.pickfiles !== undefined) $('#fileIn').click();
   if (d.unstage !== undefined) { S.up.files.splice(+d.unstage, 1); renderStage(); }
@@ -936,6 +960,7 @@ document.addEventListener('submit', async e => {
   else if (id === 'add:dc' || id === 'edit:dc') { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await saveDc(f, o, op); if (b) b.disabled = false; }
   else if (id === 'add:pl') { const file = f.file.files[0], path = `${rid}/planta_${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path }); }
   else if (id === 'add:pt') r = await sb.from('plan_points').insert({ ...o, residence_id: S.curPlan.residence_id, floorplan_id: S.curPlan.id, x: S.pend.x, y: S.pend.y });
+  else if (k === 'building_items' && (op === 'add' || op === 'edit')) { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await saveBld(f, o, op); if (b) b.disabled = false; }
   else if (op === 'add') r = await sb.from(k).insert(o);
   else if (op === 'edit') r = await sb.from(k).update(o).eq('id', f.dataset.id);
   if (r && r.error) return toast('Não foi possível salvar: ' + r.error.message, 1);
