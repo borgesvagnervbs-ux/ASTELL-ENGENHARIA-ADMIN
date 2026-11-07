@@ -220,3 +220,30 @@ p.reshead{font-weight:400}
 @media print{#lb{display:none!important}}
 
 #lb.fresh *{pointer-events:none}
+
+/* ---- documentos (pastas), logo, relatórios e backup */
+.logoimg{display:block;height:34px;width:auto;max-width:200px;object-fit:contain;margin:0 auto}
+.dfiles{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:8px;max-width:100%}
+.dfiles .filelink{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;color:var(--gold);min-height:30px;margin:0}
+.curfiles{list-style:none;margin:0;padding:0}
+.curfiles li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:var(--bg)}
+.curfiles .fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}
+label.chk{display:flex;align-items:center;gap:8px;margin:6px 0;color:var(--ink);cursor:pointer}
+label.chk input{width:auto;flex:none}
+.curfiles label.chk{margin:0;font-size:.85rem;color:var(--mute);flex:none}
+.logocard form{margin-top:10px}
+.logoprev{display:flex;align-items:center;justify-content:center;min-height:120px;padding:16px;margin:6px 0 14px;border:1px dashed var(--line);border-radius:12px;background:var(--bg)}
+.logoprev img{max-width:100%;max-height:120px;object-fit:contain}
+.twocol{display:grid;grid-template-columns:1fr;gap:0 12px}
+@media(min-width:560px){.twocol{grid-template-columns:1fr 1fr}}
+.repform select{width:100%}
+.repres span.mute{display:block}
+.tblwrap{overflow:auto;margin-top:12px;border:1px solid var(--line);border-radius:10px;max-height:70vh}
+table.rep{border-collapse:collapse;width:100%;font-size:.85rem}
+table.rep th,table.rep td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table.rep th{position:sticky;top:0;background:#16283a;color:var(--gold);font-weight:600}
+table.rep tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
+.bkbtns{flex-direction:column;align-items:stretch;gap:8px}
+.bkbtns button{margin:0}
+.bkbtns button:disabled{opacity:.55;cursor:wait}
+@media(min-width:620px){.bkbtns{flex-direction:row}}

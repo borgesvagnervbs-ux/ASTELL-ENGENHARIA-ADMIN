@@ -12,7 +12,7 @@ const fail = m => { view.innerHTML = '<div class="card" style="margin:16px"><b>N
 if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo config.js e preencha SUPABASE_URL e SUPABASE_KEY.'); throw new Error('Supabase não configurado'); }
 addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
 
-const S = { profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, pp: 10, pages: {}, noun: null, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
+const S = { logo: null, rep: null, repf: null, profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, pp: 10, pages: {}, noun: null, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
 // Aceita CLOUDINARY_UPLOAD_PRESET ou CLOUDINARY_PRESET no config.js
 const CLD_NAME = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? String(CLOUDINARY_CLOUD_NAME).trim() : '';
 const CLD_PRESET = typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' ? String(CLOUDINARY_UPLOAD_PRESET).trim() : (typeof CLOUDINARY_PRESET !== 'undefined' ? String(CLOUDINARY_PRESET).trim() : '');
@@ -26,12 +26,11 @@ const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x
 
 // ---------- ícones
 const ico = d => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
-const IC = { drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15' };
+const IC = { drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15', prefeitura: 'M3 21h18|M5 10v11|M9 10v11|M15 10v11|M19 10v11|M2 10l10-7 10 7z', banco: 'M2 6h20v12H2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M6 12h.01|M18 12h.01', capacete: 'M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5|M14 6a6 6 0 0 1 6 6v3|M4 15v-3a6 6 0 0 1 6-6|M3 15h18v4H3z', regua: 'M3 17L17 3l4 4L7 21z|M14 6l2 2|M11 9l2 2|M8 12l2 2|M5 15l2 2', compasso: 'M12 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z|M11 5.5L5 21|M13 5.5L19 21|M8 15h8', chart: 'M3 3v18h18|M8 17v-6|M13 17V7|M18 17v-4', star: 'M12 2l3 7 7 .6-5.3 4.6 1.7 7.3L12 17.8 5.6 21.5l1.7-7.3L2 9.6 9 9z', dbase: 'M12 8c4.4 0 8-1.1 8-2.5S16.4 3 12 3 4 4.1 4 5.5 7.6 8 12 8z|M4 5.5v6C4 12.9 7.6 14 12 14s8-1.1 8-2.5v-6|M4 11.5v6C4 18.9 7.6 20 12 20s8-1.1 8-2.5v-6' };
 const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 
 // ---------- menus (o primeiro é a tela inicial)
-const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user'], ['docs', 'Documentos', 'doc'], ['eq', 'Equipamentos', 'layers'], ['gar', 'Garantias', 'shield'], ['man', 'Manutenções', 'wrench'], ['ast', 'Assistência', 'phones'], ['his', 'Histórico', 'clock'], ['ctt', 'Contatos', 'book'], ['bld', 'Construção', 'home'], ['qr', 'QR Codes', 'grid'], ['pl', 'Planta técnica', 'map']];
-const TABLE_OF = { eq: 'equipment', gar: 'warranties', man: 'maintenance_tasks', ctt: 'contacts', bld: 'building_items' };
+const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user'], ['docs', 'Documentos', 'doc'], ['eq', 'Equipamentos', 'layers'], ['gar', 'Garantias', 'shield'], ['man', 'Manutenções', 'wrench'], ['ast', 'Assistência', 'phones'], ['bld', 'Construção', 'home'], ['pl', 'Planta técnica', 'map'], ['rep', 'Relatórios', 'chart'], ['logo', 'Logo', 'star'], ['bk', 'Backup', 'dbase']];
 
 // ---------- dados e campos
 const addMonths = (d, m) => { const x = new Date(d + 'T00:00'); x.setMonth(x.getMonth() + m); return x; };
@@ -39,9 +38,6 @@ function wState(w) { const end = addMonths(w.start_date, w.months), days = (end 
 const DOC_CATS = ['Projeto arquitetônico', 'Projeto estrutural', 'Projeto elétrico', 'Projeto hidráulico', 'Projeto sanitário', 'Climatização', 'Cobertura', 'Memorial descritivo', 'Manuais', 'Notas e comprovantes', 'Termo de entrega', 'Garantia', 'Outros'];
 const STATUS = ['Recebida', 'Em análise', 'Aguardando informações', 'Agendada', 'Em atendimento', 'Concluída', 'Encerrada'];
 const PT_CATS = ['Elétrica', 'Hidráulica', 'Gás', 'Climatização', 'Estrutura', 'Paredes', 'Equipamentos'];
-const QR_T = { 'Minha casa': 'casa', 'Documentos e manuais': 'documentos', 'Equipamentos': 'equipamentos', 'Manutenção': 'manutencao', 'Planta técnica': 'planta', 'Assistência técnica': 'assistencia' };
-const TBL = { residences: 'Residência', documents: 'Documento', warranties: 'Garantia', maintenance_tasks: 'Manutenção', equipment: 'Equipamento', history_events: 'Evento do histórico', contacts: 'Contato', building_items: 'Item construtivo', images: 'Imagem', floorplans: 'Planta', plan_points: 'Ponto da planta', qr_codes: 'QR Code', service_requests: 'Assistência' };
-const ACT = { INSERT: 'criou', UPDATE: 'alterou', DELETE: 'excluiu' };
 
 const DEFREQ = ['system', 'name', 'description', 'months', 'start_date', 'event_date', 'title'];
 const fld = ([k, l, t = 'text', req], v = {}) => {
@@ -60,9 +56,6 @@ const T = {
     row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> <span class="badge ${late ? 'bad' : st === 'Concluída' ? 'ok' : ''}">${late ? 'Atrasada' : st}</span><p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
   equipment: { label: 'Equipamentos', f: [['name', 'Nome'], ['category', 'Categoria'], ['maker', 'Fabricante'], ['model', 'Modelo'], ['serial', 'Nº de série'], ['location', 'Localização']],
     row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.category)} · ${esc(r.location)}</span><p>${esc(r.maker)} ${esc(r.model)} ${r.serial ? '· Série ' + esc(r.serial) : ''}</p>` },
-  history_events: { label: 'Histórico', f: [['event_date', 'Data', 'date'], ['category', 'Categoria'], ['description', 'Descrição', 'textarea']], row: () => '' },
-  contacts: { label: 'Contatos', f: [['name', 'Nome / empresa'], ['specialty', 'Especialidade'], ['phone', 'Telefone'], ['whatsapp', 'WhatsApp'], ['email', 'E-mail'], ['hours', 'Horário de atendimento'], ['notes', 'Instruções', 'textarea']],
-    row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.specialty)}</span><p>${esc(r.phone)} ${esc(r.whatsapp)} ${esc(r.email)}</p><span class="mute">${esc(r.hours)} ${esc(r.notes)}</span>` },
   building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais']], ['title', 'Título'], ['description', 'Descrição', 'textarea', false], ['highlights', 'Destaques (um por linha)', 'textarea']],
     row: r => `<b>${esc(r.title)}</b> <span class="badge">${esc(r.category)}</span><p class="mute">${esc(r.description)}</p><p>${esc((r.highlights || '').split('\n').filter(Boolean).join(' · '))}</p>` },
 };
@@ -164,7 +157,6 @@ const ADD = {
   res: noOwners => modal('Nova residência', resFormBody({}, [], noOwners) + (noOwners ? '<p class="mute">Ao salvar o proprietário, ele será vinculado a esta residência.</p>' : ''), 'data-form="add:res"', 'Criar residência'),
   own: () => openOwnerAdd(false),
   docs: () => modal('Enviar documento', resField() + '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f)).join(''), 'data-form="add:docs"', 'Enviar'),
-  qr: () => modal('Novo QR Code', resSelect() + `<label>Nome da etiqueta<input name="label" required></label>${fld(['target', 'Ao ler, abre', Object.keys(QR_T)])}`, 'data-form="add:qr"', 'Gerar'),
   pl: () => modal('Enviar planta (imagem PNG ou JPG)', resField() + '<label>Título<input name="title" required></label><label>Imagem<input name="file" type="file" accept="image/*" required></label>', 'data-form="add:pl"', 'Enviar'),
 };
 const telField = (name, label, v = '') => `<label>${label}<input name="${name}" class="tel" type="tel" inputmode="tel" placeholder="(00) 00000-0000" maxlength="15" value="${esc(v)}"></label>`;
@@ -178,12 +170,14 @@ function openOwnerEdit(id, opts = {}) {
 }
 function presetCat(cat) { return `<div class="field"><span class="lbl">Tipo de construção</span><div class="presetres"><b>${cat[0]}</b></div><input type="hidden" name="category" value="${cat[2]}"></div>`; }
 function openAdd(k) {
+  if (k.startsWith('dc:')) return openDc(k.slice(3));
   if (ADD[k]) return ADD[k]();
   const cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;   // dentro de Estruturas/Materiais/Sistemas o tipo já vem definido
   modal('Adicionar — ' + (cat ? cat[0] : T[k].label), resField() + (cat ? presetCat(cat) : '') + T[k].f.filter(f => !(cat && f[0] === 'category')).map(f => fld(f)).join(''), `data-form="add:${k}"`);
 }
 function openEdit(k, id, opts = {}) {
   if (k === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; return modal('Editar cadastro', resFormBody(r, (S.ownersByRes[id] || []).map(o => o.id), !!opts.fromOwner), `data-form="edit:res" data-id="${id}"`, 'Salvar alterações'); }
+  if (k === 'dc') { const dr = (S.rows.doc_records || []).find(r => r.id === id); return dr && openDc(Object.keys(DCATS).find(x => DCATS[x].kind === dr.kind), dr); }
   const row = (S.rows[k] || []).find(r => r.id === id); if (!row) return;
   modal('Editar', `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` + fieldsFor(k).map(f => fld(f, row)).join(''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
 }
@@ -369,11 +363,11 @@ async function resSection(id, sub) {
 // ---------- páginas dos módulos (independentes: mostram tudo, por ordem de cadastro, de todas as residências)
 const crumbs = items => `<div class="crumbs" role="navigation" aria-label="Caminho de navegação"><ol>${items.map(([l, h], i) => i === items.length - 1 ? `<li aria-current="page">${esc(l)}</li>` : `<li><a href="${h}">${esc(l)}</a></li>`).join('')}</ol></div>`;
 const scoped = q => S.scope ? q.eq('residence_id', S.scope) : q;   // dentro de uma residência: só o que é dela
-const head = (t, add, trail) => { if (S.scope && S.sub && !S.cat) t = SECTIONS[S.sub][0]; return crumbs(trail || (S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], [t]] : [['Painel', '#res'], [t]])) + `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`; };
+const head = (t, add, trail) => { if (S.scope && S.sub && !S.cat && !S.dcat) t = SECTIONS[S.sub][0]; return crumbs(trail || (S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], [t]] : [['Painel', '#res'], [t]])) + `<div class="pagehead"><div><h2>${t}</h2></div>${add ? `<button class="add" data-add="${add}" aria-label="Adicionar" title="Adicionar">+</button>` : ''}</div>`; };
 const acts = (...b) => `<div class="acts">${b.filter(Boolean).join('')}</div>`;
 const visBtn = (k, r) => `<button class="link" data-vis="${k}:${r.id}">${r.visible ? 'Ocultar do cliente' : 'Mostrar ao cliente'}</button>`;
 const hid = r => r.visible === false ? '<p><span class="badge">Oculto do cliente</span></p>' : '';
-const TITLE = { warranties: r => r.system, maintenance_tasks: r => r.name, equipment: r => r.name, contacts: r => r.name, building_items: r => r.title };
+const TITLE = { warranties: r => r.system, maintenance_tasks: r => r.name, equipment: r => r.name, building_items: r => r.title };
 
 async function listPage(k) {
   const c = T[k], cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;
@@ -403,6 +397,265 @@ async function plantaDetail(id) {
     ((pts || []).map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>');
 }
 
+// ---------- Documentos: seis pastas (cards). "Documentos gerais" é o que já existia; as outras cinco aceitam vários PDFs e imagens, com data
+const DOC_FILE_MAX = 25;   // MB por arquivo
+const DCATS = {
+  geral: { l: 'Documentos gerais', i: 'doc' },
+  pref: { l: 'Prefeitura', i: 'prefeitura', kind: 'prefeitura', f: [
+    ['tipo', 'Tipo de documento', ['Alvará de construção', 'Habite-se', 'Alvará de reforma', 'Certidão de regularização', 'Averbação', 'Taxas e tributos', 'Licença ambiental', 'Outros']],
+    ['processo', 'Nº do protocolo / processo'], ['orgao', 'Órgão ou setor emissor'], ['validade', 'Validade', 'date'],
+    ['situacao', 'Situação', ['Em análise', 'Aprovado', 'Pendente de exigências', 'Indeferido', 'Arquivado']]] },
+  banc: { l: 'Bancos', i: 'banco', kind: 'bancos', f: [
+    ['instituicao', 'Banco / instituição financeira'],
+    ['tipo', 'Tipo de documento', ['Contrato de financiamento', 'Avaliação do imóvel', 'Liberação / medição de parcela', 'Seguro', 'Certidão', 'Comprovante', 'Outros']],
+    ['contrato', 'Nº do contrato'], ['valor', 'Valor (R$)'], ['vencimento', 'Vencimento / validade', 'date']] },
+  cons: { l: 'Construtoras', i: 'capacete', kind: 'construtoras', f: [
+    ['empresa', 'Construtora / empresa'], ['cnpj', 'CNPJ'],
+    ['tipo', 'Tipo de documento', ['Contrato', 'ART / RRT', 'Orçamento', 'Medição', 'Cronograma', 'Diário de obra', 'Nota fiscal', 'Laudo', 'Outros']],
+    ['responsavel', 'Responsável técnico'], ['numero', 'Nº do contrato / ART'], ['valor', 'Valor (R$)']] },
+  plan: { l: 'Plantas Técnicas', i: 'regua', kind: 'plantas', f: [
+    ['disciplina', 'Disciplina', ['Arquitetônica', 'Estrutural', 'Elétrica', 'Hidráulica', 'Sanitária', 'Gás', 'Climatização', 'Fundação', 'Cobertura', 'Outras']],
+    ['prancha', 'Nº da prancha'], ['revisao', 'Revisão'], ['escala', 'Escala (ex.: 1:50)'], ['projetista', 'Projetista / responsável']] },
+  arq: { l: 'Arquitetura', i: 'compasso', kind: 'arquitetura', f: [
+    ['tipo', 'Tipo de documento', ['Projeto arquitetônico', 'Projeto legal', 'Projeto executivo', 'Memorial descritivo', 'Estudo preliminar', 'Detalhamento', 'Imagens 3D / maquete', 'Outros']],
+    ['etapa', 'Etapa', ['Estudo preliminar', 'Anteprojeto', 'Projeto legal', 'Projeto executivo', 'Obra', 'Como construído']],
+    ['escritorio', 'Escritório / arquiteto responsável'], ['registro', 'Nº do CAU / RRT'], ['versao', 'Versão / revisão']] },
+};
+const dcLabel = kind => (Object.values(DCATS).find(c => c.kind === kind) || { l: kind }).l;
+const dcTrail = c => S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], ['Documentos', '#res/' + S.scope + '/docs'], [c.l]] : [['Painel', '#res'], ['Documentos', '#docs'], [c.l]];
+function docsHub() {   // seis cards (no menu geral e dentro da residência)
+  const base = S.scope ? `#res/${S.scope}/docs` : '#docs';
+  view.innerHTML = head('Documentos', null) + `<div class="modgrid">${Object.entries(DCATS).map(([k, c]) => `<a class="card rescard modcard" href="${base}/${k}">${ico(IC[c.i])}<b>${c.l}</b></a>`).join('')}</div>`;
+}
+function openDc(kind, row) {   // cadastro (e edição) de um registro das cinco pastas
+  const c = DCATS[kind], ex = (row && row.extra) || {};
+  const v = row ? { title: row.title, doc_date: row.doc_date, notes: row.notes, ...Object.fromEntries(Object.entries(ex).map(([k, x]) => ['x_' + k, x])) } : {};
+  const fields = [['title', 'Título'], ['doc_date', 'Data', 'date', true], ...c.f.map(([k, l, t]) => ['x_' + k, l, t || 'text', false]), ['notes', 'Observações', 'textarea', false]];
+  const atuais = row ? `<div class="field"><span class="lbl">Arquivos atuais</span><ul class="curfiles">${(row.files || []).map(x => `<li><span class="fname">${esc(x.name)}</span><label class="chk"><input type="checkbox" name="rm_files" value="${esc(x.path)}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '';
+  const arq = `<label>${row ? 'Adicionar mais arquivos' : 'Arquivos'} (PDF ou imagens${row ? '' : '; pode escolher vários'})<input name="files" type="file" accept="application/pdf,image/*" multiple ${row ? '' : 'required'}></label><p class="mute">PDF e imagens, até ${DOC_FILE_MAX} MB cada.</p>`;
+  modal((row ? 'Editar — ' : 'Adicionar — ') + c.l, (row ? `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` : resField()) + fields.map(f => fld(f, v)).join('') + atuais + arq,
+    `data-form="${row ? 'edit' : 'add'}:dc" data-kind="${kind}"${row ? ` data-id="${row.id}" data-rid="${row.residence_id}"` : ''}`, row ? 'Salvar alterações' : 'Salvar');
+}
+async function dcList(key) {
+  const c = DCATS[key]; await loadOwners();
+  const { data, error } = await scoped(sb.from('doc_records').select('*').eq('kind', c.kind)).order('doc_date', { ascending: false });
+  if (error) { view.innerHTML = head(c.l, null, dcTrail(c)) + '<p class="empty">Rode o schema_v9.sql no Supabase para habilitar esta pasta.</p>'; return; }
+  S.rows.doc_records = data;
+  setItems({ mlist: data.map(d => {
+    const e = d.extra || {}, lines = c.f.filter(([k]) => e[k]).map(([k, l, t]) => `<span class="mute meta">${l}: ${esc(t === 'date' ? fmt(e[k]) : e[k])}</span>`).join('');
+    const files = (d.files || []).map(x => `<button type="button" class="link filelink" data-open="${esc(x.path)}" title="Abrir">${x.type === 'application/pdf' ? 'PDF' : 'Imagem'} · ${esc(x.name)}</button>`).join('');
+    return { hay: hayOf(d.residence_id, d.title, ...Object.values(e)), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute meta">Data: ${fmt(d.doc_date)}</span>${lines}${d.notes ? `<p class="mute">${esc(d.notes)}</p>` : ''}<div class="dfiles">${files}</div>${acts(`<button class="link" data-edit="dc:${d.id}">Editar</button>`, `<button class="link danger" data-deldc="${d.id}">Excluir</button>`)}</div>` };
+  }) }, { mlist: `Nada cadastrado em ${c.l}. Toque em + para adicionar.` });
+  view.innerHTML = head(c.l, 'dc:' + key, dcTrail(c)) + SHELL; paintItems();
+}
+async function saveDc(f, o, op) {   // envia os arquivos ao Storage e grava o registro; devolve { error } se algo falhar
+  const kind = f.dataset.kind, c = DCATS[kind], picked = [...f.files.files], store = sb.storage.from('documents');
+  for (const x of picked) {
+    if (!(x.type === 'application/pdf' || /^image\//.test(x.type))) return { error: { message: `"${x.name}" não é PDF nem imagem.` } };
+    if (x.size > DOC_FILE_MAX * 1048576) return { error: { message: `"${x.name}" é maior que ${DOC_FILE_MAX} MB.` } };
+  }
+  const rid = op === 'add' ? o.residence_id : f.dataset.rid, extra = {};
+  c.f.forEach(([k]) => { if (o['x_' + k]) extra[k] = o['x_' + k]; });
+  const base = { title: o.title, doc_date: o.doc_date, notes: o.notes || null, extra };
+  const up = [], undo = () => up.length ? store.remove(up.map(x => x.path)) : null;
+  try {
+    for (let i = 0; i < picked.length; i++) {
+      const x = picked[i], path = `${rid}/${c.kind}/${Date.now()}_${i}_${x.name.replace(/[^\w.-]/g, '_')}`;
+      const r = await store.upload(path, x, { contentType: x.type }); if (r.error) throw r.error;
+      up.push({ path, name: x.name, type: x.type, size: x.size });
+    }
+  } catch (e) { await undo(); return { error: e }; }
+  if (op === 'add') { const r = await sb.from('doc_records').insert({ residence_id: rid, kind: c.kind, ...base, files: up }); if (r.error) await undo(); return r; }
+  const row = (S.rows.doc_records || []).find(x => x.id === f.dataset.id) || { files: [] };
+  const rm = [...f.querySelectorAll('[name=rm_files]:checked')].map(i => i.value), keep = (row.files || []).filter(x => !rm.includes(x.path));
+  if (!keep.length && !up.length) return { error: { message: 'O registro precisa ter ao menos um arquivo.' } };
+  const r = await sb.from('doc_records').update({ ...base, files: [...keep, ...up] }).eq('id', f.dataset.id);
+  if (r.error) await undo(); else if (rm.length) await store.remove(rm);
+  return r;
+}
+async function docsGeral() {   // a lista que já existia
+  await loadOwners();
+  const { data } = await scoped(sb.from('documents').select('*')).order('created_at', { ascending: false }); S.rows.documents = data || [];
+  setItems({ mlist: (data || []).map(d => ({ hay: hayOf(d.residence_id, d.title), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>` })) });
+  view.innerHTML = head(DCATS.geral.l, 'docs', dcTrail(DCATS.geral)) + SHELL; paintItems();
+}
+
+// ---------- Logo (guardada no Cloudinary; o endereço fica em app_settings)
+async function loadLogo() {
+  try { const { data } = await sb.from('app_settings').select('value').eq('key', 'logo_url').maybeSingle(); S.logo = data && data.value ? data.value : null; } catch (e) { S.logo = null; }
+  applyLogo();
+}
+function applyLogo() {   // troca o texto ASTELL pela logo, mantendo a legenda embaixo
+  document.querySelectorAll('.logo').forEach(el => {
+    if (el.dataset.orig === undefined) el.dataset.orig = el.innerHTML;
+    const sp = (/<span[\s\S]*<\/span>/.exec(el.dataset.orig) || [''])[0];
+    el.innerHTML = S.logo ? `<img class="logoimg" src="${esc(cld(S.logo, 360))}" alt="Astell">${sp}` : el.dataset.orig;
+  });
+}
+async function cldPost(file, folder) {
+  const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLD_PRESET); fd.append('folder', folder);
+  const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLD_NAME}/auto/upload`, { method: 'POST', body: fd });
+  const j = await resp.json(); if (!resp.ok) throw new Error((j.error && j.error.message) || 'erro no envio'); return j;
+}
+async function logoPage() {
+  view.innerHTML = head('Logo', null) + `<div class="card logocard"><span class="lbl">Logo atual</span><div class="logoprev">${S.logo ? `<img src="${esc(cld(S.logo, 700))}" alt="Logo atual">` : '<span class="mute">Nenhuma logo cadastrada. O sistema mostra o texto ASTELL.</span>'}</div>` +
+    (CLOUD_OK ? '<form data-form="logo"><label>Enviar nova logo (PNG, JPG, SVG ou WEBP, até 5 MB)<input name="file" type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" required></label><button>Salvar logo</button></form>' : cloudMissing()) +
+    (S.logo ? acts('<button type="button" class="link danger" data-logodel>Remover logo</button>') : '') +
+    '<p class="notice">A logo aparece no topo e no menu do painel, no topo do aplicativo do cliente e nos relatórios impressos. Prefira uma imagem com fundo transparente e letras claras, porque o fundo do sistema é escuro. O arquivo antigo continua guardado no Cloudinary.</p></div>';
+}
+
+// ---------- Backup (dados em JSON e, opcionalmente, os documentos do Storage dentro de um ZIP)
+const BK_TABLES = ['residences', 'client_cpfs', 'cpf_residences', 'documents', 'doc_records', 'warranties', 'maintenance_tasks', 'equipment', 'building_items', 'floorplans', 'plan_points', 'images', 'service_requests', 'history_events', 'contacts', 'qr_codes', 'app_settings'];
+const BK_NOORDER = ['cpf_residences', 'app_settings'];
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u8 => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zipBlob(entries) {   // ZIP simples (sem compressão), nomes em UTF-8; entries = [{ name, data: Uint8Array }]
+  const enc = new TextEncoder(), parts = [], cd = [], n = new Date();
+  const dt = (((n.getFullYear() - 1980) << 9) | ((n.getMonth() + 1) << 5) | n.getDate()) & 0xFFFF, tm = ((n.getHours() << 11) | (n.getMinutes() << 5) | (n.getSeconds() >> 1)) & 0xFFFF;
+  let off = 0, cdLen = 0;
+  for (const e of entries) {
+    const nm = enc.encode(e.name), crc = crc32(e.data), sz = e.data.length;
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(10, tm, true); h.setUint16(12, dt, true); h.setUint32(14, crc, true); h.setUint32(18, sz, true); h.setUint32(22, sz, true); h.setUint16(26, nm.length, true);
+    parts.push(h.buffer, nm, e.data);
+    const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(12, tm, true); c.setUint16(14, dt, true); c.setUint32(16, crc, true); c.setUint32(20, sz, true); c.setUint32(24, sz, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+    cd.push(c.buffer, nm); off += 30 + nm.length + sz; cdLen += 46 + nm.length;
+  }
+  const end = new DataView(new ArrayBuffer(22)); end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true); end.setUint32(12, cdLen, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...cd, end.buffer], { type: 'application/zip' });
+}
+function saveBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+const todayStr = () => { const n = new Date(); return isoOf(n.getFullYear(), n.getMonth(), n.getDate()); };
+async function bkData(withHash, say) {
+  const out = {}, missing = [];
+  for (const t of BK_TABLES) {
+    say(`Lendo os dados: ${t}…`); const rows = [];
+    for (let a = 0; ; a += 1000) {
+      let q = sb.from(t).select('*'); if (!BK_NOORDER.includes(t)) q = q.order('id');
+      const { data, error } = await q.range(a, a + 999);
+      if (error) { missing.push(t); break; } rows.push(...data); if (data.length < 1000) break;
+    }
+    out[t] = rows;
+  }
+  if (!withHash) (out.client_cpfs || []).forEach(r => { delete r.cpf_hash; });
+  return { meta: { sistema: 'Astell Home', gerado_em: new Date().toISOString(), formato: 1, cpf_hash_incluido: !!withHash, tabelas_nao_encontradas: missing }, ...out };
+}
+const bkPaths = d => [...new Set([...(d.documents || []).map(x => x.path), ...(d.floorplans || []).map(x => x.path), ...(d.doc_records || []).flatMap(x => (x.files || []).map(f => f.path))].filter(Boolean))];
+async function runBackup(full, withHash) {
+  const msg = $('#bkmsg'), say = t => { msg.textContent = t; }, btns = document.querySelectorAll('[data-bk]'); btns.forEach(b => b.disabled = true);
+  try {
+    const data = await bkData(withHash, say), json = JSON.stringify(data, null, 1), stamp = todayStr();
+    if (!full) saveBlob(new Blob([json], { type: 'application/json' }), `astell-backup-dados-${stamp}.json`);
+    else {
+      const paths = bkPaths(data), entries = [], falhas = [], enc = new TextEncoder();
+      for (let i = 0; i < paths.length; i++) {
+        say(`Baixando documentos: ${i + 1} de ${paths.length}…`);
+        const { data: blob, error } = await sb.storage.from('documents').download(paths[i]);
+        if (error || !blob) { falhas.push(paths[i]); continue; }
+        entries.push({ name: 'arquivos/' + paths[i], data: new Uint8Array(await blob.arrayBuffer()) });
+      }
+      const leia = `ASTELL HOME — BACKUP DE ${stamp}\n\ndados.json: todas as tabelas do sistema.\narquivos/: os documentos guardados no Supabase Storage (PDFs e imagens), com o mesmo caminho gravado nos dados.\nAs imagens e vídeos das residências ficam no Cloudinary: os endereços estão na tabela "images" do dados.json.\n${withHash ? '\nATENÇÃO: este backup contém o identificador protegido dos CPFs. Guarde em local seguro.\n' : '\nOs identificadores protegidos dos CPFs não foram incluídos.\n'}${falhas.length ? '\nArquivos que não puderam ser baixados:\n' + falhas.join('\n') + '\n' : ''}`;
+      say('Montando o arquivo ZIP…');
+      saveBlob(zipBlob([{ name: 'LEIAME.txt', data: enc.encode(leia) }, { name: 'dados.json', data: enc.encode(json) }, ...entries]), `astell-backup-completo-${stamp}.zip`);
+      if (falhas.length) toast(`${falhas.length} arquivo(s) não puderam ser baixados. Veja o LEIAME.txt.`, 1);
+    }
+    try { localStorage.setItem('astell_last_backup', new Date().toISOString()); } catch (e) { /* ok */ }
+    say('Backup gerado. Confira o arquivo baixado.'); toast('Backup gerado.');
+    const last = $('#bklast'); if (last) last.textContent = 'Último backup neste navegador: ' + new Date().toLocaleString('pt-BR');
+  } catch (e) { say(''); toast('Não foi possível gerar o backup: ' + (e.message || e), 1); }
+  btns.forEach(b => b.disabled = false);
+}
+function backupPage() {
+  let last = ''; try { const v = localStorage.getItem('astell_last_backup'); if (v) last = 'Último backup neste navegador: ' + new Date(v).toLocaleString('pt-BR'); } catch (e) { /* ok */ }
+  view.innerHTML = head('Backup', null) + `<div class="card"><b>Cópia de segurança</b><p class="mute">Baixa uma cópia de tudo o que está cadastrado: residências, proprietários, documentos, equipamentos, garantias, manutenções, construção, plantas, assistências e configurações.</p>
+    <label class="chk"><input type="checkbox" id="bkhash"> Incluir o identificador protegido dos CPFs</label><p class="mute">Necessário para restaurar o acesso dos proprietários. Com ele marcado, o arquivo passa a conter dados sensíveis.</p>
+    <div class="acts bkbtns"><button type="button" class="up" data-bk="full">Backup completo (dados + documentos)</button><button type="button" class="ghost2" data-bk="json">Só os dados (JSON)</button></div>
+    <p class="mute" id="bkmsg" role="status"></p><p class="mute" id="bklast">${esc(last)}</p></div>
+    <p class="notice">O backup completo é um arquivo ZIP com o dados.json e os PDFs e imagens guardados no Supabase. As imagens e os vídeos das residências ficam no Cloudinary, e os endereços deles vão no dados.json. Quanto mais documentos, mais tempo e memória o navegador usa; se ficar pesado, baixe só os dados. Guarde o arquivo em local seguro e faça isso com frequência.</p>`;
+}
+
+// ---------- Relatórios (na tela, imprimir/PDF e CSV)
+const REPS = {
+  res: { l: 'Resumo por residência', date: null },
+  gar: { l: 'Garantias', date: 'a data de início da garantia' },
+  man: { l: 'Manutenções', date: 'a próxima data da manutenção' },
+  eq: { l: 'Equipamentos', date: null },
+  doc: { l: 'Documentos (todas as pastas)', date: 'a data do documento' },
+  ast: { l: 'Assistência técnica', date: 'a data de abertura' },
+};
+const resFilter = () => '<div class="field combo" data-combo="res"><span class="lbl">Residência (opcional)</span><div class="comboin"><input class="comboq" type="search" placeholder="Todas. Digite para escolher uma" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar residência"><input type="hidden" name="residence_id"><ul class="combolist" role="listbox" hidden></ul></div></div>';
+const repNote = t => REPS[t].date ? `O período filtra por ${REPS[t].date}. Deixe em branco para incluir tudo.` : 'Este relatório não usa período.';
+function reportsPage() {
+  const f = S.repf || {};
+  view.innerHTML = head('Relatórios', null) + `<form class="card repform" data-form="rep"><label>Tipo de relatório<select name="type">${Object.entries(REPS).map(([k, r]) => `<option value="${k}" ${f.type === k ? 'selected' : ''}>${r.l}</option>`).join('')}</select></label>${resFilter()}<div class="twocol">${dateField('from', 'De', f.from || '')}${dateField('to', 'Até', f.to || '')}</div><p class="mute" id="repnote">${repNote(f.type || 'res')}</p><button>Gerar relatório</button></form><div id="repout"></div>`;
+  if (S.rep) repShow();
+}
+async function repFetch(table, rids, dateCol, from, to) {
+  const out = [];
+  for (let a = 0; ; a += 1000) {
+    let q = sb.from(table).select('*'); if (rids.length) q = q.in('residence_id', rids);
+    if (dateCol && from) q = q.gte(dateCol, from); if (dateCol && to) q = q.lte(dateCol, to + (dateCol === 'created_at' ? 'T23:59:59' : ''));
+    const { data, error } = await q.order('created_at', { ascending: false }).range(a, a + 999);
+    if (error) throw error; out.push(...data); if (data.length < 1000) break;
+  }
+  return out;
+}
+async function repBuild(type, rids, from, to) {
+  const rn = id => resName(id), own = id => (S.ownersByRes[id] || []).map(o => o.name).join(', ') || '—', br = d => d ? fmt(d) : '—', v = x => x == null || x === '' ? '—' : x;
+  const byRes = (a, b) => rn(a.residence_id).localeCompare(rn(b.residence_id), 'pt-BR'), hoje = new Date(), aberta = m => !['Concluída', 'Cancelada'].includes(m.status || 'Pendente');
+  if (type === 'res') {
+    const rs = S.res.filter(r => !rids.length || rids.includes(r.id)).sort(byName);
+    const [dg, dr, eq, ga, ma, as] = await Promise.all(['documents', 'doc_records', 'equipment', 'warranties', 'maintenance_tasks', 'service_requests'].map(t => repFetch(t, rids).catch(() => [])));
+    const n = (arr, id, fn = () => true) => arr.filter(x => x.residence_id === id && fn(x)).length;
+    return { cols: ['Residência', 'Código', 'Proprietários', 'Documentos', 'Equipamentos', 'Garantias em vigor', 'Manutenções pendentes', 'Manutenções atrasadas', 'Assistências abertas'],
+      rows: rs.map(r => [r.name, r.code, own(r.id), n(dg, r.id) + n(dr, r.id), n(eq, r.id), n(ga, r.id, w => wState(w)[0] !== 'Encerrada'), n(ma, r.id, aberta), n(ma, r.id, m => aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje), n(as, r.id, s => !['Concluída', 'Encerrada'].includes(s.status))]) };
+  }
+  if (type === 'gar') return { group: 5, cols: ['Residência', 'Sistema', 'Cobertura', 'Início', 'Término', 'Situação'], rows: (await repFetch('warranties', rids, 'start_date', from, to)).sort(byRes).map(w => { const [s, , end] = wState(w); return [rn(w.residence_id), v(w.system), v(w.coverage), br(w.start_date), isNaN(end) ? '—' : end.toLocaleDateString('pt-BR'), s]; }) };
+  if (type === 'man') return { group: 5, cols: ['Residência', 'Tarefa', 'Sistema', 'Última execução', 'Próxima data', 'Situação'], rows: (await repFetch('maintenance_tasks', rids, 'next_due', from, to)).sort(byRes).map(m => [rn(m.residence_id), v(m.name), v(m.system), br(m.last_done), br(m.next_due), aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje ? 'Atrasada' : (m.status || 'Pendente')]) };
+  if (type === 'eq') return { group: 2, cols: ['Residência', 'Equipamento', 'Categoria', 'Fabricante', 'Modelo', 'Nº de série', 'Localização'], rows: (await repFetch('equipment', rids)).sort(byRes).map(e => [rn(e.residence_id), v(e.name), v(e.category), v(e.maker), v(e.model), v(e.serial), v(e.location)]) };
+  if (type === 'ast') return { group: 3, cols: ['Residência', 'Protocolo', 'Categoria', 'Situação', 'Urgência', 'Abertura'], rows: (await repFetch('service_requests', rids, 'created_at', from, to)).sort(byRes).map(a => [rn(a.residence_id), v(a.protocol), v(a.category), v(a.status), v(a.urgency), br(a.created_at)]) };
+  const [dg, dr] = await Promise.all([repFetch('documents', rids, 'created_at', from, to), repFetch('doc_records', rids, 'doc_date', from, to).catch(() => [])]);
+  return { group: 1, cols: ['Residência', 'Pasta', 'Título', 'Data', 'Arquivos'], rows: [...dg.map(d => ({ r: d.residence_id, row: [rn(d.residence_id), DCATS.geral.l, v(d.title), br(d.created_at), 1] })), ...dr.map(d => ({ r: d.residence_id, row: [rn(d.residence_id), dcLabel(d.kind), v(d.title), br(d.doc_date), (d.files || []).length] }))].sort((a, b) => rn(a.r).localeCompare(rn(b.r), 'pt-BR')).map(x => x.row) };
+}
+function repSummary(R) {
+  if (R.group == null || !R.rows.length) return '';
+  const c = {}; R.rows.forEach(r => { c[r[R.group]] = (c[r[R.group]] || 0) + 1; });
+  return Object.entries(c).map(([k, n]) => `${k}: ${n}`).join(' · ');
+}
+const repTable = R => `<div class="tblwrap"><table class="rep"><thead><tr>${R.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${R.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+function repShow() {
+  const R = S.rep, out = $('#repout'); if (!out || !R) return;
+  const sm = repSummary(R);
+  out.innerHTML = `<div class="card repres"><b>${esc(R.title)}</b><span class="mute">${esc(R.scope)} · ${esc(R.period)} · gerado em ${esc(R.when)}</span><span class="mute">${R.rows.length} ${R.rows.length === 1 ? 'linha' : 'linhas'}${sm ? ' · ' + esc(sm) : ''}</span>` +
+    (R.rows.length ? acts('<button type="button" class="link" data-reprint>Imprimir / salvar em PDF</button>', '<button type="button" class="link" data-repcsv>Baixar planilha (CSV)</button>') + repTable(R) : '<p class="empty">Nenhum registro encontrado com esses filtros.</p>') + '</div>';
+}
+async function runReport(f) {
+  const o = clean(Object.fromEntries(new FormData(f))), box = f.querySelector('.combo'), txt = box.querySelector('.comboq').value.trim();
+  S.repf = { type: o.type, from: o.from || '', to: o.to || '' };
+  if (txt && !o.residence_id) return toast('Escolha a residência na lista ou apague o texto do campo.', 1);
+  if (o.from && o.to && o.from > o.to) return toast('A data inicial é maior que a final.', 1);
+  const out = $('#repout'); out.innerHTML = '<p class="mute">Gerando…</p>';
+  try {
+    await loadOwners();
+    const R = await repBuild(o.type, o.residence_id ? [o.residence_id] : [], o.from, o.to);
+    R.title = REPS[o.type].l; R.scope = o.residence_id ? resName(o.residence_id) : 'Todas as residências';
+    R.period = REPS[o.type].date ? (o.from || o.to ? `${o.from ? 'de ' + brOf(o.from) : ''} ${o.to ? 'até ' + brOf(o.to) : ''}`.trim() : 'todo o período') : 'sem período'; R.when = new Date().toLocaleString('pt-BR');
+    S.rep = R; repShow();
+  } catch (e) { S.rep = null; out.innerHTML = '<p class="empty">Não foi possível gerar: ' + esc(e.message || '') + '</p>'; }
+}
+function repCsv() {
+  const R = S.rep; if (!R) return;
+  const cell = x => '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"';
+  const txt = '﻿' + [R.cols, ...R.rows].map(r => r.map(cell).join(';')).join('\r\n');
+  saveBlob(new Blob([txt], { type: 'text/csv;charset=utf-8' }), `relatorio-${R.title.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${todayStr()}.csv`);
+}
+function repPrint() {   // abre uma página própria (clara, para papel) e chama a impressão
+  const R = S.rep; if (!R) return;
+  const w = window.open('', '_blank'); if (!w) return toast('O navegador bloqueou a janela. Permita pop-ups para este site e tente de novo.', 1);
+  const sm = repSummary(R);
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(R.title)} — Astell</title><style>body{font:13px/1.4 "Segoe UI",Arial,sans-serif;color:#111;margin:24px}h1{font-size:20px;margin:6px 0 2px}p{margin:2px 0;color:#444}img{max-height:56px;max-width:240px;display:block;margin-bottom:6px}table{border-collapse:collapse;width:100%;margin-top:14px}th,td{border:1px solid #999;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eee}tr{break-inside:avoid}thead{display:table-header-group}@page{margin:14mm}</style></head><body>${S.logo ? `<img src="${esc(cld(S.logo, 400))}" alt="Astell">` : '<b style="letter-spacing:.14em">ASTELL</b>'}<h1>${esc(R.title)}</h1><p>${esc(R.scope)} · ${esc(R.period)} · gerado em ${esc(R.when)}</p><p>${R.rows.length} ${R.rows.length === 1 ? 'linha' : 'linhas'}${sm ? ' · ' + esc(sm) : ''}</p>${repTable(R)}</body></html>`);
+  w.document.close(); w.focus(); setTimeout(() => { try { w.print(); } catch (e) { /* o usuário imprime manualmente */ } }, 500);
+}
+
 const PAGES = {
   async res() { if (S.arg) return S.sub ? resSection(S.arg, S.sub) : resDetail(S.arg); return resList(); },
   async own() {
@@ -414,46 +667,17 @@ const PAGES = {
     view.innerHTML = head('Proprietários', 'own') + SHELL + '<p class="notice">Uma residência pode ter vários proprietários, cada um com o seu CPF. Cada um cria a própria conta no app e informa o CPF para ver a casa. Se você cadastrar o e-mail do proprietário, só a conta com esse e-mail consegue usar o CPF.</p>';
     paintItems();
   },
-  async docs() {
-    await loadOwners();
-    const { data } = await scoped(sb.from('documents').select('*')).order('created_at', { ascending: false }); S.rows.documents = data || [];
-    setItems({ mlist: (data || []).map(d => ({ hay: hayOf(d.residence_id, d.title), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>` })) });
-    view.innerHTML = head('Documentos', 'docs') + SHELL; paintItems();
-  },
-  eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), ctt: () => listPage('contacts'), bld: () => S.cat ? listPage('building_items') : bldHub(),
+  async docs() { if (!S.dcat) return docsHub(); return S.dcat === 'geral' ? docsGeral() : dcList(S.dcat); },
+  async rep() { await loadOwners(); reportsPage(); },
+  async logo() { logoPage(); },
+  async bk() { backupPage(); },
+  eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => S.cat ? listPage('building_items') : bldHub(),
   async ast() {
     await loadOwners();
     const { data } = await scoped(sb.from('service_requests').select('*')).order('created_at', { ascending: false });
     setItems({ mlist: (data || []).map(r => ({ hay: hayOf(r.residence_id, r.protocol, r.category), html: `<div class="card"><b>${esc(r.protocol)} — ${esc(r.category)}</b>${metaHtml(r.residence_id)}<span class="badge">${esc(r.status)}</span><p>${esc(r.place)} · urgência ${esc(r.urgency)}</p><p>${esc(r.description)}</p><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p>
       <form class="statusform" data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}">${fld(['status', 'Alterar situação', STATUS], r)}<label>Comentário para o cliente<input name="staff_note" value="${esc(r.staff_note || '')}"></label><button>Atualizar</button></form></div>` })) }, { mlist: 'Nenhuma solicitação de assistência.' });
     view.innerHTML = head('Assistência técnica', null) + SHELL; paintItems();
-  },
-  async his() {
-    await loadOwners();
-    const f = S.hf;
-    let q = sb.from('history_events').select('*').order('created_at', { ascending: false }).limit(500);
-    let a = sb.from('audit_log').select('*').order('at', { ascending: false }).limit(300);
-    if (f.cat) q = q.ilike('category', '%' + f.cat + '%');
-    if (f.from) { q = q.gte('event_date', f.from); a = a.gte('at', f.from); }
-    if (f.to) { q = q.lte('event_date', f.to); a = a.lte('at', f.to + 'T23:59:59'); }
-    const [{ data: ev }, { data: au, error }, { data: pr }] = await Promise.all([q, a, sb.from('profiles').select('id,name')]);
-    const who = Object.fromEntries((pr || []).map(p => [p.id, p.name]));
-    const what = x => { const n = x.new_data || x.old_data || {}; if (x.action === 'UPDATE') return 'campos: ' + Object.keys(n).filter(k => k !== 'created_at' && JSON.stringify((x.old_data || {})[k]) !== JSON.stringify(n[k])).join(', '); return n.title || n.name || n.system || n.protocol || n.label || n.description || ''; };
-    const items = { mlist: (ev || []).map(e => ({ hay: hayOf(e.residence_id, e.category, e.description), html: `<div class="card"><b>${fmt(e.event_date)} — ${esc(e.category)}</b>${metaHtml(e.residence_id)}<p>${esc(e.description)}</p>${acts(`<button class="link danger" data-del="history_events:${e.id}">Excluir</button>`)}</div>` })) };
-    if (!error) items.mlist2 = (au || []).map(x => ({ hay: hayOf(x.residence_id, who[x.user_id], TBL[x.table_name], what(x)), html: `<div class="card"><b>${esc(who[x.user_id] || 'Sistema')} ${ACT[x.action] || ''} ${esc((TBL[x.table_name] || x.table_name).toLowerCase())}</b>${metaHtml(x.residence_id)}<span class="mute">${new Date(x.at).toLocaleString('pt-BR')}</span><p class="mute">${esc(what(x))}</p></div>` }));
-    setItems(items, { mlist: 'Nenhum evento no período.', mlist2: 'Nenhuma alteração registrada.' });
-    view.innerHTML = head('Histórico', 'history_events') + `<form class="card" data-form="hf"><b>Filtros</b><label>Categoria contém<input name="cat" value="${esc(f.cat || '')}"></label>${dateField('from', 'De', f.from || '')}${dateField('to', 'Até', f.to || '')}<button>Filtrar</button><button type="button" class="ghost2" data-hclear>Limpar filtros</button></form><h3>Linha do tempo</h3>${SHELL}` +
-      '<h3>Alterações registradas no sistema</h3>' + (error ? '<p class="empty">O registro de alterações ainda não está disponível. Rode o schema_v5_corrigido.sql.</p>' : '<div id="mlist2"></div><div id="pg-mlist2"></div>');
-    paintItems();
-  },
-  async qr() {
-    await loadOwners();
-    const { data } = await sb.from('qr_codes').select('*').order('created_at', { ascending: false });
-    const base = new URL('index.html', location.href.split('#')[0]).href;
-    const svg = t => { const q = qrcode(0, 'M'); q.addData(base + '#qr/' + t); q.make(); return q.createSvgTag(5, 0); };
-    setItems({ mlist: (data || []).map(q => ({ hay: hayOf(q.residence_id, q.label), html: `<div class="card qr">${svg(q.token)}<b>${esc(q.label)}</b>${metaHtml(q.residence_id)}<span class="mute qrcode">Astell Home · ${esc((S.res.find(r => r.id === q.residence_id) || {}).code || '')}</span>${acts(`<button class="link danger" data-del="qr_codes:${q.id}">Excluir</button>`)}</div>` })) }, { mlist: 'Nenhum QR Code. Toque em + para gerar.' });
-    view.innerHTML = head('QR Codes', 'qr') + acts('<button class="link" data-print>Imprimir etiquetas</button>') + '<p class="mute" id="mcount"></p><div id="mlist" class="grid"></div><div id="pg-mlist"></div><p class="notice">O QR leva ao app do cliente (index.html). Quem ler precisa entrar com a conta vinculada à casa para ver qualquer informação.</p>';
-    paintItems();
   },
   async pl() { if (S.arg) return plantaDetail(S.arg); return plantasList(); },
 };
@@ -469,9 +693,10 @@ async function render() {
   const [key, arg, sub, cat] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
   S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; S.sub = S.menu === 'res' && S.arg && SECTIONS[sub] ? sub : null; S.scope = null;
   S.cat = S.menu === 'bld' && BCATS[arg] ? arg : (S.sub === 'bld' && BCATS[cat] ? cat : null);   // tipo de construção aberto (est, mat ou sis)
+  S.dcat = S.menu === 'docs' && DCATS[arg] ? arg : (S.sub === 'docs' && DCATS[cat] ? cat : null);   // pasta de documentos aberta
   view.classList.toggle('wide', !!S.arg);
-  $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
-  const tela = S.menu + '|' + (S.sub || '') + '|' + (S.cat || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
+  $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat) || (S.menu === 'docs' && !S.dcat) || ['rep', 'logo', 'bk'].includes(S.menu);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
+  const tela = S.menu + '|' + (S.sub || '') + '|' + (S.cat || '') + '|' + (S.dcat || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
   if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
   document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
@@ -519,7 +744,7 @@ async function start(session) {
   const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
   S.profile = data;
   if (!data || data.role !== 'admin') return deniedScreen();
-  $('#top').hidden = false; buildDrawer(); await loadRes();
+  $('#top').hidden = false; buildDrawer(); await loadLogo(); await loadRes();
 }
 sb.auth.getSession().then(({ data }) => start(data.session));
 sb.auth.onAuthStateChange((ev, s) => {
@@ -534,7 +759,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-print],[data-hclear],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -596,11 +821,19 @@ document.addEventListener('click', async e => {
   if (d.rel && confirm('Liberar este CPF? O acesso atual do cliente será removido e outro cadastro poderá usá-lo.')) { const { error } = await sb.rpc('admin_release_cpf', { p_cpf: d.rel }); done(error && 'Não foi possível liberar.', 'CPF liberado.'); }
   if (d.place !== undefined) { S.place = !S.place; render(); }
   if (d.plan && S.place) { const b = el.getBoundingClientRect(); S.pend = { x: +((e.clientX - b.left) / b.width * 100).toFixed(2), y: +((e.clientY - b.top) / b.height * 100).toFixed(2) }; modal('Novo ponto na planta', fld(['category', 'Categoria', PT_CATS]) + '<label>Identificação<input name="label" required></label><label>Detalhes<textarea name="description" rows="3"></textarea></label>', 'data-form="add:pt"', 'Salvar ponto'); }
-  if (d.print !== undefined) print();
-  if (d.hclear !== undefined) { S.hf = {}; render(); }
+  if (d.deldc && confirm('Excluir este registro e os arquivos dele?')) {
+    const row = (S.rows.doc_records || []).find(x => x.id === d.deldc), paths = row ? (row.files || []).map(x => x.path) : [];
+    const { error } = await sb.from('doc_records').delete().eq('id', d.deldc); if (!error && paths.length) await sb.storage.from('documents').remove(paths);
+    done(error && 'Não foi possível excluir.', 'Registro excluído.');
+  }
+  if (d.reprint !== undefined) repPrint();
+  if (d.repcsv !== undefined) repCsv();
+  if (d.bk) runBackup(d.bk === 'full', !!($('#bkhash') && $('#bkhash').checked));
+  if (d.logodel !== undefined && confirm('Remover a logo? O sistema volta a mostrar o texto ASTELL.')) { const { error } = await sb.from('app_settings').delete().eq('key', 'logo_url'); if (error) toast('Não foi possível remover.', 1); else { S.logo = null; applyLogo(); toast('Logo removida.'); render(); } }
   if (d.out !== undefined) sb.auth.signOut();
 });
 document.addEventListener('change', e => {
+  if (e.target.name === 'type' && e.target.closest && e.target.closest('.repform')) { const n = $('#repnote'); if (n) n.textContent = repNote(e.target.value); }
   if (e.target.id === 'fileIn') { stageFiles([...e.target.files]); e.target.value = ''; }
   if (e.target.matches && e.target.matches('[data-pp]')) { S.pp = +e.target.value; try { localStorage.setItem('astell_pp', S.pp); } catch (x) { /* ok */ } S.pages = {}; paintItems(); }
 });
@@ -617,7 +850,7 @@ document.addEventListener('input', e => {
     const iso = parseBr(t.value); box.querySelector('[type=hidden]').value = iso || ''; t.setCustomValidity(t.value && !iso ? 'Data inválida. Use dd/mm/aaaa.' : '');
     if (iso && !box.querySelector('.calpop').hidden) calRender(box, +iso.slice(0, 4), +iso.slice(5, 7) - 1);
   }
-  if (t.classList.contains('comboq')) { const box = t.closest('.combo'); if (box.dataset.combo === 'res') { box.querySelector('[name=residence_id]').value = ''; t.setCustomValidity('Escolha uma residência da lista.'); } comboList(box); }
+  if (t.classList.contains('comboq')) { const box = t.closest('.combo'); if (box.dataset.combo === 'res') { box.querySelector('[name=residence_id]').value = ''; if (t.required) t.setCustomValidity('Escolha uma residência da lista.'); } comboList(box); }
 });
 document.addEventListener('focusin', e => { if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo')); });
 document.addEventListener('mousedown', e => { const li = e.target.closest && e.target.closest('.combolist li[data-opt]'); if (!li) return; e.preventDefault(); const box = li.closest('.combo'); if (!['resmulti', 'own'].includes(box.dataset.combo)) comboPick(box, li.dataset.opt); });   // na lista de residências do proprietário só o botão Adicionar escolhe
@@ -635,8 +868,21 @@ document.addEventListener('submit', async e => {
   const f = e.target, id = f.dataset.form; if (!id) return; e.preventDefault();
   if (id === 'gal') return uploadImages(f);
   const o = clean(Object.fromEntries(new FormData(f))), [op, k] = id.split(':'), nested = S.stack.length > 0; let r;
-  if (id === 'hf') { S.hf = o; return render(); }
-  if (op === 'add' && (T[k] || ['docs', 'qr', 'pl'].includes(k)) && !o.residence_id) return toast('Selecione a residência (ou cadastre uma nova ao lado).', 1);
+  if (id === 'rep') return runReport(f);
+  if (id === 'logo') {
+    const file = f.file.files[0]; if (!file) return;
+    if (!/^image\/(png|jpeg|svg\+xml|webp)$/.test(file.type)) return toast('Envie PNG, JPG, SVG ou WEBP.', 1);
+    if (file.size > 5 * 1048576) return toast('A logo deve ter até 5 MB.', 1);
+    const b = f.querySelector('button'); b.disabled = true; toast('Enviando a logo…');
+    try {
+      const j = await cldPost(file, 'astell-home/logo');
+      const { error } = await sb.from('app_settings').upsert({ key: 'logo_url', value: j.secure_url, updated_at: new Date().toISOString() });
+      if (error) throw new Error(error.message + ' (rode o schema_v9.sql)');
+      S.logo = j.secure_url; applyLogo(); toast('Logo salva.'); render();
+    } catch (err) { b.disabled = false; toast('Não foi possível salvar a logo: ' + err.message, 1); }
+    return;
+  }
+  if (op === 'add' && (T[k] || ['docs', 'dc', 'pl'].includes(k)) && !o.residence_id) return toast('Selecione a residência (ou cadastre uma nova ao lado).', 1);
   const rid = o.residence_id;
   if (id === 'ast') { r = await sb.from('service_requests').update({ status: o.status, staff_note: o.staff_note }).eq('id', f.dataset.id); if (!r.error) await sb.from('history_events').insert({ residence_id: f.dataset.rid, category: 'Assistência', description: 'Solicitação atualizada: ' + o.status }); }
   else if (id === 'add:res') {
@@ -687,7 +933,7 @@ document.addEventListener('submit', async e => {
     if (!r.error && nested) { await loadOwners(); popModal({ id: f.dataset.id }); return toast('Proprietário salvo.'); }
   }
   else if (id === 'add:docs') { const file = f.file.files[0]; delete o.file; const path = `${rid}/${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('documents').insert({ ...o, path }); }
-  else if (id === 'add:qr') r = await sb.from('qr_codes').insert({ residence_id: rid, label: o.label, target_hash: QR_T[o.target] });
+  else if (id === 'add:dc' || id === 'edit:dc') { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await saveDc(f, o, op); if (b) b.disabled = false; }
   else if (id === 'add:pl') { const file = f.file.files[0], path = `${rid}/planta_${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path }); }
   else if (id === 'add:pt') r = await sb.from('plan_points').insert({ ...o, residence_id: S.curPlan.residence_id, floorplan_id: S.curPlan.id, x: S.pend.x, y: S.pend.y });
   else if (op === 'add') r = await sb.from(k).insert(o);
