@@ -54,8 +54,8 @@ const T = {
     note: 'Os prazos valem conforme contrato, fabricante e lei. As condições contratuais e legais prevalecem sobre os indicadores do aplicativo.' },
   maintenance_tasks: { label: 'Manutenções', order: 'next_due', f: [['name', 'Tarefa'], ['system', 'Sistema'], ['frequency', 'Periodicidade (texto)'], ['last_done', 'Última execução', 'date'], ['next_due', 'Próxima data', 'date'], ['interval_months', 'Repetir a cada (meses)', 'number'], ['status', 'Situação', ['Pendente', 'Em andamento', 'Concluída', 'Cancelada']], ['instructions', 'Instruções', 'textarea']],
     row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> <span class="badge ${late ? 'bad' : st === 'Concluída' ? 'ok' : ''}">${late ? 'Atrasada' : st}</span><p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
-  equipment: { label: 'Equipamentos', f: [['name', 'Nome'], ['category', 'Categoria'], ['maker', 'Fabricante'], ['model', 'Modelo'], ['serial', 'Nº de série'], ['location', 'Localização']],
-    row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.category)} · ${esc(r.location)}</span><p>${esc(r.maker)} ${esc(r.model)} ${r.serial ? '· Série ' + esc(r.serial) : ''}</p>` },
+  equipment: { label: 'Equipamentos', f: [['name', 'Nome'], ['category', 'Categoria'], ['maker', 'Fabricante'], ['model', 'Modelo'], ['serial', 'Nº de série'], ['location', 'Localização'], ['description', 'Descrição do equipamento', 'textarea', false], ['warranty_months', 'Tempo de garantia (meses)', 'number', false], ['supplier', 'Fornecedor ou loja de compra', 'text', false]],
+    row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.category)} · ${esc(r.location)}</span><p>${esc(r.maker)} ${esc(r.model)} ${r.serial ? '· Série ' + esc(r.serial) : ''}</p>${r.description ? `<p class="mute">${esc(r.description)}</p>` : ''}${r.warranty_months ? `<span class="mute meta">Garantia: ${esc(r.warranty_months)} ${+r.warranty_months === 1 ? 'mês' : 'meses'}</span>` : ''}${r.supplier ? `<span class="mute meta">Fornecedor / loja: ${esc(r.supplier)}</span>` : ''}` },
   building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais', 'Infraestrutura']], ['title', 'Título'], ['description', 'Descrição', 'textarea', false], ['highlights', 'Destaques (um por linha)', 'textarea']],
     row: r => `<b>${esc(r.title)}</b> <span class="badge">${esc(r.category)}</span><p class="mute">${esc(r.description)}</p><p>${esc((r.highlights || '').split('\n').filter(Boolean).join(' · '))}</p>` },
 };
@@ -170,39 +170,40 @@ function openOwnerEdit(id, opts = {}) {
 }
 function presetCat(cat) { return `<div class="field"><span class="lbl">Tipo de construção</span><div class="presetres"><b>${cat[0]}</b></div><input type="hidden" name="category" value="${cat[2]}"></div>`; }
 // imagens e vídeos nos cadastros da Construção (Cloudinary; os endereços ficam na coluna "media" de building_items)
-const bldMediaInput = row => !CLOUD_OK ? cloudMissing() : (row ? `<div class="field"><span class="lbl">Imagens e vídeos atuais</span><ul class="curfiles">${(row.media || []).map((x, i) => `<li><span class="fname">${x.type === 'video' ? 'Vídeo' : 'Imagem'} · ${esc(x.name || 'arquivo')}</span><label class="chk"><input type="checkbox" name="rm_media" value="${i}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '') + `<label>${row ? 'Adicionar mais imagens e vídeos' : 'Imagens e vídeos'} (opcional; pode escolher vários)<input name="media" type="file" accept="image/*,video/*" multiple></label><p class="mute">Imagens até 10 MB e vídeos até 100 MB.</p>`;
-const bldThumbs = r => (r.media || []).length ? `<div class="bthumbs">${r.media.map((x, i) => `<button type="button" class="bthumb" data-bm="${r.id}:${i}" aria-label="Ampliar ${x.type === 'video' ? 'vídeo' : 'imagem'}"><img src="${esc(x.type === 'video' ? vposter(x.url) : cld(x.url, 200))}" alt="" loading="lazy" draggable="false">${x.type === 'video' ? '<span class="playbadge">▶</span>' : ''}</button>`).join('')}</div>` : '';
-async function saveBld(f, o, op) {
+const MEDIA_T = { building_items: { vid: true, pasta: 'construcao' }, equipment: { vid: false, pasta: 'equipamentos' } };   // tabelas com imagens (e vídeos) no cadastro
+const bldMediaInput = (row, k = 'building_items') => !CLOUD_OK ? cloudMissing() : (row ? `<div class="field"><span class="lbl">${MEDIA_T[k].vid ? 'Imagens e vídeos atuais' : 'Imagens atuais'}</span><ul class="curfiles">${(row.media || []).map((x, i) => `<li><span class="fname">${x.type === 'video' ? 'Vídeo' : 'Imagem'} · ${esc(x.name || 'arquivo')}</span><label class="chk"><input type="checkbox" name="rm_media" value="${i}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '') + `<label>${MEDIA_T[k].vid ? (row ? 'Adicionar mais imagens e vídeos' : 'Imagens e vídeos') : (row ? 'Adicionar mais imagens' : 'Imagens')} (opcional; pode escolher vários)<input name="media" type="file" accept="${MEDIA_T[k].vid ? 'image/*,video/*' : 'image/*'}" multiple></label><p class="mute">${MEDIA_T[k].vid ? 'Imagens até 10 MB e vídeos até 100 MB.' : 'Imagens até 10 MB cada.'}</p>`;
+const bldThumbs = (r, k = 'building_items') => (r.media || []).length ? `<div class="bthumbs">${r.media.map((x, i) => `<button type="button" class="bthumb" data-bm="${k}|${r.id}|${i}" aria-label="Ampliar ${x.type === 'video' ? 'vídeo' : 'imagem'}"><img src="${esc(x.type === 'video' ? vposter(x.url) : cld(x.url, 200))}" alt="" loading="lazy" draggable="false">${x.type === 'video' ? '<span class="playbadge">▶</span>' : ''}</button>`).join('')}</div>` : '';
+async function saveBld(f, o, op, k = 'building_items') {
   const picked = f.media ? [...f.media.files] : [];
   for (const x of picked) {
     const vid = /^video\//.test(x.type), img = /^image\//.test(x.type);
-    if (!img && !vid) return { error: { message: `"${x.name}" não é imagem nem vídeo.` } };
+    if (!img && !(vid && MEDIA_T[k].vid)) return { error: { message: `"${x.name}" não é ${MEDIA_T[k].vid ? 'imagem nem vídeo' : 'uma imagem'}.` } };
     if (x.size > (vid ? 100 : 10) * 1048576) return { error: { message: `"${x.name}" é maior que ${vid ? 100 : 10} MB.` } };
   }
-  const { media, rm_media, ...fields } = o, row = op === 'edit' ? (S.rows.building_items || []).find(x => x.id === f.dataset.id) : null;
+  const { media, rm_media, ...fields } = o, row = op === 'edit' ? (S.rows[k] || []).find(x => x.id === f.dataset.id) : null;
   const res = S.res.find(x => x.id === (op === 'add' ? fields.residence_id : row && row.residence_id)), up = [];
-  const folder = 'astell-home/' + String(res ? res.code : 'sem-codigo').replace(/[^\w-]/g, '_') + '/construcao';
+  const folder = 'astell-home/' + String(res ? res.code : 'sem-codigo').replace(/[^\w-]/g, '_') + '/' + MEDIA_T[k].pasta;
   try {
     for (let i = 0; i < picked.length; i++) {
       toast(`Enviando ${i + 1} de ${picked.length}…`);
       const j = await cldPost(picked[i], folder); up.push({ url: j.secure_url, type: /^video\//.test(picked[i].type) ? 'video' : 'image', name: picked[i].name, public_id: j.public_id });
     }
   } catch (e) { return { error: { message: 'falha no envio de arquivo (' + e.message + ')' } }; }
-  if (op === 'add') return sb.from('building_items').insert({ ...fields, media: up });
+  if (op === 'add') return sb.from(k).insert({ ...fields, media: up });
   const rm = [...f.querySelectorAll('[name=rm_media]:checked')].map(i => +i.value);
-  return sb.from('building_items').update({ ...fields, media: [...((row && row.media) || []).filter((x, i) => !rm.includes(i)), ...up] }).eq('id', f.dataset.id);
+  return sb.from(k).update({ ...fields, media: [...((row && row.media) || []).filter((x, i) => !rm.includes(i)), ...up] }).eq('id', f.dataset.id);
 }
 function openAdd(k) {
   if (k.startsWith('dc:')) return openDc(k.slice(3));
   if (ADD[k]) return ADD[k]();
   const cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;   // dentro de Estruturas/Materiais/Sistemas o tipo já vem definido
-  modal('Adicionar — ' + (cat ? cat[0] : T[k].label), resField() + (cat ? presetCat(cat) : '') + T[k].f.filter(f => !(cat && f[0] === 'category')).map(f => fld(f)).join('') + (k === 'building_items' ? bldMediaInput() : ''), `data-form="add:${k}"`);
+  modal('Adicionar — ' + (cat ? cat[0] : T[k].label), resField() + (cat ? presetCat(cat) : '') + T[k].f.filter(f => !(cat && f[0] === 'category')).map(f => fld(f)).join('') + (MEDIA_T[k] ? bldMediaInput(null, k) : ''), `data-form="add:${k}"`);
 }
 function openEdit(k, id, opts = {}) {
   if (k === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; return modal('Editar cadastro', resFormBody(r, (S.ownersByRes[id] || []).map(o => o.id), !!opts.fromOwner), `data-form="edit:res" data-id="${id}"`, 'Salvar alterações'); }
   if (k === 'dc') { const dr = (S.rows.doc_records || []).find(r => r.id === id); return dr && openDc(Object.keys(DCATS).find(x => DCATS[x].kind === dr.kind), dr); }
   const row = (S.rows[k] || []).find(r => r.id === id); if (!row) return;
-  modal('Editar', `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` + fieldsFor(k).map(f => fld(f, row)).join('') + (k === 'building_items' ? bldMediaInput(row) : ''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
+  modal('Editar', `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` + fieldsFor(k).map(f => fld(f, row)).join('') + (MEDIA_T[k] ? bldMediaInput(row, k) : ''), `data-form="edit:${k}" data-id="${id}"`, 'Salvar alterações');
 }
 
 
@@ -402,7 +403,7 @@ async function listPage(k) {
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
-    return { hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${k === 'building_items' ? bldThumbs(r) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
+    return { hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${MEDIA_T[k] ? bldThumbs(r, k) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
   }) });
   view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
@@ -634,7 +635,7 @@ async function repBuild(type, rids, from, to) {
   }
   if (type === 'gar') return { group: 5, cols: ['Residência', 'Sistema', 'Cobertura', 'Início', 'Término', 'Situação'], rows: (await repFetch('warranties', rids, 'start_date', from, to)).sort(byRes).map(w => { const [s, , end] = wState(w); return [rn(w.residence_id), v(w.system), v(w.coverage), br(w.start_date), isNaN(end) ? '—' : end.toLocaleDateString('pt-BR'), s]; }) };
   if (type === 'man') return { group: 5, cols: ['Residência', 'Tarefa', 'Sistema', 'Última execução', 'Próxima data', 'Situação'], rows: (await repFetch('maintenance_tasks', rids, 'next_due', from, to)).sort(byRes).map(m => [rn(m.residence_id), v(m.name), v(m.system), br(m.last_done), br(m.next_due), aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje ? 'Atrasada' : (m.status || 'Pendente')]) };
-  if (type === 'eq') return { group: 2, cols: ['Residência', 'Equipamento', 'Categoria', 'Fabricante', 'Modelo', 'Nº de série', 'Localização'], rows: (await repFetch('equipment', rids)).sort(byRes).map(e => [rn(e.residence_id), v(e.name), v(e.category), v(e.maker), v(e.model), v(e.serial), v(e.location)]) };
+  if (type === 'eq') return { group: 2, cols: ['Residência', 'Equipamento', 'Categoria', 'Fabricante', 'Modelo', 'Nº de série', 'Localização', 'Garantia (meses)', 'Fornecedor / loja'], rows: (await repFetch('equipment', rids)).sort(byRes).map(e => [rn(e.residence_id), v(e.name), v(e.category), v(e.maker), v(e.model), v(e.serial), v(e.location), v(e.warranty_months), v(e.supplier)]) };
   if (type === 'ast') return { group: 3, cols: ['Residência', 'Protocolo', 'Categoria', 'Situação', 'Urgência', 'Abertura'], rows: (await repFetch('service_requests', rids, 'created_at', from, to)).sort(byRes).map(a => [rn(a.residence_id), v(a.protocol), v(a.category), v(a.status), v(a.urgency), br(a.created_at)]) };
   const [dg, dr] = await Promise.all([repFetch('documents', rids, 'created_at', from, to), repFetch('doc_records', rids, 'doc_date', from, to).catch(() => [])]);
   return { group: 1, cols: ['Residência', 'Pasta', 'Título', 'Data', 'Arquivos'], rows: [...dg.map(d => ({ r: d.residence_id, row: [rn(d.residence_id), DCATS.geral.l, v(d.title), br(d.created_at), 1] })), ...dr.map(d => ({ r: d.residence_id, row: [rn(d.residence_id), dcLabel(d.kind), v(d.title), br(d.doc_date), (d.files || []).length] }))].sort((a, b) => rn(a.r).localeCompare(rn(b.r), 'pt-BR')).map(x => x.row) };
@@ -806,7 +807,7 @@ document.addEventListener('click', async e => {
   if (d.ownunlink) { const box = el.closest('.ownpick'), h = box.querySelector('[name=owner_ids]'); h.value = h.value.split(',').filter(x => x && x !== d.ownunlink).join(','); refreshOwnPick(box); }
   if (d.ownedit) { const box = el.closest('.ownpick'); pushModal(() => refreshOwnPick(box)); openOwnerEdit(d.ownedit, { fromRes: true }); }
   if (d.gal) { const [, id] = d.gal.split(':'), t = S.rows.maintenance_tasks.find(x => x.id === id); S.gal = { kind: 'maintenance', refId: id, resId: t.residence_id, title: t.name }; gallery(); }
-  if (d.bm) { const [bid, bi] = d.bm.split(':'), row = (S.rows.building_items || []).find(x => x.id === bid); if (row) lbOpenList((row.media || []).map((x, j) => ({ id: bid + j, url: x.url, media_type: x.type === 'video' ? 'video' : 'image' })), +bi); }
+  if (d.bm) { const [bk, bid, bi] = d.bm.split('|'), row = (S.rows[bk] || []).find(x => x.id === bid); if (row) lbOpenList((row.media || []).map((x, j) => ({ id: bid + j, url: x.url, media_type: x.type === 'video' ? 'video' : 'image' })), +bi); }
   if (d.upl) openUpload(d.upl.split(':')[1]);
   if (d.pickfiles !== undefined) $('#fileIn').click();
   if (d.unstage !== undefined) { S.up.files.splice(+d.unstage, 1); renderStage(); }
@@ -960,7 +961,7 @@ document.addEventListener('submit', async e => {
   else if (id === 'add:dc' || id === 'edit:dc') { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await saveDc(f, o, op); if (b) b.disabled = false; }
   else if (id === 'add:pl') { const file = f.file.files[0], path = `${rid}/planta_${Date.now()}_${file.name.replace(/[^\w.-]/g, '_')}`; r = await sb.storage.from('documents').upload(path, file); if (!r.error) r = await sb.from('floorplans').insert({ residence_id: rid, title: o.title, path }); }
   else if (id === 'add:pt') r = await sb.from('plan_points').insert({ ...o, residence_id: S.curPlan.residence_id, floorplan_id: S.curPlan.id, x: S.pend.x, y: S.pend.y });
-  else if (k === 'building_items' && (op === 'add' || op === 'edit')) { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await saveBld(f, o, op); if (b) b.disabled = false; }
+  else if (MEDIA_T[k] && (op === 'add' || op === 'edit')) { const b = f.querySelector('button:not([type])'); if (b) b.disabled = true; r = await saveBld(f, o, op, k); if (b) b.disabled = false; }
   else if (op === 'add') r = await sb.from(k).insert(o);
   else if (op === 'edit') r = await sb.from(k).update(o).eq('id', f.dataset.id);
   if (r && r.error) return toast('Não foi possível salvar: ' + r.error.message, 1);
