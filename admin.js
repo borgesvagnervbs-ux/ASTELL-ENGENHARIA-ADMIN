@@ -30,7 +30,7 @@ const IC = { drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 
 const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 
 // ---------- menus (o primeiro é a tela inicial)
-const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user'], ['docs', 'Documentos', 'doc'], ['eq', 'Equipamentos', 'layers'], ['gar', 'Garantias', 'shield'], ['man', 'Manutenções', 'wrench'], ['ast', 'Assistência', 'phones'], ['bld', 'Construção', 'home'], ['pl', 'Planta técnica', 'map'], ['rep', 'Relatórios', 'chart'], ['logo', 'Logo', 'star'], ['bk', 'Backup', 'dbase']];
+const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user'], ['docs', 'Documentos', 'doc'], ['eq', 'Equipamentos', 'layers'], ['gar', 'Garantias', 'shield'], ['man', 'Inspeções Preventivas', 'wrench'], ['ast', 'Assistência', 'phones'], ['bld', 'Construção', 'home'], ['pl', 'Planta técnica', 'map'], ['rep', 'Relatórios', 'chart'], ['logo', 'Logo', 'star'], ['bk', 'Backup', 'dbase']];
 
 // ---------- dados e campos
 const addMonths = (d, m) => { const x = new Date(d + 'T00:00'); x.setMonth(x.getMonth() + m); return x; };
@@ -52,7 +52,7 @@ const T = {
   warranties: { label: 'Garantias', order: 'start_date', f: [['system', 'Sistema ou componente'], ['coverage', 'Descrição da cobertura'], ['start_date', 'Data inicial', 'date'], ['months', 'Prazo (meses)', 'number'], ['notes', 'Condições e exclusões', 'textarea']],
     row: r => { const [s, c, end] = wState(r); return `<b>${esc(r.system)}</b> <span class="badge ${c}">${s}</span><p>${esc(r.coverage)}</p><span class="mute">${fmt(r.start_date)} até ${end.toLocaleDateString('pt-BR')}</span><p class="mute">${esc(r.notes)}</p>`; },
     note: 'Os prazos valem conforme contrato, fabricante e lei. As condições contratuais e legais prevalecem sobre os indicadores do aplicativo.' },
-  maintenance_tasks: { label: 'Manutenções', order: 'next_due', f: [['name', 'Tarefa'], ['system', 'Sistema'], ['frequency', 'Periodicidade (texto)'], ['last_done', 'Última execução', 'date'], ['next_due', 'Próxima data', 'date'], ['interval_months', 'Repetir a cada (meses)', 'number'], ['status', 'Situação', ['Pendente', 'Em andamento', 'Concluída', 'Cancelada']], ['instructions', 'Instruções', 'textarea']],
+  maintenance_tasks: { label: 'Inspeções Preventivas', order: 'next_due', f: [['name', 'Tarefa'], ['system', 'Sistema'], ['frequency', 'Periodicidade (texto)'], ['last_done', 'Última execução', 'date'], ['next_due', 'Próxima data', 'date'], ['interval_months', 'Repetir a cada (meses)', 'number'], ['status', 'Situação', ['Pendente', 'Em andamento', 'Concluída', 'Cancelada']], ['instructions', 'Instruções', 'textarea']],
     row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> <span class="badge ${late ? 'bad' : st === 'Concluída' ? 'ok' : ''}">${late ? 'Atrasada' : st}</span><p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
   equipment: { label: 'Equipamentos', f: [['name', 'Nome'], ['category', 'Categoria'], ['maker', 'Fabricante'], ['model', 'Modelo'], ['serial', 'Nº de série'], ['location', 'Localização'], ['description', 'Descrição do equipamento', 'textarea', false], ['warranty_months', 'Tempo de garantia (meses)', 'number', false], ['supplier', 'Fornecedor ou loja de compra', 'text', false]],
     row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.category)} · ${esc(r.location)}</span><p>${esc(r.maker)} ${esc(r.model)} ${r.serial ? '· Série ' + esc(r.serial) : ''}</p>${r.description ? `<p class="mute">${esc(r.description)}</p>` : ''}${r.warranty_months ? `<span class="mute meta">Garantia: ${esc(r.warranty_months)} ${+r.warranty_months === 1 ? 'mês' : 'meses'}</span>` : ''}${r.supplier ? `<span class="mute meta">Fornecedor / loja: ${esc(r.supplier)}</span>` : ''}` },
@@ -358,7 +358,7 @@ async function resList() {
   view.innerHTML = head('Residências', 'res') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
 }
 const contactLine = c => `${c.phone ? `<span class="mute meta">Celular: ${esc(c.phone)}</span>` : ''}${c.whatsapp ? `<span class="mute meta">WhatsApp: <a class="golda" href="https://wa.me/55${telDigits(c.whatsapp)}" target="_blank" rel="noopener">${esc(c.whatsapp)}</a></span>` : ''}`;
-const SECTIONS = { docs: ['Documentos', 'doc'], media: ['Mídias', 'image'], eq: ['Equipamentos', 'layers'], gar: ['Garantias', 'shield'], man: ['Manutenções', 'wrench'], ast: ['Assistências', 'phones'], bld: ['Construção', 'home'], pl: ['Plantas Técnicas', 'map'] };
+const SECTIONS = { docs: ['Documentos', 'doc'], media: ['Mídias', 'image'], eq: ['Equipamentos', 'layers'], gar: ['Garantias', 'shield'], man: ['Inspeções Preventivas', 'wrench'], ast: ['Assistências', 'phones'], bld: ['Construção', 'home'], pl: ['Plantas Técnicas', 'map'] };
 const BCATS = { est: ['Estruturas', 'home', 'Estrutura'], mat: ['Materiais', 'layers', 'Materiais'], sis: ['Sistemas', 'drop', 'Sistemas'], inf: ['Infraestrutura', 'estrada', 'Infraestrutura'] };   // [rótulo do card, ícone, valor gravado no banco]
 const bldTrail = () => S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], ['Construção', '#res/' + S.scope + '/bld'], [BCATS[S.cat][0]]] : [['Painel', '#res'], ['Construção', '#bld'], [BCATS[S.cat][0]]];
 function bldHub() {   // quatro cards: Estruturas, Materiais, Sistemas e Infraestrutura (no menu geral e dentro da residência)
@@ -381,7 +381,7 @@ async function resSection(id, sub) {
   const r = S.res.find(x => x.id === id); if (!r) return resDetail(id);
   S.cur = r; S.scope = id;
   if (sub === 'media') { resetSel(); await Promise.all([loadMedia(), loadOwners()]); view.innerHTML = head('Mídias', null) + `<div id="mediabox">${mediaPanel()}</div>`; return; }
-  return ({ docs: () => PAGES.docs(), eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => S.cat ? listPage('building_items') : bldHub(), ast: () => PAGES.ast(), pl: () => plantasList() })[sub]();
+  return ({ docs: () => PAGES.docs(), eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => S.cat ? listPage('building_items') : bldHub(), ast: () => PAGES.ast(), pl: () => S.plan ? plantaDetail(S.plan) : plantasList() })[sub]();
 }
 
 // ---------- páginas dos módulos (independentes: mostram tudo, por ordem de cadastro, de todas as residências)
@@ -412,10 +412,11 @@ async function listPage(k) {
 async function plantaDetail(id) {
   await loadOwners();
   const { data: fp } = await sb.from('floorplans').select('*').eq('id', id), cur = (fp || [])[0];
-  if (!cur) { view.innerHTML = crumbs([['Painel', '#res'], ['Planta técnica', '#pl'], ['Não encontrada']]) + '<p class="empty">Planta não encontrada.</p>'; return; }
+  const ptr = S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], ['Plantas Técnicas', '#res/' + S.scope + '/pl']] : [['Painel', '#res'], ['Planta técnica', '#pl']];   // dentro da residência a trilha e o "voltar" continuam nela
+  if (!cur) { view.innerHTML = crumbs([...ptr, ['Não encontrada']]) + '<p class="empty">Planta não encontrada.</p>'; return; }
   S.curPlan = cur;
   const [{ data: u }, { data: pts }] = await Promise.all([sb.storage.from('documents').createSignedUrl(cur.path, 3600), sb.from('plan_points').select('*').eq('floorplan_id', id).order('created_at')]);
-  view.innerHTML = crumbs([['Painel', '#res'], ['Planta técnica', '#pl'], [cur.title]]) + `<div class="pagehead"><div><h2>${esc(cur.title)}</h2>${metaHtml(cur.residence_id)}</div></div>` +
+  view.innerHTML = crumbs([...ptr, [cur.title]]) + `<div class="pagehead"><div><h2>${esc(cur.title)}</h2>${metaHtml(cur.residence_id)}</div></div>` +
     acts(`<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}|${esc(cur.path)}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
     `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${(pts || []).map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div><h3>Pontos cadastrados</h3>` +
     ((pts || []).map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>');
@@ -601,7 +602,7 @@ function backupPage() {
 const REPS = {
   res: { l: 'Resumo por residência', date: null },
   gar: { l: 'Garantias', date: 'a data de início da garantia' },
-  man: { l: 'Manutenções', date: 'a próxima data da manutenção' },
+  man: { l: 'Inspeções Preventivas', date: 'a próxima data da inspeção' },
   eq: { l: 'Equipamentos', date: null },
   doc: { l: 'Documentos (todas as pastas)', date: 'a data do documento' },
   ast: { l: 'Assistência técnica', date: 'a data de abertura' },
@@ -630,7 +631,7 @@ async function repBuild(type, rids, from, to) {
     const rs = S.res.filter(r => !rids.length || rids.includes(r.id)).sort(byName);
     const [dg, dr, eq, ga, ma, as] = await Promise.all(['documents', 'doc_records', 'equipment', 'warranties', 'maintenance_tasks', 'service_requests'].map(t => repFetch(t, rids).catch(() => [])));
     const n = (arr, id, fn = () => true) => arr.filter(x => x.residence_id === id && fn(x)).length;
-    return { cols: ['Residência', 'Código', 'Proprietários', 'Documentos', 'Equipamentos', 'Garantias em vigor', 'Manutenções pendentes', 'Manutenções atrasadas', 'Assistências abertas'],
+    return { cols: ['Residência', 'Código', 'Proprietários', 'Documentos', 'Equipamentos', 'Garantias em vigor', 'Inspeções pendentes', 'Inspeções atrasadas', 'Assistências abertas'],
       rows: rs.map(r => [r.name, r.code, own(r.id), n(dg, r.id) + n(dr, r.id), n(eq, r.id), n(ga, r.id, w => wState(w)[0] !== 'Encerrada'), n(ma, r.id, aberta), n(ma, r.id, m => aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje), n(as, r.id, s => !['Concluída', 'Encerrada'].includes(s.status))]) };
   }
   if (type === 'gar') return { group: 5, cols: ['Residência', 'Sistema', 'Cobertura', 'Início', 'Término', 'Situação'], rows: (await repFetch('warranties', rids, 'start_date', from, to)).sort(byRes).map(w => { const [s, , end] = wState(w); return [rn(w.residence_id), v(w.system), v(w.coverage), br(w.start_date), isNaN(end) ? '—' : end.toLocaleDateString('pt-BR'), s]; }) };
@@ -708,7 +709,7 @@ const PAGES = {
 async function plantasList() {
   await loadOwners();
   const { data } = await scoped(sb.from('floorplans').select('*')).order('created_at', { ascending: false });
-  setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title), html: `<a class="card rescard" href="#pl/${p.id}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}</a>` })) }, { mlist: 'Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.' });
+  setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title), html: `<a class="card rescard" href="${S.scope ? `#res/${S.scope}/pl/${p.id}` : `#pl/${p.id}`}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}</a>` })) }, { mlist: 'Nenhuma planta enviada. Toque em + para enviar uma imagem da planta.' });
   view.innerHTML = head('Planta técnica', 'pl') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
 }
 
@@ -717,9 +718,10 @@ async function render() {
   const [key, arg, sub, cat] = (location.hash.slice(1) || 'res').split('/'), m = MENU.find(x => x[0] === key) || MENU[0]; S.menu = m[0];
   S.arg = ['res', 'pl'].includes(S.menu) ? (arg || null) : null; S.sub = S.menu === 'res' && S.arg && SECTIONS[sub] ? sub : null; S.scope = null;
   S.cat = S.menu === 'bld' && BCATS[arg] ? arg : (S.sub === 'bld' && BCATS[cat] ? cat : null);   // tipo de construção aberto (est, mat ou sis)
+  S.plan = S.sub === 'pl' && cat ? cat : null;   // planta aberta dentro da residência
   S.dcat = S.menu === 'docs' && DCATS[arg] ? arg : (S.sub === 'docs' && DCATS[cat] ? cat : null);   // pasta de documentos aberta
   view.classList.toggle('wide', !!S.arg);
-  $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat) || (S.menu === 'docs' && !S.dcat) || ['rep', 'logo', 'bk'].includes(S.menu);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
+  $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat) || (S.menu === 'docs' && !S.dcat) || (S.menu === 'pl' && !!S.arg) || !!S.plan || ['rep', 'logo', 'bk'].includes(S.menu);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
   const tela = S.menu + '|' + (S.sub || '') + '|' + (S.cat || '') + '|' + (S.dcat || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
   if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
@@ -831,7 +833,7 @@ document.addEventListener('click', async e => {
   if (d.vis) { const [k, id] = d.vis.split(':'), r = S.rows[k].find(x => x.id === id); const { error } = await sb.from(k).update({ visible: !r.visible }).eq('id', id); done(error && 'Não foi possível alterar.', r.visible ? 'Oculto do cliente.' : 'Visível ao cliente.'); }
   if (d.del && confirm('Excluir este registro?')) { const [k, id] = d.del.split(':'); const { error } = await sb.from(k).delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
   if (d.deldoc && confirm('Excluir este documento?')) { const [id, p] = d.deldoc.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('documents').delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Documento excluído.'); }
-  if (d.delplan && confirm('Excluir esta planta e todos os pontos marcados nela?')) { const [id, p] = d.delplan.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('floorplans').delete().eq('id', id); if (error) toast('Não foi possível excluir.', 1); else { toast('Planta excluída.'); location.hash = '#pl'; } }
+  if (d.delplan && confirm('Excluir esta planta e todos os pontos marcados nela?')) { const [id, p] = d.delplan.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('floorplans').delete().eq('id', id); if (error) toast('Não foi possível excluir.', 1); else { toast('Planta excluída.'); location.hash = S.scope ? '#res/' + S.scope + '/pl' : '#pl'; } }
   if (d.open) { const { data, error } = await sb.storage.from('documents').createSignedUrl(d.open, 60); error ? toast('Não foi possível abrir.', 1) : window.open(data.signedUrl, '_blank', 'noopener'); }
   if (d.done) {
     const t = S.rows.maintenance_tasks.find(x => x.id === d.done), today = new Date().toISOString().slice(0, 10), nx = t.interval_months ? addMonths(today, +t.interval_months).toISOString().slice(0, 10) : null;
