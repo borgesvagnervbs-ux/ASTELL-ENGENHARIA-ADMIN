@@ -281,3 +281,8 @@ table.rep tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
 .mvbox{margin:8px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0d1a27}
 .mvbox model-viewer{display:block;width:100%;height:min(60vh,460px);--poster-color:transparent}
 .mvfail{padding:0 12px 10px}
+
+/* ---- menu lateral: o botão dos três risquinhos some enquanto o menu está aberto; "Sair" na cor amarela do sistema */
+body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
+.dfoot button.ghost{background:var(--gold);color:#1b1409;border:0;font-weight:600}
+.dfoot button.ghost:hover{filter:brightness(1.08)}
