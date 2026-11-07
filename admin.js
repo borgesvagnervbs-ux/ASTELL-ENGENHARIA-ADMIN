@@ -93,7 +93,7 @@ const closeModal = () => S.stack.length ? popModal(null) : hardClose();
 const byName = (a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR');
 const presetRes = rid => { const r = S.res.find(x => x.id === rid) || {}; return `<div class="field"><span class="lbl">Residência</span><div class="presetres"><b>${esc(r.name || '—')}</b> <span class="mute">${esc(r.code || '')}</span></div><input type="hidden" name="residence_id" value="${esc(rid)}"></div>`; };
 const resField = () => S.scope ? presetRes(S.scope) : resSelect();
-const resSelect = () => `<div class="field combo" data-combo="res"><span class="lbl">Residência *</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar residência pelo nome…" autocomplete="off" required role="combobox" aria-expanded="false" aria-label="Pesquisar residência"><input type="hidden" name="residence_id"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newres>Cadastrar</button></div><p class="mute combohint">Digite parte do nome e escolha a residência na lista.</p>${S.res.length ? '' : '<p class="mute">Nenhuma residência cadastrada ainda. Use “Cadastrar” para criar a primeira.</p>'}</div>`;
+const resSelect = () => `<div class="field combo" data-combo="res"><span class="lbl">Residência *</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar residência por nome ou código…" autocomplete="off" required role="combobox" aria-expanded="false" aria-label="Pesquisar residência"><input type="hidden" name="residence_id"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newres>Cadastrar</button></div><p class="mute combohint">Digite parte do nome e escolha a residência na lista.</p>${S.res.length ? '' : '<p class="mute">Nenhuma residência cadastrada ainda. Use “Cadastrar” para criar a primeira.</p>'}</div>`;
 const ownPickHtml = ids => `<div class="ownpick field combo" data-combo="own"><span class="lbl">Proprietários vinculados (opcional)</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar proprietário pelo nome…" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar proprietário"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newown>Cadastrar</button></div><div class="reslinked" data-ownlist></div><input type="hidden" name="owner_ids" value="${ids.join(',')}"></div>`;
 function refreshOwnPick(box) {   // lista numerada dos proprietários escolhidos (a gravação acontece ao salvar a residência)
   const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean), os = ids.map(id => S.owners.find(x => x.id === id)).filter(Boolean);
@@ -105,10 +105,10 @@ function comboList(box) {
   if (!q) return comboClose(box);   // sem caracteres digitados: nenhuma sugestão
   if (type === 'res') {
     const cur = S.res.find(r => r.id === box.querySelector('[name=residence_id]').value); if (cur && cur.name === inp.value) return comboClose(box);   // já escolhida: nada a sugerir
-    items = S.res.filter(r => !q || norm(r.name).includes(q)).sort(byName).map(r => ({ id: r.id, label: r.name, sub: r.code }));
+    items = S.res.filter(r => !q || hit(norm(r.name + ' ' + r.code), q)).sort(byName).map(r => ({ id: r.id, label: r.name, sub: r.code }));
   } else if (type === 'resmulti') {   // residências do proprietário: não repete as que já estão na lista
     const ids = box.querySelector('[name=res_ids]').value.split(',').filter(Boolean);
-    items = S.res.filter(r => !ids.includes(r.id) && (!q || norm(r.name).includes(q))).sort(byName).map(r => ({ id: r.id, label: r.name, sub: r.code }));
+    items = S.res.filter(r => !ids.includes(r.id) && (!q || hit(norm(r.name + ' ' + r.code), q))).sort(byName).map(r => ({ id: r.id, label: r.name, sub: r.code }));
   } else {
     const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean);
     items = S.owners.filter(o => !ids.includes(o.id) && (!q || norm(o.name).includes(q))).sort(byName).map(o => ({ id: o.id, label: o.name, sub: o.cpf_mask }));
@@ -126,7 +126,7 @@ function comboPick(box, id) {
   comboClose(box);
 }
 // lista numerada das residências vinculadas ao proprietário (a gravação acontece ao clicar em Salvar)
-const resMultiHtml = ids => `<div class="resmulti field combo" data-combo="resmulti"><span class="lbl">Residências vinculadas (opcional)</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar residência pelo nome…" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar residência"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newres>Cadastrar</button></div><input type="hidden" name="res_ids" value="${ids.join(',')}"><div class="reslinked" data-reslist></div></div>`;
+const resMultiHtml = ids => `<div class="resmulti field combo" data-combo="resmulti"><span class="lbl">Residências vinculadas (opcional)</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar residência por nome ou código…" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar residência"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newres>Cadastrar</button></div><input type="hidden" name="res_ids" value="${ids.join(',')}"><div class="reslinked" data-reslist></div></div>`;
 function refreshResMulti(box) {
   const ids = box.querySelector('[name=res_ids]').value.split(',').filter(Boolean), rs = ids.map(id => S.res.find(r => r.id === id)).filter(Boolean);
   box.querySelector('[data-reslist]').innerHTML = rs.length ? `<h4 class="reshead">Residências vinculadas (${rs.length})</h4><ol class="reslist">${rs.map(r => `<li><div class="rname"><b>${esc(r.name)}</b><span class="mute">${esc(r.code)}${r.address ? ' · ' + esc(r.address) : ''}</span></div>${acts(`<button type="button" class="link" data-reedit="${r.id}">Editar</button>`, `<button type="button" class="link danger" data-reunlink="${r.id}">Desvincular</button>`)}</li>`).join('')}</ol>` : '<p class="mute reshead">Nenhuma residência vinculada.</p>';
@@ -331,6 +331,8 @@ function lbMove(n) { const L = S.lb; L.i = (L.i + n + L.list.length) % L.list.le
 
 // ---------- dados auxiliares: residências e proprietários
 const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const cmp = s => s.replace(/[^a-z0-9]/g, '');   // ignora hífen, espaço e pontuação (ex.: "ast2026002" acha "AST-2026-002")
+const hit = (hay, q) => hay.includes(q) || (cmp(q) && cmp(hay).includes(cmp(q)));
 async function reloadRes() { const { data } = await sb.from('residences').select('*').order('created_at', { ascending: false }); S.res = data || []; }
 async function loadOwners() {
   const [{ data: cl }, { data: lk }] = await Promise.all([sb.from('client_cpfs').select('*').order('created_at', { ascending: false }), sb.from('cpf_residences').select('cpf_id,residence_id')]);
@@ -354,7 +356,7 @@ function paintItems() {
   const q = norm(S.q).trim(), raw = S.q.trim(), noun = S.noun || ['item', 'itens'];
   Object.entries(S.items || {}).forEach(([id, items], n) => {
     const el = $('#' + id); if (!el) return;
-    const list = items.filter(i => (!q || i.hay.includes(q)) && (!S.stf.size || i.st === undefined || S.stf.has(i.st))), filtrado = !!q || (S.stf.size > 0 && items.some(i => i.st !== undefined)), pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
+    const list = items.filter(i => (!q || hit(i.hay, q)) && (!S.stf.size || i.st === undefined || S.stf.has(i.st))), filtrado = !!q || (S.stf.size > 0 && items.some(i => i.st !== undefined)), pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
     S.pages[id] = pg;
     el.innerHTML = list.length ? list.slice((pg - 1) * S.pp, pg * S.pp).map(i => i.html).join('') : `<p class="empty">${items.length ? (raw ? `Nada encontrado para “${esc(raw)}”${S.stf.size ? ' com a situação escolhida' : ''}.` : 'Nenhum item com a situação escolhida.') : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
     const bar = $('#pg-' + id); if (bar) bar.innerHTML = list.length ? pagerHtml(id, list.length, pg, pages) : '';
