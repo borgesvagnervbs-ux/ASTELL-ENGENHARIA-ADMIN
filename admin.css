@@ -253,3 +253,20 @@ table.rep tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
 .bthumb{position:relative;width:76px;height:76px;min-height:0;padding:0;margin:0;border-radius:8px;overflow:hidden;background:#000;border:1px solid var(--line)}
 .bthumb img{width:100%;height:100%;object-fit:cover;display:block}
 .bthumb .playbadge{width:28px;height:28px;font-size:.7rem}
+
+/* ---- inspeções preventivas: situação colorida, menu de troca e filtros */
+.badge.st-pend,.stopt.st-pend,.stf-pend{--c:#8d99a6;--cx:#0b1623}
+.badge.st-and,.stopt.st-and,.stf-and{--c:#e0b020;--cx:#1b1409}
+.badge.st-conc,.stopt.st-conc,.stf-conc{--c:#2a9a62;--cx:#fff}
+.badge.st-canc,.stopt.st-canc,.stf-canc{--c:#c0443a;--cx:#fff}
+.stf-all{--c:#d9b48a;--cx:#1b1409}
+.badge.st,.stopt{background:var(--c);color:var(--cx)}
+.stpick{position:relative;display:inline-flex;align-items:center;gap:4px;vertical-align:middle}
+.stbtn{min-height:26px;width:28px;padding:0;margin:0;background:transparent;border:1px solid #2a4157;color:var(--ink);border-radius:8px;font-size:.8rem;line-height:1}
+.stmenu{position:absolute;left:0;top:calc(100% + 4px);z-index:30;list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:6px;min-width:160px;background:#16283a;border:1px solid #2a4157;border-radius:10px;box-shadow:0 8px 24px #0009}
+.stmenu[hidden]{display:none}
+.stopt{width:100%;min-height:36px;margin:0;padding:0 12px;border-radius:8px;font-size:.88rem;text-align:left}
+.stbar{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 14px}
+.stf{margin:0;min-height:38px;padding:0 16px;border-radius:999px;font-size:.85rem;background:transparent;color:var(--c);border:2px solid var(--c)}
+.stf[aria-pressed=true]{background:var(--c);color:var(--cx)}
+.stf:focus-visible,.stbtn:focus-visible,.stopt:focus-visible{outline:3px solid #8fc6cc;outline-offset:2px}

@@ -12,7 +12,7 @@ const fail = m => { view.innerHTML = '<div class="card" style="margin:16px"><b>N
 if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo config.js e preencha SUPABASE_URL e SUPABASE_KEY.'); throw new Error('Supabase não configurado'); }
 addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
 
-const S = { logo: null, rep: null, repf: null, profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, pp: 10, pages: {}, noun: null, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
+const S = { stf: new Set(), logo: null, rep: null, repf: null, profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, pp: 10, pages: {}, noun: null, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
 // Aceita CLOUDINARY_UPLOAD_PRESET ou CLOUDINARY_PRESET no config.js
 const CLD_NAME = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? String(CLOUDINARY_CLOUD_NAME).trim() : '';
 const CLD_PRESET = typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' ? String(CLOUDINARY_UPLOAD_PRESET).trim() : (typeof CLOUDINARY_PRESET !== 'undefined' ? String(CLOUDINARY_PRESET).trim() : '');
@@ -37,6 +37,11 @@ const addMonths = (d, m) => { const x = new Date(d + 'T00:00'); x.setMonth(x.get
 function wState(w) { const end = addMonths(w.start_date, w.months), days = (end - new Date()) / 864e5; return days < 0 ? ['Encerrada', 'bad', end] : days < 90 ? ['Próxima do vencimento', 'warn', end] : ['Vigente', 'ok', end]; }
 const DOC_CATS = ['Projeto arquitetônico', 'Projeto estrutural', 'Projeto elétrico', 'Projeto hidráulico', 'Projeto sanitário', 'Climatização', 'Cobertura', 'Memorial descritivo', 'Manuais', 'Notas e comprovantes', 'Termo de entrega', 'Garantia', 'Outros'];
 const STATUS = ['Recebida', 'Em análise', 'Aguardando informações', 'Agendada', 'Em atendimento', 'Concluída', 'Encerrada'];
+// situações das inspeções preventivas: valor gravado no banco → [classe de cor, rótulo do botão de filtro]
+const ST = { 'Pendente': ['pend', 'Pendentes'], 'Em andamento': ['and', 'Em Andamento'], 'Concluída': ['conc', 'Concluídas'], 'Cancelada': ['canc', 'Canceladas'] };
+const stPick = r => { const st = ST[r.status] ? r.status : 'Pendente';   // selo colorido + setinha que abre as outras situações
+  return `<span class="stpick" data-stwrap><span class="badge st st-${ST[st][0]}">${st}</span><button type="button" class="stbtn" data-stopen aria-label="Alterar a situação" aria-haspopup="true" aria-expanded="false">▾</button><ul class="stmenu" hidden>${Object.keys(ST).filter(x => x !== st).map(x => `<li><button type="button" class="stopt st-${ST[x][0]}" data-stset="${r.id}|${x}">${x}</button></li>`).join('')}</ul></span>`; };
+const stBarInner = () => `<button type="button" class="stf stf-all" data-stf="all" aria-pressed="${!S.stf.size}">Todas</button>` + Object.entries(ST).map(([k, [c, l]]) => `<button type="button" class="stf stf-${c}" data-stf="${k}" aria-pressed="${S.stf.has(k)}">${l}</button>`).join('');
 const PT_CATS = ['Elétrica', 'Hidráulica', 'Gás', 'Climatização', 'Estrutura', 'Paredes', 'Equipamentos'];
 
 const DEFREQ = ['system', 'name', 'description', 'months', 'start_date', 'event_date', 'title'];
@@ -53,7 +58,7 @@ const T = {
     row: r => { const [s, c, end] = wState(r); return `<b>${esc(r.system)}</b> <span class="badge ${c}">${s}</span><p>${esc(r.coverage)}</p><span class="mute">${fmt(r.start_date)} até ${end.toLocaleDateString('pt-BR')}</span><p class="mute">${esc(r.notes)}</p>`; },
     note: 'Os prazos valem conforme contrato, fabricante e lei. As condições contratuais e legais prevalecem sobre os indicadores do aplicativo.' },
   maintenance_tasks: { label: 'Inspeções Preventivas', order: 'next_due', f: [['name', 'Tarefa'], ['system', 'Sistema'], ['frequency', 'Periodicidade (texto)'], ['last_done', 'Última execução', 'date'], ['next_due', 'Próxima data', 'date'], ['interval_months', 'Repetir a cada (meses)', 'number'], ['status', 'Situação', ['Pendente', 'Em andamento', 'Concluída', 'Cancelada']], ['instructions', 'Instruções', 'textarea']],
-    row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> <span class="badge ${late ? 'bad' : st === 'Concluída' ? 'ok' : ''}">${late ? 'Atrasada' : st}</span><p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
+    row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> ${stPick(r)}${late ? ' <span class="badge bad">Atrasada</span>' : ''}<p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
   equipment: { label: 'Equipamentos', f: [['name', 'Nome'], ['category', 'Categoria'], ['maker', 'Fabricante'], ['model', 'Modelo'], ['serial', 'Nº de série'], ['location', 'Localização'], ['description', 'Descrição do equipamento', 'textarea', false], ['warranty_months', 'Tempo de garantia (meses)', 'number', false], ['supplier', 'Fornecedor ou loja de compra', 'text', false]],
     row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.category)} · ${esc(r.location)}</span><p>${esc(r.maker)} ${esc(r.model)} ${r.serial ? '· Série ' + esc(r.serial) : ''}</p>${r.description ? `<p class="mute">${esc(r.description)}</p>` : ''}${r.warranty_months ? `<span class="mute meta">Garantia: ${esc(r.warranty_months)} ${+r.warranty_months === 1 ? 'mês' : 'meses'}</span>` : ''}${r.supplier ? `<span class="mute meta">Fornecedor / loja: ${esc(r.supplier)}</span>` : ''}` },
   building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais', 'Infraestrutura']], ['title', 'Título'], ['description', 'Descrição', 'textarea', false], ['highlights', 'Destaques (um por linha)', 'textarea']],
@@ -149,6 +154,7 @@ function closeFloating(except) {
   let any = false;
   document.querySelectorAll('.calpop:not([hidden])').forEach(p => { if (!except || !p.closest('[data-date]').contains(except)) { p.hidden = true; any = true; } });
   document.querySelectorAll('.combolist:not([hidden])').forEach(u => { const b = u.closest('.combo'); if (!except || !b.contains(except)) { comboClose(b); any = true; } });
+  document.querySelectorAll('.stmenu:not([hidden])').forEach(m => { if (!except || !m.closest('[data-stwrap]').contains(except)) { m.hidden = true; const b = m.parentElement.querySelector('[data-stopen]'); if (b) b.setAttribute('aria-expanded', 'false'); any = true; } });
   return any;
 }
 const resFormBody = (row = {}, ownerIds = [], noOwners = false) => RES_F.map(f => fld(f, row)).join('') + (noOwners ? '' : ownPickHtml(ownerIds));
@@ -170,28 +176,35 @@ function openOwnerEdit(id, opts = {}) {
 }
 function presetCat(cat) { return `<div class="field"><span class="lbl">Tipo de construção</span><div class="presetres"><b>${cat[0]}</b></div><input type="hidden" name="category" value="${cat[2]}"></div>`; }
 // imagens e vídeos nos cadastros da Construção (Cloudinary; os endereços ficam na coluna "media" de building_items)
-const MEDIA_T = { building_items: { vid: true, pasta: 'construcao' }, equipment: { vid: false, pasta: 'equipamentos' } };   // tabelas com imagens (e vídeos) no cadastro
-const bldMediaInput = (row, k = 'building_items') => !CLOUD_OK ? cloudMissing() : (row ? `<div class="field"><span class="lbl">${MEDIA_T[k].vid ? 'Imagens e vídeos atuais' : 'Imagens atuais'}</span><ul class="curfiles">${(row.media || []).map((x, i) => `<li><span class="fname">${x.type === 'video' ? 'Vídeo' : 'Imagem'} · ${esc(x.name || 'arquivo')}</span><label class="chk"><input type="checkbox" name="rm_media" value="${i}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '') + `<label>${MEDIA_T[k].vid ? (row ? 'Adicionar mais imagens e vídeos' : 'Imagens e vídeos') : (row ? 'Adicionar mais imagens' : 'Imagens')} (opcional; pode escolher vários)<input name="media" type="file" accept="${MEDIA_T[k].vid ? 'image/*,video/*' : 'image/*'}" multiple></label><p class="mute">${MEDIA_T[k].vid ? 'Imagens até 10 MB e vídeos até 100 MB.' : 'Imagens até 10 MB cada.'}</p>`;
-const bldThumbs = (r, k = 'building_items') => (r.media || []).length ? `<div class="bthumbs">${r.media.map((x, i) => `<button type="button" class="bthumb" data-bm="${k}|${r.id}|${i}" aria-label="Ampliar ${x.type === 'video' ? 'vídeo' : 'imagem'}"><img src="${esc(x.type === 'video' ? vposter(x.url) : cld(x.url, 200))}" alt="" loading="lazy" draggable="false">${x.type === 'video' ? '<span class="playbadge">▶</span>' : ''}</button>`).join('')}</div>` : '';
+const MEDIA_T = { building_items: { vid: true, pasta: 'construcao' }, equipment: { vid: false, pasta: 'equipamentos' }, maintenance_tasks: { vid: true, pdf: true, pasta: 'inspecoes' } };   // tabelas com imagens (e vídeos) no cadastro
+const mediaKinds = k => MEDIA_T[k].pdf ? 'imagens, vídeos e PDFs' : MEDIA_T[k].vid ? 'imagens e vídeos' : 'imagens';
+const mediaItemLabel = x => (x.type === 'video' ? 'Vídeo' : x.type === 'pdf' ? 'PDF' : 'Imagem') + ' · ' + (x.name || 'arquivo');
+const bldMediaInput = (row, k = 'building_items') => { const T0 = MEDIA_T[k], cap = mediaKinds(k); return !CLOUD_OK ? cloudMissing() : (row ? `<div class="field"><span class="lbl">Arquivos atuais (${cap})</span><ul class="curfiles">${(row.media || []).map((x, i) => `<li><span class="fname">${esc(mediaItemLabel(x))}</span><label class="chk"><input type="checkbox" name="rm_media" value="${i}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '') + `<label>${row ? 'Adicionar mais' : 'Anexar'} ${cap} (opcional; pode escolher vários)<input name="media" type="file" accept="${T0.pdf ? 'image/*,video/*,application/pdf' : T0.vid ? 'image/*,video/*' : 'image/*'}" multiple></label><p class="mute">Imagens até 10 MB${T0.vid ? ', vídeos até 100 MB' : ''}${T0.pdf ? ' e PDFs até 25 MB' : ''}.</p>`; };
+const bldThumbs = (r, k = 'building_items') => { const m = r.media || []; if (!m.length) return '';
+  const vis = m.map((x, i) => [x, i]).filter(([x]) => x.type !== 'pdf'), pdf = m.filter(x => x.type === 'pdf');
+  return (vis.length ? `<div class="bthumbs">${vis.map(([x, i]) => `<button type="button" class="bthumb" data-bm="${k}|${r.id}|${i}" aria-label="Ampliar ${x.type === 'video' ? 'vídeo' : 'imagem'}"><img src="${esc(x.type === 'video' ? vposter(x.url) : cld(x.url, 200))}" alt="" loading="lazy" draggable="false">${x.type === 'video' ? '<span class="playbadge">▶</span>' : ''}</button>`).join('')}</div>` : '') +
+    (pdf.length ? `<div class="dfiles">${pdf.map(x => `<button type="button" class="link filelink" data-open="${esc(x.path)}" title="Abrir">PDF · ${esc(x.name)}</button>`).join('')}</div>` : ''); };
 async function saveBld(f, o, op, k = 'building_items') {
-  const picked = f.media ? [...f.media.files] : [];
+  const picked = f.media ? [...f.media.files] : [], T0 = MEDIA_T[k], kind = x => /^image\//.test(x.type) ? 'image' : /^video\//.test(x.type) && T0.vid ? 'video' : x.type === 'application/pdf' && T0.pdf ? 'pdf' : null;
   for (const x of picked) {
-    const vid = /^video\//.test(x.type), img = /^image\//.test(x.type);
-    if (!img && !(vid && MEDIA_T[k].vid)) return { error: { message: `"${x.name}" não é ${MEDIA_T[k].vid ? 'imagem nem vídeo' : 'uma imagem'}.` } };
-    if (x.size > (vid ? 100 : 10) * 1048576) return { error: { message: `"${x.name}" é maior que ${vid ? 100 : 10} MB.` } };
+    const t = kind(x); if (!t) return { error: { message: `"${x.name}" não é um tipo aceito (${mediaKinds(k)}).` } };
+    const max = t === 'video' ? 100 : t === 'pdf' ? 25 : 10; if (x.size > max * 1048576) return { error: { message: `"${x.name}" é maior que ${max} MB.` } };
   }
   const { media, rm_media, ...fields } = o, row = op === 'edit' ? (S.rows[k] || []).find(x => x.id === f.dataset.id) : null;
-  const res = S.res.find(x => x.id === (op === 'add' ? fields.residence_id : row && row.residence_id)), up = [];
-  const folder = 'astell-home/' + String(res ? res.code : 'sem-codigo').replace(/[^\w-]/g, '_') + '/' + MEDIA_T[k].pasta;
+  const rid = op === 'add' ? fields.residence_id : row && row.residence_id, res = S.res.find(x => x.id === rid), up = [], store = sb.storage.from('documents');
+  const folder = 'astell-home/' + String(res ? res.code : 'sem-codigo').replace(/[^\w-]/g, '_') + '/' + T0.pasta, pdfPaths = () => up.filter(x => x.path).map(x => x.path);
   try {
     for (let i = 0; i < picked.length; i++) {
-      toast(`Enviando ${i + 1} de ${picked.length}…`);
-      const j = await cldPost(picked[i], folder); up.push({ url: j.secure_url, type: /^video\//.test(picked[i].type) ? 'video' : 'image', name: picked[i].name, public_id: j.public_id });
+      toast(`Enviando ${i + 1} de ${picked.length}…`); const t = kind(picked[i]);
+      if (t === 'pdf') { const path = `${rid}/${T0.pasta}/${Date.now()}_${i}_${picked[i].name.replace(/[^\w.-]/g, '_')}`, r = await store.upload(path, picked[i], { contentType: 'application/pdf' }); if (r.error) throw r.error; up.push({ path, type: 'pdf', name: picked[i].name, size: picked[i].size }); }
+      else { const j = await cldPost(picked[i], folder); up.push({ url: j.secure_url, type: t, name: picked[i].name, public_id: j.public_id }); }
     }
-  } catch (e) { return { error: { message: 'falha no envio de arquivo (' + e.message + ')' } }; }
-  if (op === 'add') return sb.from(k).insert({ ...fields, media: up });
-  const rm = [...f.querySelectorAll('[name=rm_media]:checked')].map(i => +i.value);
-  return sb.from(k).update({ ...fields, media: [...((row && row.media) || []).filter((x, i) => !rm.includes(i)), ...up] }).eq('id', f.dataset.id);
+  } catch (e) { if (pdfPaths().length) await store.remove(pdfPaths()); return { error: { message: 'falha no envio de arquivo (' + e.message + ')' } }; }
+  if (op === 'add') { const r = await sb.from(k).insert({ ...fields, media: up }); if (r.error && pdfPaths().length) await store.remove(pdfPaths()); return r; }
+  const rm = [...f.querySelectorAll('[name=rm_media]:checked')].map(i => +i.value), old = (row && row.media) || [];
+  const r = await sb.from(k).update({ ...fields, media: [...old.filter((x, i) => !rm.includes(i)), ...up] }).eq('id', f.dataset.id);
+  if (r.error) { if (pdfPaths().length) await store.remove(pdfPaths()); } else { const gone = old.filter((x, i) => rm.includes(i) && x.path).map(x => x.path); if (gone.length) await store.remove(gone); }
+  return r;
 }
 function openAdd(k) {
   if (k.startsWith('dc:')) return openDc(k.slice(3));
@@ -341,11 +354,11 @@ function paintItems() {
   const q = norm(S.q).trim(), raw = S.q.trim(), noun = S.noun || ['item', 'itens'];
   Object.entries(S.items || {}).forEach(([id, items], n) => {
     const el = $('#' + id); if (!el) return;
-    const list = q ? items.filter(i => i.hay.includes(q)) : items, pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
+    const list = items.filter(i => (!q || i.hay.includes(q)) && (!S.stf.size || i.st === undefined || S.stf.has(i.st))), filtrado = !!q || (S.stf.size > 0 && items.some(i => i.st !== undefined)), pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
     S.pages[id] = pg;
-    el.innerHTML = list.length ? list.slice((pg - 1) * S.pp, pg * S.pp).map(i => i.html).join('') : `<p class="empty">${items.length ? `Nada encontrado para “${esc(raw)}”.` : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
+    el.innerHTML = list.length ? list.slice((pg - 1) * S.pp, pg * S.pp).map(i => i.html).join('') : `<p class="empty">${items.length ? (raw ? `Nada encontrado para “${esc(raw)}”${S.stf.size ? ' com a situação escolhida' : ''}.` : 'Nenhum item com a situação escolhida.') : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
     const bar = $('#pg-' + id); if (bar) bar.innerHTML = list.length ? pagerHtml(id, list.length, pg, pages) : '';
-    const c = n === 0 && $('#mcount'); if (c) c.textContent = q ? `${list.length} de ${items.length} ${items.length === 1 ? noun[0] : noun[1]}` : `${items.length} ${items.length === 1 ? noun[0] : noun[1]}`;
+    const c = n === 0 && $('#mcount'); if (c) c.textContent = filtrado ? `${list.length} de ${items.length} ${items.length === 1 ? noun[0] : noun[1]}` : `${items.length} ${items.length === 1 ? noun[0] : noun[1]}`;
   });
 }
 const setItems = (map, empties = {}) => { S.items = map; S.empties = empties; };
@@ -403,9 +416,9 @@ async function listPage(k) {
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
-    return { hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${MEDIA_T[k] ? bldThumbs(r, k) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
+    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${MEDIA_T[k] ? bldThumbs(r, k) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
   }) });
-  view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
+  view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + (k === 'maintenance_tasks' ? `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div>` : '') + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
 }
 
@@ -564,7 +577,7 @@ async function bkData(withHash, say) {
   if (!withHash) (out.client_cpfs || []).forEach(r => { delete r.cpf_hash; });
   return { meta: { sistema: 'Astell Home', gerado_em: new Date().toISOString(), formato: 1, cpf_hash_incluido: !!withHash, tabelas_nao_encontradas: missing }, ...out };
 }
-const bkPaths = d => [...new Set([...(d.documents || []).map(x => x.path), ...(d.floorplans || []).map(x => x.path), ...(d.doc_records || []).flatMap(x => (x.files || []).map(f => f.path))].filter(Boolean))];
+const bkPaths = d => [...new Set([...(d.documents || []).map(x => x.path), ...(d.floorplans || []).map(x => x.path), ...(d.doc_records || []).flatMap(x => (x.files || []).map(f => f.path)), ...['maintenance_tasks', 'building_items', 'equipment'].flatMap(t => (d[t] || []).flatMap(r => (r.media || []).map(m => m.path)))].filter(Boolean))];
 async function runBackup(full, withHash) {
   const msg = $('#bkmsg'), say = t => { msg.textContent = t; }, btns = document.querySelectorAll('[data-bk]'); btns.forEach(b => b.disabled = true);
   try {
@@ -723,7 +736,7 @@ async function render() {
   view.classList.toggle('wide', !!S.arg);
   $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat) || (S.menu === 'docs' && !S.dcat) || (S.menu === 'pl' && !!S.arg) || !!S.plan || ['rep', 'logo', 'bk'].includes(S.menu);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
   const tela = S.menu + '|' + (S.sub || '') + '|' + (S.cat || '') + '|' + (S.dcat || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
-  if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; }
+  if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; S.stf = new Set(); }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
   document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
   S.items = null;
@@ -785,7 +798,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-bm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-stopen],[data-stset],[data-stf],[data-bm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -809,7 +822,10 @@ document.addEventListener('click', async e => {
   if (d.ownunlink) { const box = el.closest('.ownpick'), h = box.querySelector('[name=owner_ids]'); h.value = h.value.split(',').filter(x => x && x !== d.ownunlink).join(','); refreshOwnPick(box); }
   if (d.ownedit) { const box = el.closest('.ownpick'); pushModal(() => refreshOwnPick(box)); openOwnerEdit(d.ownedit, { fromRes: true }); }
   if (d.gal) { const [, id] = d.gal.split(':'), t = S.rows.maintenance_tasks.find(x => x.id === id); S.gal = { kind: 'maintenance', refId: id, resId: t.residence_id, title: t.name }; gallery(); }
-  if (d.bm) { const [bk, bid, bi] = d.bm.split('|'), row = (S.rows[bk] || []).find(x => x.id === bid); if (row) lbOpenList((row.media || []).map((x, j) => ({ id: bid + j, url: x.url, media_type: x.type === 'video' ? 'video' : 'image' })), +bi); }
+  if (d.stopen !== undefined) { const m = el.parentElement.querySelector('.stmenu'), abrir = m.hidden; closeFloating(); m.hidden = !abrir; el.setAttribute('aria-expanded', abrir); }
+  if (d.stset) { const [sid, sv] = d.stset.split('|'); const { error } = await sb.from('maintenance_tasks').update({ status: sv }).eq('id', sid); done(error && 'Não foi possível alterar a situação.', 'Situação alterada para ' + sv + '.'); }
+  if (d.stf) { if (d.stf === 'all') S.stf = new Set(); else { if (S.stf.has(d.stf)) S.stf.delete(d.stf); else S.stf.add(d.stf); if (S.stf.size === Object.keys(ST).length) S.stf = new Set(); } S.pages = {}; $('#stbar').innerHTML = stBarInner(); paintItems(); }
+  if (d.bm) { const [bk, bid, bi] = d.bm.split('|'), row = (S.rows[bk] || []).find(x => x.id === bid); if (row) { const vis = (row.media || []).map((x, j) => ({ x, j })).filter(o => o.x.type !== 'pdf'); lbOpenList(vis.map(({ x, j }) => ({ id: bid + j, url: x.url, media_type: x.type === 'video' ? 'video' : 'image' })), Math.max(0, vis.findIndex(o => o.j === +bi))); } }
   if (d.upl) openUpload(d.upl.split(':')[1]);
   if (d.pickfiles !== undefined) $('#fileIn').click();
   if (d.unstage !== undefined) { S.up.files.splice(+d.unstage, 1); renderStage(); }
@@ -831,7 +847,7 @@ document.addEventListener('click', async e => {
   if (d.add) openAdd(d.add);
   if (d.edit) { const [k, id] = d.edit.split(':'); openEdit(k, id); }
   if (d.vis) { const [k, id] = d.vis.split(':'), r = S.rows[k].find(x => x.id === id); const { error } = await sb.from(k).update({ visible: !r.visible }).eq('id', id); done(error && 'Não foi possível alterar.', r.visible ? 'Oculto do cliente.' : 'Visível ao cliente.'); }
-  if (d.del && confirm('Excluir este registro?')) { const [k, id] = d.del.split(':'); const { error } = await sb.from(k).delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
+  if (d.del && confirm('Excluir este registro?')) { const [k, id] = d.del.split(':'), old = ((S.rows[k] || []).find(x => x.id === id) || {}).media || []; const { error } = await sb.from(k).delete().eq('id', id); const pp = old.filter(x => x.path).map(x => x.path); if (!error && pp.length) await sb.storage.from('documents').remove(pp); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
   if (d.deldoc && confirm('Excluir este documento?')) { const [id, p] = d.deldoc.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('documents').delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Documento excluído.'); }
   if (d.delplan && confirm('Excluir esta planta e todos os pontos marcados nela?')) { const [id, p] = d.delplan.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('floorplans').delete().eq('id', id); if (error) toast('Não foi possível excluir.', 1); else { toast('Planta excluída.'); location.hash = S.scope ? '#res/' + S.scope + '/pl' : '#pl'; } }
   if (d.open) { const { data, error } = await sb.storage.from('documents').createSignedUrl(d.open, 60); error ? toast('Não foi possível abrir.', 1) : window.open(data.signedUrl, '_blank', 'noopener'); }
