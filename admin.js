@@ -217,6 +217,18 @@ function openAdd(k) {
   const cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;   // dentro de Estruturas/Materiais/Sistemas o tipo já vem definido
   modal('Adicionar — ' + (cat ? cat[0] : T[k].label), resField() + (cat ? presetCat(cat) : '') + T[k].f.filter(f => !(cat && f[0] === 'category')).map(f => fld(f)).join('') + (MEDIA_T[k] ? bldMediaInput(null, k, cat ? cat[2] : undefined) : ''), `data-form="add:${k}"`);
 }
+// ---------- copiar: abre o cadastro já preenchido; ao salvar vira um NOVO registro (os arquivos anexos não são copiados)
+const copyNote = t => `<p class="notice">Cópia de “${esc(t || 'registro')}”. Ajuste o que precisar e salve para criar um novo cadastro. Os arquivos anexos não são copiados; anexe novamente se precisar.</p>`;
+function pickCopyRes(rid) { if (S.scope) return; const box = document.querySelector('#modal [data-combo=res]'); if (box) comboPick(box, rid); }   // nos menus gerais a residência vem escolhida, mas pode ser trocada
+function openCopy(k, id) {
+  if (k === 'dc') { const dr = (S.rows.doc_records || []).find(r => r.id === id); return dr && openDc(Object.keys(DCATS).find(x => DCATS[x].kind === dr.kind), null, dr); }
+  if (k === 'pl') { const p = S.curPlan || {}; if (p.id !== id) return; return modal('Copiar planta técnica', copyNote(p.title) + resField() + plFormBody().replace('name="title" value=""', `name="title" value="${esc(p.title)}"`), 'data-form="add:pl" data-iscopy="1"', 'Salvar cópia'), pickCopyRes(p.residence_id); }
+  const row = (S.rows[k] || []).find(r => r.id === id); if (!row) return;
+  if (k === 'documents') { modal('Copiar documento', copyNote(row.title) + resField() + '<label>Arquivo<input name="file" type="file" required></label>' + DOC_F.map(f => fld(f, row)).join(''), 'data-form="add:docs"', 'Salvar cópia'); return pickCopyRes(row.residence_id); }
+  const cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;
+  modal('Copiar — ' + (cat ? cat[0] : T[k].label), copyNote(TITLE[k] ? TITLE[k](row) : '') + resField() + (cat ? presetCat(cat) : '') + T[k].f.filter(f => !(cat && f[0] === 'category')).map(f => fld(f, row)).join('') + (MEDIA_T[k] ? bldMediaInput(null, k, cat ? cat[2] : row.category) : ''), `data-form="add:${k}"`, 'Salvar cópia');
+  pickCopyRes(row.residence_id);
+}
 function openEdit(k, id, opts = {}) {
   if (k === 'res') { const r = S.res.find(x => x.id === id); if (!r) return; return modal('Editar cadastro', resFormBody(r, (S.ownersByRes[id] || []).map(o => o.id), !!opts.fromOwner), `data-form="edit:res" data-id="${id}"`, 'Salvar alterações'); }
   if (k === 'dc') { const dr = (S.rows.doc_records || []).find(r => r.id === id); return dr && openDc(Object.keys(DCATS).find(x => DCATS[x].kind === dr.kind), dr); }
@@ -423,7 +435,7 @@ async function listPage(k) {
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
-    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? (wState(r)[0] === 'Expirada' ? 'Expirada' : 'Vigente') : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${MEDIA_T[k] ? bldThumbs(r, k) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
+    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? (wState(r)[0] === 'Expirada' ? 'Expirada' : 'Vigente') : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${MEDIA_T[k] ? bldThumbs(r, k) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, `<button class="link" data-copy="${k}:${r.id}">Copiar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
   }) });
   view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + (k === 'maintenance_tasks' || k === 'warranties' ? `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div>` : '') + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
@@ -447,7 +459,7 @@ async function savePl(f, o, op) {
   if (img && (!/^image\//.test(img.type) || img.size > 10 * 1048576)) return { error: { message: `"${img.name}" precisa ser uma imagem de até 10 MB.` } };
   for (const x of picked) { const t = plKind2(x); if (!t) return { error: { message: `"${x.name}" não é PDF, imagem nem vídeo.` } }; const mx = t === 'video' ? 100 : t === 'pdf' ? 25 : 10; if (x.size > mx * 1048576) return { error: { message: `"${x.name}" é maior que ${mx} MB.` } }; if (t !== 'pdf' && !CLOUD_OK) return { error: { message: 'Imagens e vídeos extras precisam do Cloudinary configurado.' } }; }
   const rid = op === 'add' ? o.residence_id : row.residence_id, rm = [...f.querySelectorAll('[name=rm_files]:checked')].map(i => +i.value), old = (row && row.files) || [];
-  const keep = old.filter((x, i) => !rm.includes(i)); if (!img && !picked.length && !(row && row.path) && !keep.length) return { error: { message: 'Envie a imagem da planta, um PDF, uma imagem ou um vídeo.' } };
+  const keep = old.filter((x, i) => !rm.includes(i)); if (!f.dataset.iscopy && !img && !picked.length && !(row && row.path) && !keep.length) return { error: { message: 'Envie a imagem da planta, um PDF, uma imagem ou um vídeo.' } };
   const up = [], safe = n => n.replace(/[^\w.-]/g, '_'), sent = [], res = S.res.find(x => x.id === rid), folder = 'astell-home/' + String(res ? res.code : 'sem-codigo').replace(/[^\w-]/g, '_') + '/plantas'; let imgPath = null;
   const undo = () => sent.length ? store.remove(sent) : null;
   try {
@@ -482,7 +494,7 @@ async function plantaDetail(id) {
   S.curPlan = cur;
   const files = cur.files || [], [{ data: u }, { data: pts }, ...urls] = await Promise.all([cur.path ? sb.storage.from('documents').createSignedUrl(cur.path, 3600) : Promise.resolve({ data: null }), cur.path ? sb.from('plan_points').select('*').eq('floorplan_id', id).order('created_at') : Promise.resolve({ data: [] }), ...files.map(x => x.path ? sb.storage.from('documents').createSignedUrl(x.path, 3600) : Promise.resolve({ data: null }))]);
   view.innerHTML = crumbs([...ptr, [cur.title]]) + `<div class="pagehead"><div><h2>${esc(cur.title)}</h2>${metaHtml(cur.residence_id)}</div></div>` +
-    acts(`<button class="link" data-pledit="${cur.id}">Editar</button>`, cur.path && `<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
+    acts(`<button class="link" data-pledit="${cur.id}">Editar</button>`, `<button class="link" data-copy="pl:${cur.id}">Copiar</button>`, cur.path && `<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
     (cur.path ? `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${(pts || []).map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div>` : '') +
     (files.some(x => x.type === 'image' || x.type === 'video') ? `<h3>Imagens e vídeos</h3>${bldThumbs({ id: cur.id, media: files }, 'pm', true).replace(/data-bm="pm\|[^|]*\|/g, 'data-pm="')}` : '') +
     (files.some(x => x.type === 'pdf' || x.type === '3d') ? `<h3>Arquivos (PDF${files.some(x => x.type === '3d') ? ' e 3D' : ''})</h3>${files.map((x, i) => x.type === 'pdf' || x.type === '3d' ? plFileBlock(x, urls[i] && urls[i].data ? urls[i].data.signedUrl : '') : '').join('')}` : '') +
@@ -520,14 +532,15 @@ function docsHub() {   // seis cards (no menu geral e dentro da residência)
   const base = S.scope ? `#res/${S.scope}/docs` : '#docs';
   view.innerHTML = head('Documentos', null) + `<div class="modgrid">${Object.entries(DCATS).map(([k, c]) => `<a class="card rescard modcard" href="${base}/${k}">${ico(IC[c.i])}<b>${c.l}</b></a>`).join('')}</div>`;
 }
-function openDc(kind, row) {   // cadastro (e edição) de um registro das cinco pastas
-  const c = DCATS[kind], ex = (row && row.extra) || {};
-  const v = row ? { title: row.title, doc_date: row.doc_date, notes: row.notes, ...Object.fromEntries(Object.entries(ex).map(([k, x]) => ['x_' + k, x])) } : {};
+function openDc(kind, row, cp) {   // cadastro (e edição, ou cópia) de um registro das cinco pastas
+  const c = DCATS[kind], src = row || cp, ex = (src && src.extra) || {};
+  const v = src ? { title: src.title, doc_date: src.doc_date, notes: src.notes, ...Object.fromEntries(Object.entries(ex).map(([k, x]) => ['x_' + k, x])) } : {};
   const fields = [['title', 'Título'], ['doc_date', 'Data', 'date', true], ...c.f.map(([k, l, t]) => ['x_' + k, l, t || 'text', false]), ['notes', 'Observações', 'textarea', false]];
   const atuais = row ? `<div class="field"><span class="lbl">Arquivos atuais</span><ul class="curfiles">${(row.files || []).map(x => `<li><span class="fname">${esc(x.name)}</span><label class="chk"><input type="checkbox" name="rm_files" value="${esc(x.path)}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '';
-  const arq = `<label>${row ? 'Adicionar mais arquivos' : 'Arquivos'} (PDF ou imagens${row ? '' : '; pode escolher vários'})<input name="files" type="file" accept="application/pdf,image/*" multiple ${row ? '' : 'required'}></label><p class="mute">PDF e imagens, até ${DOC_FILE_MAX} MB cada.</p>`;
-  modal((row ? 'Editar — ' : 'Adicionar — ') + c.l, (row ? `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` : resField()) + fields.map(f => fld(f, v)).join('') + atuais + arq,
-    `data-form="${row ? 'edit' : 'add'}:dc" data-kind="${kind}"${row ? ` data-id="${row.id}" data-rid="${row.residence_id}"` : ''}`, row ? 'Salvar alterações' : 'Salvar');
+  const arq = `<label>${row ? 'Adicionar mais arquivos' : 'Arquivos'} (PDF ou imagens${row ? '' : '; pode escolher vários'})<input name="files" type="file" accept="application/pdf,image/*" multiple ${row || cp ? '' : 'required'}></label><p class="mute">PDF e imagens, até ${DOC_FILE_MAX} MB cada.</p>`;
+  modal((row ? 'Editar — ' : cp ? 'Copiar — ' : 'Adicionar — ') + c.l, (cp ? copyNote(cp.title) : '') + (row ? `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` : resField()) + fields.map(f => fld(f, v)).join('') + atuais + arq,
+    `data-form="${row ? 'edit' : 'add'}:dc" data-kind="${kind}"${row ? ` data-id="${row.id}" data-rid="${row.residence_id}"` : ''}`, row ? 'Salvar alterações' : cp ? 'Salvar cópia' : 'Salvar');
+  if (cp) pickCopyRes(cp.residence_id);
 }
 async function dcList(key) {
   const c = DCATS[key]; await loadOwners();
@@ -537,7 +550,7 @@ async function dcList(key) {
   setItems({ mlist: data.map(d => {
     const e = d.extra || {}, lines = c.f.filter(([k]) => e[k]).map(([k, l, t]) => `<span class="mute meta">${l}: ${esc(t === 'date' ? fmt(e[k]) : e[k])}</span>`).join('');
     const files = (d.files || []).map(x => `<button type="button" class="link filelink" data-open="${esc(x.path)}" title="Abrir">${x.type === 'application/pdf' ? 'PDF' : 'Imagem'} · ${esc(x.name)}</button>`).join('');
-    return { hay: hayOf(d.residence_id, d.title, ...Object.values(e)), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute meta">Data: ${fmt(d.doc_date)}</span>${lines}${d.notes ? `<p class="mute">${esc(d.notes)}</p>` : ''}<div class="dfiles">${files}</div>${acts(`<button class="link" data-edit="dc:${d.id}">Editar</button>`, `<button class="link danger" data-deldc="${d.id}">Excluir</button>`)}</div>` };
+    return { hay: hayOf(d.residence_id, d.title, ...Object.values(e)), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute meta">Data: ${fmt(d.doc_date)}</span>${lines}${d.notes ? `<p class="mute">${esc(d.notes)}</p>` : ''}<div class="dfiles">${files}</div>${acts(`<button class="link" data-edit="dc:${d.id}">Editar</button>`, `<button class="link" data-copy="dc:${d.id}">Copiar</button>`, `<button class="link danger" data-deldc="${d.id}">Excluir</button>`)}</div>` };
   }) }, { mlist: `Nada cadastrado em ${c.l}. Toque em + para adicionar.` });
   view.innerHTML = head(c.l, 'dc:' + key, dcTrail(c)) + SHELL; paintItems();
 }
@@ -569,7 +582,7 @@ async function saveDc(f, o, op) {   // envia os arquivos ao Storage e grava o re
 async function docsGeral() {   // a lista que já existia
   await loadOwners();
   const { data } = await scoped(sb.from('documents').select('*')).order('created_at', { ascending: false }); S.rows.documents = data || [];
-  setItems({ mlist: (data || []).map(d => ({ hay: hayOf(d.residence_id, d.title), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>` })) });
+  setItems({ mlist: (data || []).map(d => ({ hay: hayOf(d.residence_id, d.title), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute">${esc(d.category)} · v${esc(d.version || '1')} · ${fmt(d.created_at)}</span><p>${esc(d.description)}</p>${hid(d)}${acts(`<button class="link" data-open="${esc(d.path)}">Abrir</button>`, `<button class="link" data-edit="documents:${d.id}">Editar</button>`, `<button class="link" data-copy="documents:${d.id}">Copiar</button>`, visBtn('documents', d), `<button class="link danger" data-deldoc="${d.id}|${esc(d.path)}">Excluir</button>`)}</div>` })) });
   view.innerHTML = head(DCATS.geral.l, 'docs', dcTrail(DCATS.geral)) + SHELL; paintItems();
 }
 
@@ -853,7 +866,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-bm],[data-v3d],[data-pm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-copy],[data-bm],[data-v3d],[data-pm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -902,6 +915,7 @@ document.addEventListener('click', async e => {
   if (d.gvis) { const x = S.imgs.find(i => i.id === d.gvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await gallery(); }
   if (d.gdel && confirm('Excluir esta imagem do sistema? O arquivo continua guardado no Cloudinary.')) { const { error } = await sb.from('images').delete().eq('id', d.gdel); if (error) toast('Não foi possível excluir.', 1); else toast('Imagem excluída.'); await gallery(); }
   if (d.add) openAdd(d.add);
+  if (d.copy) { const [ck, ...cr] = d.copy.split(':'); openCopy(ck, cr.join(':')); }
   if (d.edit) { const [k, id] = d.edit.split(':'); openEdit(k, id); }
   if (d.vis) { const [k, id] = d.vis.split(':'), r = S.rows[k].find(x => x.id === id); const { error } = await sb.from(k).update({ visible: !r.visible }).eq('id', id); done(error && 'Não foi possível alterar.', r.visible ? 'Oculto do cliente.' : 'Visível ao cliente.'); }
   if (d.del && confirm('Excluir este registro?')) { const [k, id] = d.del.split(':'), old = ((S.rows[k] || []).find(x => x.id === id) || {}).media || []; const { error } = await sb.from(k).delete().eq('id', id); const pp = old.filter(x => x.path).map(x => x.path); if (!error && pp.length) await sb.storage.from('documents').remove(pp); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
