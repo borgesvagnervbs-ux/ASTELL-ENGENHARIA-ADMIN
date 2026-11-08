@@ -12,7 +12,7 @@ const fail = m => { view.innerHTML = '<div class="card" style="margin:16px"><b>N
 if (!sb || /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY)) { fail('Abra o arquivo config.js e preencha SUPABASE_URL e SUPABASE_KEY.'); throw new Error('Supabase não configurado'); }
 addEventListener('error', e => { if (!view.innerHTML.trim()) fail('Erro: ' + e.message); });
 
-const S = { stf: new Set(), logo: null, rep: null, repf: null, profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, pp: 10, pages: {}, noun: null, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
+const S = { stf: new Set(), urf: new Set(), logo: null, rep: null, repf: null, profile: null, res: [], cur: null, rows: {}, hf: {}, place: false, mTab: 'all', sel: { on: false, ids: new Set() }, q: '', arg: null, ownersByRes: {}, pp: 10, pages: {}, noun: null, stack: [], items: null, empties: {}, lastMenu: null, owners: [], links: [], curPlan: null };
 // Aceita CLOUDINARY_UPLOAD_PRESET ou CLOUDINARY_PRESET no config.js
 const CLD_NAME = typeof CLOUDINARY_CLOUD_NAME !== 'undefined' ? String(CLOUDINARY_CLOUD_NAME).trim() : '';
 const CLD_PRESET = typeof CLOUDINARY_UPLOAD_PRESET !== 'undefined' ? String(CLOUDINARY_UPLOAD_PRESET).trim() : (typeof CLOUDINARY_PRESET !== 'undefined' ? String(CLOUDINARY_PRESET).trim() : '');
@@ -39,8 +39,13 @@ const DOC_CATS = ['Projeto arquitetônico', 'Projeto estrutural', 'Projeto elét
 const STATUS = ['Recebida', 'Em análise', 'Aguardando informações', 'Agendada', 'Em atendimento', 'Concluída', 'Encerrada'];
 // situações das inspeções preventivas: valor gravado no banco → [classe de cor, rótulo do botão de filtro]
 const ST = { 'Pendente': ['pend', 'Pendentes'], 'Em andamento': ['and', 'Em Andamento'], 'Concluída': ['conc', 'Concluídas'], 'Cancelada': ['canc', 'Canceladas'] };
-const stPick = r => { const st = ST[r.status] ? r.status : 'Pendente';   // selo colorido + setinha que abre as outras situações
-  return `<span class="stpick" data-stwrap><span class="badge st st-${ST[st][0]}">${st}</span><button type="button" class="stbtn" data-stopen aria-label="Alterar a situação" aria-haspopup="true" aria-expanded="false">▾</button><ul class="stmenu" hidden>${Object.keys(ST).filter(x => x !== st).map(x => `<li><button type="button" class="stopt st-${ST[x][0]}" data-stset="${r.id}|${x}">${x}</button></li>`).join('')}</ul></span>`; };
+const pickOf = (tbl, col, id, cur, map, cls, rot) => `<span class="stpick" data-stwrap><span class="badge st ${cls(cur)}">${esc(cur)}</span><button type="button" class="stbtn" data-stopen aria-label="Alterar ${rot}" aria-haspopup="true" aria-expanded="false">▾</button><ul class="stmenu" hidden>${Object.keys(map).filter(x => x !== cur).map(x => `<li><button type="button" class="stopt ${cls(x)}" data-stset="${tbl}|${col}|${id}|${x}">${x}</button></li>`).join('')}</ul></span>`;   // selo colorido + setinha que abre as outras opções
+const stPick = r => { const st = ST[r.status] ? r.status : 'Pendente'; return pickOf('maintenance_tasks', 'status', r.id, st, ST, x => 'st-' + ST[x][0], 'a situação'); };
+const ST_A = { 'Recebida': ['pend', 'Recebidas'], 'Em análise': ['ana', 'Em análise'], 'Agendada': ['agd', 'Agendadas'], 'Em atendimento': ['and', 'Em atendimento'], 'Concluída': ['conc', 'Concluídas'] };   // assistência técnica
+const UR = { 'Crítica': 'crit', 'Alta': 'alta', 'Média': 'med', 'Baixa': 'baixa' };
+const astStPick = r => pickOf('service_requests', 'status', r.id, r.status, ST_A, x => 'st-' + (ST_A[x] ? ST_A[x][0] : 'pend'), 'a situação');
+const astUrPick = r => pickOf('service_requests', 'urgency', r.id, UR[r.urgency] ? r.urgency : 'Média', UR, x => 'ur-' + UR[x], 'o grau de urgência');
+const urBarInner = () => Object.entries(UR).map(([k, c]) => `<button type="button" class="stf uf uf-${c}" data-urf="${k}" aria-pressed="${S.urf.has(k)}">${k}</button>`).join('');
 const WST = { 'Vigente': ['conc', 'Vigentes'], 'Expirada': ['canc', 'Expiradas'] };   // garantias: situação vem do prazo; só uma por vez
 const stMap = () => S.stMode || ST;
 const stBarInner = () => `<button type="button" class="stf stf-all" data-stf="all" aria-pressed="${!S.stf.size}">Todas</button>` + Object.entries(stMap()).map(([k, [c, l]]) => `<button type="button" class="stf stf-${c}" data-stf="${k}" aria-pressed="${S.stf.has(k)}">${l}</button>`).join('');
@@ -373,9 +378,9 @@ function paintItems() {
   const q = norm(S.q).trim(), raw = S.q.trim(), noun = S.noun || ['item', 'itens'];
   Object.entries(S.items || {}).forEach(([id, items], n) => {
     const el = $('#' + id); if (!el) return;
-    const list = items.filter(i => (!q || hit(i.hay, q)) && (!S.stf.size || i.st === undefined || S.stf.has(i.st))), filtrado = !!q || (S.stf.size > 0 && items.some(i => i.st !== undefined)), pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
+    const list = items.filter(i => (!q || hit(i.hay, q)) && (!S.stf.size || i.st === undefined || S.stf.has(i.st)) && (!S.urf.size || i.ur === undefined || S.urf.has(i.ur))), filtrado = !!q || ((S.stf.size > 0 || S.urf.size > 0) && items.some(i => i.st !== undefined || i.ur !== undefined)), pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
     S.pages[id] = pg;
-    el.innerHTML = list.length ? list.slice((pg - 1) * S.pp, pg * S.pp).map(i => i.html).join('') : `<p class="empty">${items.length ? (raw ? `Nada encontrado para “${esc(raw)}”${S.stf.size ? ' com a situação escolhida' : ''}.` : 'Nenhum item com a situação escolhida.') : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
+    el.innerHTML = list.length ? list.slice((pg - 1) * S.pp, pg * S.pp).map(i => i.html).join('') : `<p class="empty">${items.length ? (raw ? `Nada encontrado para “${esc(raw)}”${S.stf.size || S.urf.size ? ' com o filtro escolhido' : ''}.` : 'Nenhum item com o filtro escolhido.') : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
     const bar = $('#pg-' + id); if (bar) bar.innerHTML = list.length ? pagerHtml(id, list.length, pg, pages) : '';
     const c = n === 0 && $('#mcount'); if (c) c.textContent = filtrado ? `${list.length} de ${items.length} ${items.length === 1 ? noun[0] : noun[1]}` : `${items.length} ${items.length === 1 ? noun[0] : noun[1]}`;
   });
@@ -433,6 +438,7 @@ const EM = {
   maintenance_tasks: { arr: 'media', doc: true, vid: true, pasta: 'inspecoes', cloud: true },
   floorplans: { arr: 'files', doc: true, vid: true, pasta: 'plantas', cloud: true },
   doc_records: { arr: 'files', doc: true, vid: false, pasta: null, cloud: false },
+  service_requests: { arr: 'media', doc: false, vid: false, pasta: 'assistencia', cloud: true },
 };
 const emTy = x => ['image', 'video', 'pdf', '3d'].includes(x.type) ? x.type : /^image\//.test(x.type || '') ? 'image' : x.type === 'application/pdf' ? 'pdf' : 'file';
 function emSplit(k, row, imgs) {
@@ -861,11 +867,11 @@ const PAGES = {
   async bk() { backupPage(); },
   eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => S.cat ? listPage('building_items') : bldHub(),
   async ast() {
-    await loadOwners();
-    const { data } = await scoped(sb.from('service_requests').select('*')).order('created_at', { ascending: false });
-    setItems({ mlist: (data || []).map(r => ({ hay: hayOf(r.residence_id, r.protocol, r.category), html: `<div class="card"><b>${esc(r.protocol)} — ${esc(r.category)}</b>${metaHtml(r.residence_id)}<span class="badge">${esc(r.status)}</span><p>${esc(r.place)} · urgência ${esc(r.urgency)}</p><p>${esc(r.description)}</p><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p>
-      <form class="statusform" data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}">${fld(['status', 'Alterar situação', STATUS], r)}<label>Comentário para o cliente<input name="staff_note" value="${esc(r.staff_note || '')}"></label><button>Atualizar</button></form></div>` })) }, { mlist: 'Nenhuma solicitação de assistência.' });
-    view.innerHTML = head('Assistência técnica', null) + SHELL; paintItems();
+    await loadOwners(); S.stMode = ST_A;
+    const { data } = await scoped(sb.from('service_requests').select('*')).order('created_at', { ascending: false }); S.rows.service_requests = data || [];
+    setItems({ mlist: (data || []).map(r => ({ st: r.status, ur: UR[r.urgency] ? r.urgency : 'Média', hay: hayOf(r.residence_id, r.protocol, r.category, r.place, r.description), html: `<div class="card"><b>${esc(r.protocol)} — ${esc(r.category)}</b>${metaHtml(r.residence_id)}<div class="pickrow"><span class="pk"><span class="mute">Situação</span>${astStPick(r)}</span><span class="pk"><span class="mute">Urgência</span>${astUrPick(r)}</span></div><p class="mute meta">Local: ${esc(r.place || '—')}</p><div class="reqdesc"><span class="lbl">O que o cliente descreveu</span><p>${esc(r.description || '—')}</p></div><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p>
+      <form class="statusform" data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}"><label>Assistência que será feita (o cliente vê esta informação)<textarea name="staff_note" rows="5" placeholder="Descreva a assistência que será realizada, prazos e orientações.">${esc(r.staff_note || '')}</textarea></label><button>Salvar</button></form>${emBtns('service_requests', r)}</div>` })) }, { mlist: 'Nenhuma solicitação de assistência.' });
+    view.innerHTML = head('Assistência técnica', null) + `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div><div class="stbar" id="urbar" role="group" aria-label="Filtrar por urgência">${urBarInner()}</div>` + SHELL; paintItems();
   },
   async pl() { if (S.arg) return plantaDetail(S.arg); return plantasList(); },
 };
@@ -886,7 +892,7 @@ async function render() {
   view.classList.toggle('wide', !!S.arg);
   $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat) || (S.menu === 'docs' && !S.dcat) || (S.menu === 'pl' && !!S.arg) || !!S.plan || ['rep', 'logo', 'bk'].includes(S.menu);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
   const tela = S.menu + '|' + (S.sub || '') + '|' + (S.cat || '') + '|' + (S.dcat || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
-  if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; S.stf = new Set(); }
+  if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; S.stf = new Set(); S.urf = new Set(); }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
   document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
   S.items = null;
@@ -948,7 +954,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-copy],[data-em],[data-emup],[data-emtab],[data-emselmode],[data-emsid],[data-emdel],[data-emdd],[data-emvis],[data-emi],[data-bm],[data-v3d],[data-pm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-urf],[data-copy],[data-em],[data-emup],[data-emtab],[data-emselmode],[data-emsid],[data-emdel],[data-emdd],[data-emvis],[data-emi],[data-bm],[data-v3d],[data-pm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -973,8 +979,11 @@ document.addEventListener('click', async e => {
   if (d.ownedit) { const box = el.closest('.ownpick'); pushModal(() => refreshOwnPick(box)); openOwnerEdit(d.ownedit, { fromRes: true }); }
   if (d.gal) { const [, id] = d.gal.split(':'), t = S.rows.maintenance_tasks.find(x => x.id === id); S.gal = { kind: 'maintenance', refId: id, resId: t.residence_id, title: t.name }; gallery(); }
   if (d.stopen !== undefined) { const m = el.parentElement.querySelector('.stmenu'), abrir = m.hidden; closeFloating(); m.hidden = !abrir; el.setAttribute('aria-expanded', abrir); }
-  if (d.stset) { const [sid, sv] = d.stset.split('|'); const { error } = await sb.from('maintenance_tasks').update({ status: sv }).eq('id', sid); done(error && 'Não foi possível alterar a situação.', 'Situação alterada para ' + sv + '.'); }
-  if (d.stf) { if (d.stf === 'all') S.stf = new Set(); else { if (S.stMode) S.stf = S.stf.has(d.stf) ? new Set() : new Set([d.stf]); else { if (S.stf.has(d.stf)) S.stf.delete(d.stf); else S.stf.add(d.stf); if (S.stf.size === Object.keys(ST).length) S.stf = new Set(); } } S.pages = {}; $('#stbar').innerHTML = stBarInner(); paintItems(); }
+  if (d.urf) { if (S.urf.has(d.urf)) S.urf.delete(d.urf); else S.urf.add(d.urf); S.pages = {}; $('#urbar').innerHTML = urBarInner(); paintItems(); }
+  if (d.stset) { const [tb, col, sid, sv] = d.stset.split('|'); const { error } = await sb.from(tb).update({ [col]: sv }).eq('id', sid);
+    if (!error && tb === 'service_requests' && col === 'status') { const rr = (S.rows.service_requests || []).find(x => x.id === sid); if (rr) await sb.from('history_events').insert({ residence_id: rr.residence_id, category: 'Assistência', description: 'Solicitação atualizada: ' + sv }); }
+    done(error && 'Não foi possível alterar.', (col === 'urgency' ? 'Urgência alterada para ' : 'Situação alterada para ') + sv + '.'); }
+  if (d.stf) { if (d.stf === 'all') S.stf = new Set(); else { if (S.stMode === WST) S.stf = S.stf.has(d.stf) ? new Set() : new Set([d.stf]); else { if (S.stf.has(d.stf)) S.stf.delete(d.stf); else S.stf.add(d.stf); if (S.stf.size === Object.keys(stMap()).length) S.stf = new Set(); } } S.pages = {}; $('#stbar').innerHTML = stBarInner(); paintItems(); }
   if (d.v3d) { const [vp, vn, vs] = d.v3d.split('|'), { data: vu } = await sb.storage.from('documents').createSignedUrl(vp, 3600); $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Arquivo 3D"><div class="sheethead"><b>Arquivo 3D</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>${plFileBlock({ type: '3d', name: vn, path: vp, size: +vs }, vu ? vu.signedUrl : '')}</div>`; $('#modal').hidden = false; if (PL_VIEW.includes(plExt(vn))) { loadMV(); $('#modal').querySelectorAll('model-viewer').forEach(m => m.addEventListener('error', () => { const p = m.parentElement.querySelector('.mvfail'); if (p) p.hidden = false; })); } }
   if (d.pm) { const [pi] = d.pm.split('|'), cp = S.curPlan, vis = ((cp && cp.files) || []).map((x, j) => ({ x, j })).filter(o => o.x.type === 'image' || o.x.type === 'video'); lbOpenList(vis.map(({ x, j }) => ({ id: cp.id + j, url: x.url, media_type: x.type })), Math.max(0, vis.findIndex(o => o.j === +pi))); }
   if (d.bm) { const [bk, bid, bi] = d.bm.split('|'), row = (S.rows[bk] || []).find(x => x.id === bid); if (row) { const vis = (row.media || []).map((x, j) => ({ x, j })).filter(o => o.x.type === 'image' || o.x.type === 'video'); lbOpenList(vis.map(({ x, j }) => ({ id: bid + j, url: x.url, media_type: x.type === 'video' ? 'video' : 'image' })), Math.max(0, vis.findIndex(o => o.j === +bi))); } }
@@ -1096,7 +1105,7 @@ document.addEventListener('submit', async e => {
   }
   if (op === 'add' && (T[k] || ['docs', 'dc', 'pl'].includes(k)) && !o.residence_id) return toast('Selecione a residência (ou cadastre uma nova ao lado).', 1);
   const rid = o.residence_id;
-  if (id === 'ast') { r = await sb.from('service_requests').update({ status: o.status, staff_note: o.staff_note }).eq('id', f.dataset.id); if (!r.error) await sb.from('history_events').insert({ residence_id: f.dataset.rid, category: 'Assistência', description: 'Solicitação atualizada: ' + o.status }); }
+  if (id === 'ast') { r = await sb.from('service_requests').update({ staff_note: (o.staff_note || '').trim() || null }).eq('id', f.dataset.id); }
   else if (id === 'add:res') {
     const { owner_ids, ...fields } = o; r = await sb.from('residences').insert(fields).select().single();
     if (!r.error) {

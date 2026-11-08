@@ -292,3 +292,22 @@ body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 .emsheet .pfile{text-align:left}
 .emsheet .mgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 .emsheet .tabs{flex-wrap:wrap}
+
+/* ---- assistência técnica: situações extras, graus de urgência e descrição */
+.badge.st-ana,.stopt.st-ana,.stf-ana{--c:#3b82c4;--cx:#fff}
+.badge.st-agd,.stopt.st-agd,.stf-agd{--c:#8e6bd1;--cx:#fff}
+.badge.ur-crit,.stopt.ur-crit{--c:#fde2e2;--cx:#d92d20}
+.badge.ur-alta,.stopt.ur-alta{--c:#fde5d6;--cx:#a3471f}
+.badge.ur-med,.stopt.ur-med{--c:#dcecfd;--cx:#1f6fd6}
+.badge.ur-baixa,.stopt.ur-baixa{--c:#d6f2df;--cx:#17803d}
+.badge.st[class*=ur-],.stopt[class*=ur-]{font-weight:700}
+.stf.uf-crit{--c:#ef5350;--bgp:#fde2e2;--cx:#d92d20}
+.stf.uf-alta{--c:#e8925f;--bgp:#fde5d6;--cx:#a3471f}
+.stf.uf-med{--c:#4d9bf0;--bgp:#dcecfd;--cx:#1f6fd6}
+.stf.uf-baixa{--c:#3fb56f;--bgp:#d6f2df;--cx:#17803d}
+.stf.uf[aria-pressed=true]{background:var(--bgp);color:var(--cx);border-color:var(--bgp);font-weight:700}
+.pickrow{display:flex;flex-wrap:wrap;gap:8px 22px;margin:8px 0}
+.pickrow .pk{display:inline-flex;align-items:center;gap:8px}
+.reqdesc{background:#0b1623;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+.reqdesc p{margin:4px 0 0;white-space:pre-wrap}
+.statusform textarea{width:100%;min-height:120px}
