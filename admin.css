@@ -4,8 +4,8 @@ body{padding-bottom:40px}
 main#view{max-width:980px}
 header .menubtn{position:absolute;left:8px;top:2px;width:48px;height:48px;min-height:0;margin:0;padding:0;background:none;color:#fff;display:grid;place-items:center}
 header .menubtn:hover{background:#16283a;filter:none}
-.logo span{font-size:.55rem;letter-spacing:.35em}
-.login h1 span{font-size:.7rem;letter-spacing:.35em}
+.logo span{color:var(--gold);font-size:.55rem;letter-spacing:.35em}
+.login h1 span{color:var(--gold);font-size:.7rem;letter-spacing:.35em}
 
 /* Menu lateral */
 #drawer{position:fixed;top:0;bottom:0;left:0;z-index:30;width:290px;max-width:86vw;background:var(--navy);display:flex;flex-direction:column;transform:translateX(-102%);transition:transform .25s ease;box-shadow:4px 0 24px #0008}
