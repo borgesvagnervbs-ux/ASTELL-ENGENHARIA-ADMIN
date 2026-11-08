@@ -508,6 +508,10 @@ async function emRemove(keys) {   // keys: 'a<posição>' (colunas do elemento) 
   for (const id of ids) { const r = await sb.from('images').delete().eq('id', id); if (r.error) return toast('Não foi possível excluir.', 1); }
   toast(keys.length === 1 ? 'Item excluído.' : keys.length + ' itens excluídos.'); E.sel = { on: false, ids: new Set() }; await emLoad(); emRender();
 }
+function astView(id, note) {   // janela editável da solicitação: situação e urgência trocam pela setinha; o texto da assistência grava no Salvar
+  const r = (S.rows.service_requests || []).find(x => x.id === id); if (!r) return;
+  modal('Assistência — ' + r.protocol, `<p class="mute">${esc(r.category || '')} · Residência: <b>${esc(resName(r.residence_id))}</b></p><div class="pickrow"><span class="pk"><span class="mute">Situação</span>${astStPick(r)}</span><span class="pk"><span class="mute">Urgência</span>${astUrPick(r)}</span></div><p class="mute meta">Local: ${esc(r.place || '—')}</p><div class="reqdesc"><span class="lbl">O que o cliente descreveu</span><p>${esc(r.description || '—')}</p></div><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p><label>Assistência que será feita (o cliente vê esta informação)<textarea name="staff_note" rows="6" placeholder="Descreva a assistência que será realizada, prazos e orientações.">${esc(note != null ? note : (r.staff_note || ''))}</textarea></label>`, `data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}"`, 'Salvar');
+}
 async function listPage(k) {
   const c = T[k], cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;
   await loadOwners();
@@ -916,7 +920,7 @@ $('#resSearch').addEventListener('input', e => {   // filtra a lista do módulo 
 addEventListener('hashchange', () => { S.place = false; render(); });
 addEventListener('keydown', e => {
   if (!$('#lb').hidden) { if (e.key === 'Escape') lbClose(); else if (e.key === 'ArrowRight') lbMove(1); else if (e.key === 'ArrowLeft') lbMove(-1); return; }
-  if (e.key === 'Escape') { if (!closeFloating()) { const em = !!document.querySelector('#modal .emsheet'); closeModal(); if (em) render(); } }
+  if (e.key === 'Escape') { if (!closeFloating()) { const em = !!document.querySelector('#modal .emsheet, #modal form[data-form=ast]'); closeModal(); if (em) render(); } }
 });
 
 // ---------- acesso
@@ -978,11 +982,13 @@ document.addEventListener('click', async e => {
   if (d.ownedit) { const box = el.closest('.ownpick'); pushModal(() => refreshOwnPick(box)); openOwnerEdit(d.ownedit, { fromRes: true }); }
   if (d.gal) { const [, id] = d.gal.split(':'), t = S.rows.maintenance_tasks.find(x => x.id === id); S.gal = { kind: 'maintenance', refId: id, resId: t.residence_id, title: t.name }; gallery(); }
   if (d.stopen !== undefined) { const m = el.parentElement.querySelector('.stmenu'), abrir = m.hidden; closeFloating(); m.hidden = !abrir; el.setAttribute('aria-expanded', abrir); }
-  if (d.astv) { const r = (S.rows.service_requests || []).find(x => x.id === d.astv); if (r) modal('Assistência — ' + r.protocol, `<p class="mute">${esc(r.category || '')} · Residência: <b>${esc(resName(r.residence_id))}</b></p><p><span class="badge st st-${ST_A[r.status] ? ST_A[r.status][0] : 'pend'}">${esc(r.status)}</span> <span class="badge st ur-${UR[r.urgency] || 'med'}">${esc(UR[r.urgency] ? r.urgency : 'Média')}</span></p><p class="mute meta">Local: ${esc(r.place || '—')}</p><div class="reqdesc"><span class="lbl">O que o cliente descreveu</span><p>${esc(r.description || '—')}</p></div><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p><label>Assistência que será feita (o cliente vê esta informação)<textarea name="staff_note" rows="6" placeholder="Descreva a assistência que será realizada, prazos e orientações.">${esc(r.staff_note || '')}</textarea></label>`, `data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}"`, 'Salvar'); }
+  if (d.astv) astView(d.astv);
   if (d.urf) { if (S.urf.has(d.urf)) S.urf.delete(d.urf); else S.urf.add(d.urf); S.pages = {}; $('#urbar').innerHTML = urBarInner(); paintItems(); }
   if (d.stset) { const [tb, col, sid, sv] = d.stset.split('|'); const { error } = await sb.from(tb).update({ [col]: sv }).eq('id', sid);
     if (!error && tb === 'service_requests' && col === 'status') { const rr = (S.rows.service_requests || []).find(x => x.id === sid); if (rr) await sb.from('history_events').insert({ residence_id: rr.residence_id, category: 'Assistência', description: 'Solicitação atualizada: ' + sv }); }
-    done(error && 'Não foi possível alterar.', (col === 'urgency' ? 'Urgência alterada para ' : 'Situação alterada para ') + sv + '.'); }
+    const msg = (col === 'urgency' ? 'Urgência alterada para ' : 'Situação alterada para ') + sv + '.';
+    if (el.closest('#modal')) { if (error) return toast('Não foi possível alterar.', 1); const rr = (S.rows.service_requests || []).find(x => x.id === sid); if (rr) rr[col] = sv; const ta = $('#modal textarea[name=staff_note]'); astView(sid, ta ? ta.value : undefined); return toast(msg); }
+    done(error && 'Não foi possível alterar.', msg); }
   if (d.stf) { if (d.stf === 'all') S.stf = new Set(); else { if (S.stMode === WST) S.stf = S.stf.has(d.stf) ? new Set() : new Set([d.stf]); else { if (S.stf.has(d.stf)) S.stf.delete(d.stf); else S.stf.add(d.stf); if (S.stf.size === Object.keys(stMap()).length) S.stf = new Set(); } } S.pages = {}; $('#stbar').innerHTML = stBarInner(); paintItems(); }
   if (d.v3d) { const [vp, vn, vs] = d.v3d.split('|'), { data: vu } = await sb.storage.from('documents').createSignedUrl(vp, 3600); $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Arquivo 3D"><div class="sheethead"><b>Arquivo 3D</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>${plFileBlock({ type: '3d', name: vn, path: vp, size: +vs }, vu ? vu.signedUrl : '')}</div>`; $('#modal').hidden = false; if (PL_VIEW.includes(plExt(vn))) { loadMV(); $('#modal').querySelectorAll('model-viewer').forEach(m => m.addEventListener('error', () => { const p = m.parentElement.querySelector('.mvfail'); if (p) p.hidden = false; })); } }
   if (d.pm) { const [pi] = d.pm.split('|'), cp = S.curPlan, vis = ((cp && cp.files) || []).map((x, j) => ({ x, j })).filter(o => o.x.type === 'image' || o.x.type === 'video'); lbOpenList(vis.map(({ x, j }) => ({ id: cp.id + j, url: x.url, media_type: x.type })), Math.max(0, vis.findIndex(o => o.j === +pi))); }
