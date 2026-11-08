@@ -142,7 +142,7 @@ main#view.wide .gallery{grid-template-columns:repeat(auto-fill,minmax(210px,1fr)
 .day{margin:0;min-height:34px;padding:0;border-radius:8px;background:transparent;color:var(--ink);font-weight:500}
 .day:hover{background:#16283a;filter:none}
 .day.today{box-shadow:inset 0 0 0 2px var(--gold)}
-.day.sel{background:var(--gold);color:#1b1409}
+.day.sel{background:var(--gold);color:#04231a}
 .calfoot{display:flex;justify-content:space-between;gap:8px}
 .calfoot button{margin:0;min-height:38px;padding:0 16px}
 
@@ -211,7 +211,7 @@ p.reshead{font-weight:400}
 #lb img{max-width:100%;max-height:calc(100vh - 150px);border-radius:10px;background:#000;display:block}
 /* vídeo: ocupa a área grande desde a abertura (não depende do tamanho da capa nem de ter começado a tocar) */
 #lb video{width:100%;height:100%;max-height:calc(100vh - 150px);object-fit:contain;border-radius:10px;background:#000;display:block}
-#lb button{position:absolute;margin:0;padding:0;width:52px;min-height:52px;border-radius:50%;font-size:1.9rem;line-height:1;display:grid;place-items:center;background:var(--gold);color:#1b1409;border:0}
+#lb button{position:absolute;margin:0;padding:0;width:52px;min-height:52px;border-radius:50%;font-size:1.9rem;line-height:1;display:grid;place-items:center;background:var(--gold);color:#04231a;border:0}
 #lb .lbx{top:14px;right:14px}
 #lb .lbn{top:50%;transform:translateY(-50%)}
 #lb .l{left:18px}#lb .r{right:18px}
@@ -256,10 +256,10 @@ table.rep tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
 
 /* ---- inspeções preventivas: situação colorida, menu de troca e filtros */
 .badge.st-pend,.stopt.st-pend,.stf-pend{--c:#8d99a6;--cx:#0b1623}
-.badge.st-and,.stopt.st-and,.stf-and{--c:#e0b020;--cx:#1b1409}
+.badge.st-and,.stopt.st-and,.stf-and{--c:#e0b020;--cx:#04231a}
 .badge.st-conc,.stopt.st-conc,.stf-conc{--c:#2a9a62;--cx:#fff}
 .badge.st-canc,.stopt.st-canc,.stf-canc{--c:#c0443a;--cx:#fff}
-.stf-all{--c:#d9b48a;--cx:#1b1409}
+.stf-all{--c:#3dc08c;--cx:#04231a}
 .badge.st,.stopt{background:var(--c);color:var(--cx)}
 .stpick{position:relative;display:inline-flex;align-items:center;gap:4px;vertical-align:middle}
 .stbtn{min-height:26px;width:28px;padding:0;margin:0;background:transparent;border:1px solid #2a4157;color:var(--ink);border-radius:8px;font-size:.8rem;line-height:1}
@@ -284,7 +284,7 @@ table.rep tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
 
 /* ---- menu lateral: o botão dos três risquinhos some enquanto o menu está aberto; "Sair" na cor amarela do sistema */
 body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
-.dfoot button.ghost{background:var(--gold);color:#1b1409;border:0;font-weight:600}
+.dfoot button.ghost{background:var(--gold);color:#04231a;border:0;font-weight:600}
 .dfoot button.ghost:hover{filter:brightness(1.08)}
 
 /* ---- Documentos / Mídias de cada elemento */
@@ -328,4 +328,4 @@ body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 .wbar.sm{height:7px;margin:6px 0;width:100%;max-width:220px}
 .wbar.sm.w-ok{--wc:#2fbf71}.wbar.sm.w-warn{--wc:#f08a3c}.wbar.sm.w-bad{--wc:#e5534b}
 .wpill{display:inline-block;margin-top:10px;padding:3px 12px;border-radius:999px;font-size:.82rem;font-weight:700;background:var(--wp);color:var(--wpx)}
-.stf-lar{--c:#f08a3c;--cx:#1b1409}
+.stf-lar{--c:#f08a3c;--cx:#04231a}
