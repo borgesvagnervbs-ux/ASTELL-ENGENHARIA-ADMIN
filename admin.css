@@ -311,3 +311,21 @@ body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 .reqdesc{background:#0b1623;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
 .reqdesc p{margin:4px 0 0;white-space:pre-wrap}
 .statusform textarea{width:100%;min-height:120px}
+
+/* ---- garantias: prazo total, tempo restante e barra de vigência */
+.wbox{--wc:#2fbf71;--wp:#d6f2df;--wpx:#17803d;margin:10px 0 8px}
+.wbox.w-warn{--wc:#f08a3c;--wp:#fde5d6;--wpx:#a3471f}
+.wbox.w-bad{--wc:#e5534b;--wp:#fde2e2;--wpx:#d92d20}
+.wwarn{color:#f08a3c;font-weight:700;margin:0 0 8px}
+.wexp{color:#e5534b;font-weight:700;margin:0 0 8px}
+.wfig{display:flex;gap:28px 48px;flex-wrap:wrap;margin-bottom:10px}
+.wfig>div{display:flex;flex-direction:column;gap:2px;min-width:130px}
+.wnum{font-size:1.5rem;font-weight:700;line-height:1.2}
+.wtot{color:#2fbf71}.wrem{color:var(--wc)}
+.wlbl{font-size:.85rem;color:#9fb5c1}
+.wbar{display:block;height:10px;border-radius:999px;background:#22364a;overflow:hidden}
+.wbar>i{display:block;height:100%;border-radius:999px;background:var(--wc)}
+.wbar.sm{height:7px;margin:6px 0;width:100%;max-width:220px}
+.wbar.sm.w-ok{--wc:#2fbf71}.wbar.sm.w-warn{--wc:#f08a3c}.wbar.sm.w-bad{--wc:#e5534b}
+.wpill{display:inline-block;margin-top:10px;padding:3px 12px;border-radius:999px;font-size:.82rem;font-weight:700;background:var(--wp);color:var(--wpx)}
+.stf-lar{--c:#f08a3c;--cx:#1b1409}

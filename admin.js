@@ -34,7 +34,15 @@ const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user']
 
 // ---------- dados e campos
 const addMonths = (d, m) => { const x = new Date(d + 'T00:00'); x.setMonth(x.getMonth() + m); return x; };
-function wState(w) { const end = addMonths(w.start_date, w.months), days = (end - new Date()) / 864e5; return days < 0 ? ['Expirada', 'bad', end] : days < 90 ? ['Próxima do vencimento', 'warn', end] : ['Vigente', 'ok', end]; }
+function wState(w) { const start = new Date(w.start_date + 'T00:00'), end = addMonths(w.start_date, w.months), left = end - new Date(), total = end - start;   // vigente; próxima do vencimento = resta 1/4 do prazo ou menos; expirada
+  return left <= 0 ? ['Expirada', 'bad', end] : left <= total / 4 ? ['Próxima do vencimento', 'warn', end] : ['Vigente', 'ok', end]; }
+function wInfo(w) {   // tudo que o cartão da garantia mostra: tempo restante (meses e dias), % da barra e frase de alerta
+  const [s, c, end] = wState(w), start = new Date(w.start_date + 'T00:00'), now = new Date(), total = end - start, left = Math.max(0, end - now), from = now < start ? start : now;
+  let m = 0, d = 0; if (left > 0) { m = (end.getFullYear() - from.getFullYear()) * 12 + end.getMonth() - from.getMonth(); let t = new Date(from); t.setMonth(t.getMonth() + m); if (t > end) { m--; t = new Date(from); t.setMonth(t.getMonth() + m); } d = Math.floor((end - t) / 864e5); }
+  const mm = n => n + (n === 1 ? ' mês' : ' meses'), dd = n => n + (n === 1 ? ' dia' : ' dias');
+  const txt = [m ? mm(m) : '', d || !m ? dd(d) : ''].filter(Boolean).join(' e ');
+  return { s, c, end, m, d, txt, big: m ? mm(m) : dd(d), total: mm(+w.months || 0), pct: c === 'bad' ? 100 : total > 0 ? Math.max(2, Math.min(100, left / total * 100)) : 0, kind: c === 'bad' ? 'bad' : c === 'warn' ? 'warn' : 'ok' };
+}
 const DOC_CATS = ['Projeto arquitetônico', 'Projeto estrutural', 'Projeto elétrico', 'Projeto hidráulico', 'Projeto sanitário', 'Climatização', 'Cobertura', 'Memorial descritivo', 'Manuais', 'Notas e comprovantes', 'Termo de entrega', 'Garantia', 'Outros'];
 const STATUS = ['Recebida', 'Em análise', 'Aguardando informações', 'Agendada', 'Em atendimento', 'Concluída', 'Encerrada'];
 // situações das inspeções preventivas: valor gravado no banco → [classe de cor, rótulo do botão de filtro]
@@ -46,7 +54,7 @@ const UR = { 'Crítica': 'crit', 'Alta': 'alta', 'Média': 'med', 'Baixa': 'baix
 const astStPick = r => pickOf('service_requests', 'status', r.id, r.status, ST_A, x => 'st-' + (ST_A[x] ? ST_A[x][0] : 'pend'), 'a situação');
 const astUrPick = r => pickOf('service_requests', 'urgency', r.id, UR[r.urgency] ? r.urgency : 'Média', UR, x => 'ur-' + UR[x], 'o grau de urgência');
 const urBarInner = () => Object.entries(UR).map(([k, c]) => `<button type="button" class="stf uf uf-${c}" data-urf="${k}" aria-pressed="${S.urf.has(k)}">${k}</button>`).join('');
-const WST = { 'Vigente': ['conc', 'Vigentes'], 'Expirada': ['canc', 'Expiradas'] };   // garantias: situação vem do prazo; só uma por vez
+const WST = { 'Vigente': ['conc', 'Vigentes'], 'Próxima do vencimento': ['lar', 'Próximas do vencimento'], 'Expirada': ['canc', 'Expiradas'] };   // garantias: situação vem do prazo; só uma por vez
 const stMap = () => S.stMode || ST;
 const stBarInner = () => `<button type="button" class="stf stf-all" data-stf="all" aria-pressed="${!S.stf.size}">Todas</button>` + Object.entries(stMap()).map(([k, [c, l]]) => `<button type="button" class="stf stf-${c}" data-stf="${k}" aria-pressed="${S.stf.has(k)}">${l}</button>`).join('');
 const PT_CATS = ['Elétrica', 'Hidráulica', 'Gás', 'Climatização', 'Estrutura', 'Paredes', 'Equipamentos'];
@@ -62,7 +70,7 @@ const RES_F = [['code', 'Código (ex.: AST-2026-002)', 'text', true], ['name', '
 const DOC_F = [['title', 'Título'], ['category', 'Categoria', DOC_CATS], ['version', 'Versão'], ['description', 'Descrição', 'text', false]];
 const T = {
   warranties: { label: 'Garantias', order: 'start_date', f: [['system', 'Sistema ou componente'], ['coverage', 'Descrição da cobertura'], ['start_date', 'Data inicial', 'date'], ['months', 'Prazo (meses)', 'number'], ['notes', 'Condições e exclusões', 'textarea']],
-    row: r => { const [s, c, end] = wState(r); return `<b>${esc(r.system)}</b> <span class="badge ${c}">${s}</span><p>${esc(r.coverage)}</p><span class="mute">${fmt(r.start_date)} até ${end.toLocaleDateString('pt-BR')}</span><p class="mute">${esc(r.notes)}</p>`; },
+    row: r => { const w = wInfo(r); return `<b>${esc(r.system)}</b><div class="wbox w-${w.kind}">${w.kind === 'warn' ? `<p class="wwarn">Garantia próxima do vencimento - faltam ${w.txt}</p>` : w.kind === 'bad' ? `<p class="wexp">Garantia expirada em ${w.end.toLocaleDateString('pt-BR')}</p>` : ''}<div class="wfig"><div><span class="wnum wtot">${w.total}</span><span class="wlbl">Prazo total</span></div><div><span class="wnum wrem">${w.kind === 'bad' ? 'Expirada' : w.big}</span><span class="wlbl">${w.kind === 'bad' ? 'Vencida' : 'Restantes'}</span></div></div><div class="wbar" role="img" aria-label="Tempo restante da garantia"><i style="width:${w.pct.toFixed(1)}%"></i></div><span class="wpill">${w.s}</span></div><p>${esc(r.coverage)}</p><span class="mute">${fmt(r.start_date)} até ${w.end.toLocaleDateString('pt-BR')}</span><p class="mute">${esc(r.notes)}</p>`; },
     note: 'Os prazos valem conforme contrato, fabricante e lei. As condições contratuais e legais prevalecem sobre os indicadores do aplicativo.' },
   maintenance_tasks: { label: 'Inspeções Preventivas', order: 'next_due', f: [['name', 'Tarefa'], ['system', 'Sistema'], ['frequency', 'Periodicidade (texto)'], ['last_done', 'Última execução', 'date'], ['next_due', 'Próxima data', 'date'], ['interval_months', 'Repetir a cada (meses)', 'number'], ['status', 'Situação', ['Pendente', 'Em andamento', 'Concluída', 'Cancelada']], ['instructions', 'Instruções', 'textarea']],
     row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> ${stPick(r)}${late ? ' <span class="badge bad">Atrasada</span>' : ''}<p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
@@ -522,7 +530,7 @@ async function listPage(k) {
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
-    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? (wState(r)[0] === 'Expirada' ? 'Expirada' : 'Vigente') : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, `<button class="link" data-copy="${k}:${r.id}">Copiar</button>`, 'visible' in r && visBtn(k, r), `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}${EM[k] ? emBtns(k, r, (im[r.id] || []).length) : ''}</div>` };
+    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? wState(r)[0] : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, `<button class="link" data-copy="${k}:${r.id}">Copiar</button>`, 'visible' in r && visBtn(k, r), `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}${EM[k] ? emBtns(k, r, (im[r.id] || []).length) : ''}</div>` };
   }) });
   view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + (k === 'maintenance_tasks' || k === 'warranties' ? `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div>` : '') + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
