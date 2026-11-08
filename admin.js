@@ -34,14 +34,16 @@ const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user']
 
 // ---------- dados e campos
 const addMonths = (d, m) => { const x = new Date(d + 'T00:00'); x.setMonth(x.getMonth() + m); return x; };
-function wState(w) { const end = addMonths(w.start_date, w.months), days = (end - new Date()) / 864e5; return days < 0 ? ['Encerrada', 'bad', end] : days < 90 ? ['Próxima do vencimento', 'warn', end] : ['Vigente', 'ok', end]; }
+function wState(w) { const end = addMonths(w.start_date, w.months), days = (end - new Date()) / 864e5; return days < 0 ? ['Expirada', 'bad', end] : days < 90 ? ['Próxima do vencimento', 'warn', end] : ['Vigente', 'ok', end]; }
 const DOC_CATS = ['Projeto arquitetônico', 'Projeto estrutural', 'Projeto elétrico', 'Projeto hidráulico', 'Projeto sanitário', 'Climatização', 'Cobertura', 'Memorial descritivo', 'Manuais', 'Notas e comprovantes', 'Termo de entrega', 'Garantia', 'Outros'];
 const STATUS = ['Recebida', 'Em análise', 'Aguardando informações', 'Agendada', 'Em atendimento', 'Concluída', 'Encerrada'];
 // situações das inspeções preventivas: valor gravado no banco → [classe de cor, rótulo do botão de filtro]
 const ST = { 'Pendente': ['pend', 'Pendentes'], 'Em andamento': ['and', 'Em Andamento'], 'Concluída': ['conc', 'Concluídas'], 'Cancelada': ['canc', 'Canceladas'] };
 const stPick = r => { const st = ST[r.status] ? r.status : 'Pendente';   // selo colorido + setinha que abre as outras situações
   return `<span class="stpick" data-stwrap><span class="badge st st-${ST[st][0]}">${st}</span><button type="button" class="stbtn" data-stopen aria-label="Alterar a situação" aria-haspopup="true" aria-expanded="false">▾</button><ul class="stmenu" hidden>${Object.keys(ST).filter(x => x !== st).map(x => `<li><button type="button" class="stopt st-${ST[x][0]}" data-stset="${r.id}|${x}">${x}</button></li>`).join('')}</ul></span>`; };
-const stBarInner = () => `<button type="button" class="stf stf-all" data-stf="all" aria-pressed="${!S.stf.size}">Todas</button>` + Object.entries(ST).map(([k, [c, l]]) => `<button type="button" class="stf stf-${c}" data-stf="${k}" aria-pressed="${S.stf.has(k)}">${l}</button>`).join('');
+const WST = { 'Vigente': ['conc', 'Vigentes'], 'Expirada': ['canc', 'Expiradas'] };   // garantias: situação vem do prazo; só uma por vez
+const stMap = () => S.stMode || ST;
+const stBarInner = () => `<button type="button" class="stf stf-all" data-stf="all" aria-pressed="${!S.stf.size}">Todas</button>` + Object.entries(stMap()).map(([k, [c, l]]) => `<button type="button" class="stf stf-${c}" data-stf="${k}" aria-pressed="${S.stf.has(k)}">${l}</button>`).join('');
 const PT_CATS = ['Elétrica', 'Hidráulica', 'Gás', 'Climatização', 'Estrutura', 'Paredes', 'Equipamentos'];
 
 const DEFREQ = ['system', 'name', 'description', 'months', 'start_date', 'event_date', 'title'];
@@ -49,7 +51,7 @@ const fld = ([k, l, t = 'text', req], v = {}) => {
   const val = v[k] ?? '', r = (req ?? DEFREQ.includes(k)) ? 'required' : '';
   if (t === 'date') return dateField(k, l, val, r === 'required');
   if (Array.isArray(t)) return `<label>${l}<select name="${k}">${t.map(o => `<option ${o === val ? 'selected' : ''}>${o}</option>`).join('')}</select></label>`;
-  return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}>`}</label>`;
+  return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}${t === 'number' && /months/.test(k) ? ' min="0" step="1" inputmode="numeric" data-nonneg' : ''}>`}</label>`;
 };
 const RES_F = [['code', 'Código (ex.: AST-2026-002)', 'text', true], ['name', 'Nome da residência', 'text', true], ['address', 'Endereço'], ['area_m2', 'Área construída (m²)', 'number'], ['floors', 'Pavimentos', 'number'], ['build_system', 'Sistema construtivo'], ['project_no', 'Nº do projeto'], ['start_date', 'Início da obra', 'date', false], ['delivery_date', 'Entrega', 'date', false], ['tech_lead', 'Responsável técnico'], ['notes', 'Observações', 'textarea']];
 const DOC_F = [['title', 'Título'], ['category', 'Categoria', DOC_CATS], ['version', 'Versão'], ['description', 'Descrição', 'text', false]];
@@ -179,7 +181,7 @@ function presetCat(cat) { return `<div class="field"><span class="lbl">Tipo de c
 const MEDIA_T = { building_items: { vid: true, pdf: true, d3: 'Estrutura', pasta: 'construcao' }, equipment: { vid: false, pasta: 'equipamentos' }, maintenance_tasks: { vid: true, pdf: true, pasta: 'inspecoes' } };   // tabelas com imagens (e vídeos) no cadastro
 const mediaKinds = (k, cat) => { const T0 = MEDIA_T[k], d3 = T0.d3 && cat === T0.d3; return d3 ? 'imagens, vídeos, PDFs e arquivos 3D' : T0.pdf ? 'imagens, vídeos e PDFs' : T0.vid ? 'imagens e vídeos' : 'imagens'; };
 const accept3d = () => ',' + PL_3D.map(e => '.' + e).join(',');
-const mediaHint = (k, cat) => { const T0 = MEDIA_T[k]; return `Imagens até 10 MB${T0.vid ? ', vídeos até 100 MB' : ''}${T0.pdf ? ' e PDFs até 25 MB' : ''}.` + (T0.d3 && cat === T0.d3 ? ` Arquivos 3D até 50 MB (${PL_3D.map(e => e.toUpperCase()).join(', ')}); só GLB e GLTF abrem para visualização, os demais ficam guardados para baixar.` : ''); };
+const mediaHint = (k, cat) => { const T0 = MEDIA_T[k]; return `Imagens até 10 MB${T0.vid ? ', vídeos até 100 MB' : ''}${T0.pdf ? ' e PDFs até 25 MB' : ''}.` + (T0.d3 && cat === T0.d3 ? ` Arquivos 3D até 200 MB (${PL_3D.map(e => e.toUpperCase()).join(', ')}); só GLB e GLTF abrem para visualização, os demais ficam guardados para baixar.` : ''); };
 const mediaItemLabel = x => (x.type === 'video' ? 'Vídeo' : x.type === 'pdf' ? 'PDF' : x.type === '3d' ? '3D' : 'Imagem') + ' · ' + (x.name || 'arquivo');
 const bldMediaInput = (row, k = 'building_items', cat) => { const T0 = MEDIA_T[k], cap = mediaKinds(k, cat), base = T0.pdf ? 'image/*,video/*,application/pdf' : T0.vid ? 'image/*,video/*' : 'image/*'; return !CLOUD_OK ? cloudMissing() : (row ? `<div class="field"><span class="lbl">Arquivos atuais (${cap})</span><ul class="curfiles">${(row.media || []).map((x, i) => `<li><span class="fname">${esc(mediaItemLabel(x))}</span><label class="chk"><input type="checkbox" name="rm_media" value="${i}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '') + `<label>${row ? 'Adicionar mais' : 'Anexar'} ${cap} (opcional; pode escolher vários)<input name="media" type="file" data-base="${base}" ${T0.d3 ? `data-d3="${T0.d3}"` : ''} accept="${base}${T0.d3 && cat === T0.d3 ? accept3d() : ''}" multiple></label><p class="mute" data-mhint="${k}">${mediaHint(k, cat)}</p>`; };
 const bldThumbs = (r, k = 'building_items', soVis) => { const m = r.media || []; if (!m.length) return '';
@@ -191,7 +193,7 @@ async function saveBld(f, o, op, k = 'building_items') {
   const picked = f.media ? [...f.media.files] : [], T0 = MEDIA_T[k], catv = (o.category || '').trim(), kind = x => /^image\//.test(x.type) ? 'image' : /^video\//.test(x.type) && T0.vid ? 'video' : x.type === 'application/pdf' && T0.pdf ? 'pdf' : T0.d3 && catv === T0.d3 && PL_3D.includes(plExt(x.name)) ? '3d' : null;
   for (const x of picked) {
     const t = kind(x); if (!t) return { error: { message: `"${x.name}" não é um tipo aceito (${mediaKinds(k, catv)}).${PL_3D.includes(plExt(x.name)) ? ' Arquivos 3D só podem ser enviados em Construção › Estrutura.' : ''}` } };
-    const max = t === 'video' ? 100 : t === '3d' ? 50 : t === 'pdf' ? 25 : 10; if (x.size > max * 1048576) return { error: { message: `"${x.name}" é maior que ${max} MB.` } };
+    const max = t === 'video' ? 100 : t === '3d' ? 200 : t === 'pdf' ? 25 : 10; if (x.size > max * 1048576) return { error: { message: `"${x.name}" é maior que ${max} MB.` } };
   }
   const { media, rm_media, ...fields } = o, row = op === 'edit' ? (S.rows[k] || []).find(x => x.id === f.dataset.id) : null;
   const rid = op === 'add' ? fields.residence_id : row && row.residence_id, res = S.res.find(x => x.id === rid), up = [], store = sb.storage.from('documents');
@@ -416,14 +418,14 @@ async function listPage(k) {
   await loadOwners();
   let qy = scoped(sb.from(k).select('*')); if (cat) qy = qy.eq('category', cat[2]);
   const { data, error } = await qy.order('created_at', { ascending: false });
-  if (error) throw error; S.rows[k] = data;
+  if (error) throw error; S.rows[k] = data; S.stMode = k === 'warranties' ? WST : null;
   const im = {};
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
-    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${MEDIA_T[k] ? bldThumbs(r, k) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
+    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? (wState(r)[0] === 'Expirada' ? 'Expirada' : 'Vigente') : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${MEDIA_T[k] ? bldThumbs(r, k) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-done="${r.id}">Marcar como executada</button>`, k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
   }) });
-  view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + (k === 'maintenance_tasks' ? `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div>` : '') + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
+  view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + (k === 'maintenance_tasks' || k === 'warranties' ? `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div>` : '') + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
 }
 
@@ -698,7 +700,7 @@ async function repBuild(type, rids, from, to) {
     const [dg, dr, eq, ga, ma, as] = await Promise.all(['documents', 'doc_records', 'equipment', 'warranties', 'maintenance_tasks', 'service_requests'].map(t => repFetch(t, rids).catch(() => [])));
     const n = (arr, id, fn = () => true) => arr.filter(x => x.residence_id === id && fn(x)).length;
     return { cols: ['Residência', 'Código', 'Proprietários', 'Documentos', 'Equipamentos', 'Garantias em vigor', 'Inspeções pendentes', 'Inspeções atrasadas', 'Assistências abertas'],
-      rows: rs.map(r => [r.name, r.code, own(r.id), n(dg, r.id) + n(dr, r.id), n(eq, r.id), n(ga, r.id, w => wState(w)[0] !== 'Encerrada'), n(ma, r.id, aberta), n(ma, r.id, m => aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje), n(as, r.id, s => !['Concluída', 'Encerrada'].includes(s.status))]) };
+      rows: rs.map(r => [r.name, r.code, own(r.id), n(dg, r.id) + n(dr, r.id), n(eq, r.id), n(ga, r.id, w => wState(w)[0] !== 'Expirada'), n(ma, r.id, aberta), n(ma, r.id, m => aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje), n(as, r.id, s => !['Concluída', 'Encerrada'].includes(s.status))]) };
   }
   if (type === 'gar') return { group: 5, cols: ['Residência', 'Sistema', 'Cobertura', 'Início', 'Término', 'Situação'], rows: (await repFetch('warranties', rids, 'start_date', from, to)).sort(byRes).map(w => { const [s, , end] = wState(w); return [rn(w.residence_id), v(w.system), v(w.coverage), br(w.start_date), isNaN(end) ? '—' : end.toLocaleDateString('pt-BR'), s]; }) };
   if (type === 'man') return { group: 5, cols: ['Residência', 'Tarefa', 'Sistema', 'Última execução', 'Próxima data', 'Situação'], rows: (await repFetch('maintenance_tasks', rids, 'next_due', from, to)).sort(byRes).map(m => [rn(m.residence_id), v(m.name), v(m.system), br(m.last_done), br(m.next_due), aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje ? 'Atrasada' : (m.status || 'Pendente')]) };
@@ -877,7 +879,7 @@ document.addEventListener('click', async e => {
   if (d.gal) { const [, id] = d.gal.split(':'), t = S.rows.maintenance_tasks.find(x => x.id === id); S.gal = { kind: 'maintenance', refId: id, resId: t.residence_id, title: t.name }; gallery(); }
   if (d.stopen !== undefined) { const m = el.parentElement.querySelector('.stmenu'), abrir = m.hidden; closeFloating(); m.hidden = !abrir; el.setAttribute('aria-expanded', abrir); }
   if (d.stset) { const [sid, sv] = d.stset.split('|'); const { error } = await sb.from('maintenance_tasks').update({ status: sv }).eq('id', sid); done(error && 'Não foi possível alterar a situação.', 'Situação alterada para ' + sv + '.'); }
-  if (d.stf) { if (d.stf === 'all') S.stf = new Set(); else { if (S.stf.has(d.stf)) S.stf.delete(d.stf); else S.stf.add(d.stf); if (S.stf.size === Object.keys(ST).length) S.stf = new Set(); } S.pages = {}; $('#stbar').innerHTML = stBarInner(); paintItems(); }
+  if (d.stf) { if (d.stf === 'all') S.stf = new Set(); else { if (S.stMode) S.stf = S.stf.has(d.stf) ? new Set() : new Set([d.stf]); else { if (S.stf.has(d.stf)) S.stf.delete(d.stf); else S.stf.add(d.stf); if (S.stf.size === Object.keys(ST).length) S.stf = new Set(); } } S.pages = {}; $('#stbar').innerHTML = stBarInner(); paintItems(); }
   if (d.v3d) { const [vp, vn, vs] = d.v3d.split('|'), { data: vu } = await sb.storage.from('documents').createSignedUrl(vp, 3600); $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Arquivo 3D"><div class="sheethead"><b>Arquivo 3D</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>${plFileBlock({ type: '3d', name: vn, path: vp, size: +vs }, vu ? vu.signedUrl : '')}</div>`; $('#modal').hidden = false; if (PL_VIEW.includes(plExt(vn))) { loadMV(); $('#modal').querySelectorAll('model-viewer').forEach(m => m.addEventListener('error', () => { const p = m.parentElement.querySelector('.mvfail'); if (p) p.hidden = false; })); } }
   if (d.pm) { const [pi] = d.pm.split('|'), cp = S.curPlan, vis = ((cp && cp.files) || []).map((x, j) => ({ x, j })).filter(o => o.x.type === 'image' || o.x.type === 'video'); lbOpenList(vis.map(({ x, j }) => ({ id: cp.id + j, url: x.url, media_type: x.type })), Math.max(0, vis.findIndex(o => o.j === +pi))); }
   if (d.bm) { const [bk, bid, bi] = d.bm.split('|'), row = (S.rows[bk] || []).find(x => x.id === bid); if (row) { const vis = (row.media || []).map((x, j) => ({ x, j })).filter(o => o.x.type === 'image' || o.x.type === 'video'); lbOpenList(vis.map(({ x, j }) => ({ id: bid + j, url: x.url, media_type: x.type === 'video' ? 'video' : 'image' })), Math.max(0, vis.findIndex(o => o.j === +bi))); } }
@@ -1043,3 +1045,7 @@ document.addEventListener('submit', async e => {
   if (r && r.error) return toast('Não foi possível salvar: ' + r.error.message, 1);
   closeModal(); toast('Salvo com sucesso.'); await render();
 });
+
+// prazos (meses/anos): só números inteiros, nunca negativos
+document.addEventListener('keydown', e => { if (e.target.matches && e.target.matches('input[data-nonneg]') && (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E' || e.key === '.' || e.key === ',')) e.preventDefault(); });
+document.addEventListener('input', e => { const t = e.target; if (t.matches && t.matches('input[data-nonneg]') && t.value !== '' && !/^\d+$/.test(t.value)) t.value = t.value.replace(/\D/g, ''); });
