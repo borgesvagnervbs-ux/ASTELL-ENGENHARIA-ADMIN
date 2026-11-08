@@ -1,3 +1,4 @@
+:root{--gold:#3dc08c}
 /* Painel administrativo — usa as mesmas cores e componentes do style.css */
 body{padding-bottom:40px}
 main#view{max-width:980px}
@@ -256,7 +257,7 @@ table.rep tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
 
 /* ---- inspeções preventivas: situação colorida, menu de troca e filtros */
 .badge.st-pend,.stopt.st-pend,.stf-pend{--c:#8d99a6;--cx:#0b1623}
-.badge.st-and,.stopt.st-and,.stf-and{--c:#e0b020;--cx:#04231a}
+.badge.st-and,.stopt.st-and,.stf-and{--c:#26b5c4;--cx:#04231a}
 .badge.st-conc,.stopt.st-conc,.stf-conc{--c:#2a9a62;--cx:#fff}
 .badge.st-canc,.stopt.st-canc,.stf-canc{--c:#c0443a;--cx:#fff}
 .stf-all{--c:#3dc08c;--cx:#04231a}
