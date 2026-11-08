@@ -286,3 +286,9 @@ table.rep tbody tr:nth-child(even){background:rgba(255,255,255,.025)}
 body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 .dfoot button.ghost{background:var(--gold);color:#1b1409;border:0;font-weight:600}
 .dfoot button.ghost:hover{filter:brightness(1.08)}
+
+/* ---- Documentos / Mídias de cada elemento */
+.emsheet .mcenter .up{margin:6px auto 12px;display:block}
+.emsheet .pfile{text-align:left}
+.emsheet .mgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.emsheet .tabs{flex-wrap:wrap}

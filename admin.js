@@ -425,6 +425,83 @@ const visBtn = (k, r) => `<button class="link" data-vis="${k}:${r.id}">${r.visib
 const hid = r => r.visible === false ? '<p><span class="badge">Oculto do cliente</span></p>' : '';
 const TITLE = { warranties: r => r.system, maintenance_tasks: r => r.name, equipment: r => r.name, building_items: r => r.title };
 
+
+// ---------- Documentos e Mídias de cada elemento (PDFs/3D de um lado; imagens e vídeos do outro, com a mesma organização das mídias da residência)
+const EM = {
+  building_items: { arr: 'media', doc: true, vid: true, pasta: 'construcao', cloud: true },
+  equipment: { arr: 'media', doc: false, vid: false, pasta: 'equipamentos', cloud: true },
+  maintenance_tasks: { arr: 'media', doc: true, vid: true, pasta: 'inspecoes', cloud: true },
+  floorplans: { arr: 'files', doc: true, vid: true, pasta: 'plantas', cloud: true },
+  doc_records: { arr: 'files', doc: true, vid: false, pasta: null, cloud: false },
+};
+const emTy = x => ['image', 'video', 'pdf', '3d'].includes(x.type) ? x.type : /^image\//.test(x.type || '') ? 'image' : x.type === 'application/pdf' ? 'pdf' : 'file';
+function emSplit(k, row, imgs) {
+  const m = [], d = [];
+  ((row && row[EM[k].arr]) || []).forEach((x, idx) => { const t = emTy(x), o = { src: 'a', idx, key: 'a' + idx, type: t, name: x.name, url: x.url, path: x.path, size: x.size, visible: x.visible !== false }; (t === 'image' || t === 'video' ? m : d).push(o); });
+  (imgs || []).forEach(x => m.push({ src: 'i', id: x.id, key: 'i' + x.id, type: 'image', url: x.url, visible: x.visible !== false, name: 'Imagem' }));
+  return { m, d };
+}
+const emRow = (k, id) => k === 'floorplans' ? (S.curPlan && S.curPlan.id === id ? S.curPlan : null) : (S.rows[k] || []).find(r => r.id === id);
+const emBtns = (k, r, nImg = 0) => { const { m, d } = emSplit(k, r, []); return acts(EM[k].doc ? `<button type="button" class="link" data-em="${k}:${r.id}:d">Documentos (${d.length})</button>` : '', `<button type="button" class="link" data-em="${k}:${r.id}:m">Mídias (${m.length + nImg})</button>`); };
+async function emLoad() {
+  const E = S.em, row = emRow(E.k, E.id); if (!row) return;
+  if (E.k === 'maintenance_tasks') { const { data } = await sb.from('images').select('*').eq('kind', 'maintenance').eq('ref_id', E.id).order('created_at'); E.imgs = data || []; }
+  const { m } = emSplit(E.k, row, E.imgs);
+  await Promise.all(m.filter(x => x.path && !E.urls[x.path]).map(async x => { const { data } = await sb.storage.from('documents').createSignedUrl(x.path, 3600); if (data) E.urls[x.path] = data.signedUrl; }));
+}
+async function emOpen(k, id, view) { if (!emRow(k, id)) return; S.em = { k, id, view, tab: 'all', sel: { on: false, ids: new Set() }, imgs: [], urls: {} }; await emLoad(); emRender(); }
+const emThumb = x => x.path ? x.url : x.type === 'video' ? vposter(x.url) : cld(x.url, 300);
+function emRender() {
+  const E = S.em, row = emRow(E.k, E.id), C = EM[E.k]; if (!row) return;
+  const { m, d } = emSplit(E.k, row, E.imgs); m.forEach(x => { if (x.path) x.url = E.urls[x.path]; });
+  const title = (row.title || row.name || 'Elemento'), vids = m.filter(x => x.type === 'video'), pics = m.filter(x => x.type === 'image'), sel = E.sel, n = sel.ids.size;
+  let body;
+  if (E.view === 'd') {
+    const d3ok = E.k === 'building_items' && row.category === 'Estrutura';
+    body = `<div class="mcenter"><button type="button" class="up" data-emup="d">Upload de documentos${d3ok ? ' e arquivos 3D' : ' (PDF)'}</button>` + (d.length ? d.map(x => `<div class="card pfile"><div class="pfhead"><b>${x.type === 'pdf' ? 'PDF' : x.type === '3d' ? '3D' : 'Arquivo'} · ${esc(x.name || 'arquivo')}</b><span class="mute">${plSize(x.size || 0)}</span></div>${acts(x.type === 'pdf' ? `<button type="button" class="link" data-open="${esc(x.path)}">Abrir</button>` : x.type === '3d' ? `<button type="button" class="link" data-v3d="${esc(x.path)}|${esc(x.name)}|${x.size || 0}">Ver em 3D</button>` : '', `<button type="button" class="link" data-dl="${esc(x.path)}|${esc(x.name)}">Baixar</button>`, `<button type="button" class="link danger" data-emdd="${x.idx}">Excluir</button>`)}</div>`).join('') : '<p class="empty">Nenhum documento enviado ainda.</p>') + '</div>';
+  } else {
+    const shown = { all: m, img: pics, vid: vids }[E.tab] || m;
+    const tile = x => { const ck = sel.ids.has(x.key), vid = x.type === 'video';
+      return `<div class="gtile mtile${ck ? ' picked' : ''}"><div class="mwrap"><img src="${esc(emThumb(x))}" alt="" loading="lazy" draggable="false" data-emi="${x.key}">${vid ? '<span class="playbadge">▶</span><span class="badge vb">Vídeo</span>' : ''}${sel.on ? `<div class="cover" data-emsid="${x.key}"></div><input type="checkbox" class="selbox" data-emsid="${x.key}" ${ck ? 'checked' : ''} aria-label="Selecionar ${vid ? 'vídeo' : 'imagem'}">` : ''}</div><div class="mfoot">${x.visible === false ? '<span class="badge">Oculto</span>' : '<span></span>'}<button type="button" class="link" data-emvis="${x.key}" title="${x.visible === false ? 'Mostrar ao cliente' : 'Ocultar do cliente'}">${x.visible === false ? 'Mostrar' : 'Ocultar'}</button></div></div>`; };
+    const tabs = `<div class="tabs three" role="tablist">${[['all', 'Todos', m.length], ['img', 'Imagens', pics.length], ['vid', 'Vídeos', vids.length]].filter(t => C.vid || t[0] !== 'vid').map(([k, l, c]) => `<button type="button" role="tab" aria-selected="${E.tab === k}" class="${E.tab === k ? 'on' : ''}" data-emtab="${k}">${l} (${c})</button>`).join('')}</div>`;
+    const tools = `<div class="mtools"><span class="mute">${shown.length} ${shown.length === 1 ? 'item' : 'itens'}</span><span class="mbtns">${sel.on ? `<button type="button" class="btn-danger" data-emdel ${n ? '' : 'disabled'}>Excluir${n ? ` (${n})` : ''}</button><button type="button" class="ghost2" data-emselmode>Cancelar</button>` : `<button type="button" class="ghost2" data-emselmode ${shown.length ? '' : 'disabled'}>Selecionar</button>`}</span></div>`;
+    const empty = E.tab === 'img' ? 'Nenhuma imagem enviada ainda.' : E.tab === 'vid' ? 'Nenhum vídeo enviado ainda.' : 'Nada enviado ainda.';
+    body = `<div class="mcenter"><button type="button" class="up" data-emup="m">Upload de imagens${C.vid ? ' e vídeos' : ''}</button>` + tabs + tools + '<p class="mute mhint">Dê dois cliques em uma imagem, ou um clique em um vídeo, para ampliar.</p>' + `<div class="mgrid">${shown.map(tile).join('') || `<p class="empty">${empty}</p>`}</div></div>`;
+  }
+  $('#modal').innerHTML = `<div class="sheet big emsheet" role="dialog" aria-modal="true" aria-label="${E.view === 'd' ? 'Documentos' : 'Mídias'}"><div class="sheethead"><b>${E.view === 'd' ? 'Documentos' : 'Mídias'} — ${esc(title)}</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>${body}<input type="file" id="emFile" hidden multiple></div>`;
+  $('#modal').hidden = false;
+}
+async function emSave(patch) {   // grava o novo conteúdo da coluna de arquivos do elemento aberto
+  const E = S.em, row = emRow(E.k, E.id), C = EM[E.k], r = await sb.from(E.k).update({ [C.arr]: patch }).eq('id', E.id);
+  if (!r.error) row[C.arr] = patch; return r;
+}
+async function emUpload(files, kind) {
+  const E = S.em, row = emRow(E.k, E.id), C = EM[E.k]; if (!row || !files.length) return;
+  const d3ok = E.k === 'building_items' && row.category === 'Estrutura', res = S.res.find(x => x.id === row.residence_id), rid = row.residence_id, store = sb.storage.from('documents');
+  const typeOf = x => kind === 'm' ? (/^image\//.test(x.type) ? 'image' : /^video\//.test(x.type) && C.vid ? 'video' : null) : (x.type === 'application/pdf' || plExt(x.name) === 'pdf' ? 'pdf' : d3ok && PL_3D.includes(plExt(x.name)) ? '3d' : null);
+  for (const x of files) { const t = typeOf(x); if (!t) return toast(`"${x.name}" não é um tipo aceito aqui.`, 1); const mx = t === 'video' ? 100 : t === '3d' ? 200 : t === 'pdf' ? 25 : 10; if (x.size > mx * 1048576) return toast(`"${x.name}" é maior que ${mx} MB.`, 1); if (kind === 'm' && !C.cloud && !store) return; }
+  const folder = 'astell-home/' + String(res ? res.code : 'sem-codigo').replace(/[^\w-]/g, '_') + '/' + (C.pasta || 'documentos'), up = [], sent = [];
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const x = files[i], t = typeOf(x); toast(`Enviando ${i + 1} de ${files.length}…`);
+      if (t === 'image' || t === 'video') {
+        if (C.cloud) { if (!CLOUD_OK) throw new Error('Cloudinary não configurado'); const j = await cldPost(x, folder); up.push({ url: j.secure_url, type: t, name: x.name, public_id: j.public_id }); }
+        else { const path = `${rid}/${row.kind || 'documentos'}/${Date.now()}_${i}_${x.name.replace(/[^\w.-]/g, '_')}`, r = await store.upload(path, x, { contentType: x.type }); if (r.error) throw r.error; sent.push(path); up.push({ path, name: x.name, type: x.type, size: x.size }); }
+      } else {
+        const path = `${rid}/${C.pasta || row.kind || 'documentos'}/${Date.now()}_${i}_${x.name.replace(/[^\w.-]/g, '_')}`, r = await store.upload(path, x, { contentType: t === 'pdf' ? 'application/pdf' : plExt(x.name) === 'glb' ? 'model/gltf-binary' : 'application/octet-stream' }); if (r.error) throw r.error; sent.push(path);
+        up.push(C.arr === 'files' && E.k === 'doc_records' ? { path, name: x.name, type: 'application/pdf', size: x.size } : { path, type: t, name: x.name, size: x.size });
+      }
+    }
+  } catch (e) { if (sent.length) await store.remove(sent); return toast('Falha no envio: ' + e.message, 1); }
+  const r = await emSave([...(row[C.arr] || []), ...up]); if (r.error) { if (sent.length) await store.remove(sent); return toast('Não foi possível salvar: ' + r.error.message, 1); }
+  toast(up.length === 1 ? 'Arquivo enviado.' : up.length + ' arquivos enviados.'); await emLoad(); emRender();
+}
+async function emRemove(keys) {   // keys: 'a<posição>' (colunas do elemento) ou 'i<id>' (imagens antigas das inspeções)
+  const E = S.em, row = emRow(E.k, E.id), C = EM[E.k], idx = keys.filter(k => k[0] === 'a').map(k => +k.slice(1)), ids = keys.filter(k => k[0] === 'i').map(k => k.slice(1));
+  if (idx.length) { const old = row[C.arr] || [], gone = old.filter((x, i) => idx.includes(i) && x.path).map(x => x.path), r = await emSave(old.filter((x, i) => !idx.includes(i))); if (r.error) return toast('Não foi possível excluir.', 1); if (gone.length) await sb.storage.from('documents').remove(gone); }
+  for (const id of ids) { const r = await sb.from('images').delete().eq('id', id); if (r.error) return toast('Não foi possível excluir.', 1); }
+  toast(keys.length === 1 ? 'Item excluído.' : keys.length + ' itens excluídos.'); E.sel = { on: false, ids: new Set() }; await emLoad(); emRender();
+}
 async function listPage(k) {
   const c = T[k], cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;
   await loadOwners();
@@ -435,7 +512,7 @@ async function listPage(k) {
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
-    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? (wState(r)[0] === 'Expirada' ? 'Expirada' : 'Vigente') : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${k === 'maintenance_tasks' ? thumbsOf(im[r.id]) : ''}${MEDIA_T[k] ? bldThumbs(r, k) : ''}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, `<button class="link" data-copy="${k}:${r.id}">Copiar</button>`, 'visible' in r && visBtn(k, r), k === 'maintenance_tasks' && `<button class="link" data-gal="man:${r.id}">Imagens (${(im[r.id] || []).length})</button>`, `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}</div>` };
+    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? (wState(r)[0] === 'Expirada' ? 'Expirada' : 'Vigente') : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, `<button class="link" data-copy="${k}:${r.id}">Copiar</button>`, 'visible' in r && visBtn(k, r), `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}${EM[k] ? emBtns(k, r, (im[r.id] || []).length) : ''}</div>` };
   }) });
   view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + (k === 'maintenance_tasks' || k === 'warranties' ? `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div>` : '') + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
@@ -445,20 +522,20 @@ async function listPage(k) {
 const PL_3D = ['glb', 'gltf', 'obj', 'stl', 'fbx', '3ds', 'dae', 'skp', 'ifc', 'rvt', 'step', 'stp', '3dm', 'blend'];
 const PL_VIEW = ['glb', 'gltf'];   // formatos que o navegador mostra (visualizador 3D); os demais podem ser baixados
 const plExt = n => (String(n).split('.').pop() || '').toLowerCase();
-const plKind = x => x.type === 'application/pdf' || plExt(x.name) === 'pdf' ? 'pdf' : PL_3D.includes(plExt(x.name)) ? '3d' : null;
+const plKind = x => x.type === 'application/pdf' || plExt(x.name) === 'pdf' ? 'pdf' : null;   // 3D novo só em Construção › Estrutura (3D antigos continuam visíveis)
 const plKind2 = x => /^image\//.test(x.type) ? 'image' : /^video\//.test(x.type) ? 'video' : plKind(x);
 const plSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 const plFormBody = (row, pre) => { const v = row || pre || {}; return `<label>Título<input name="title" value="${esc(v.title || '')}" required></label>` +
   `<label>Descrição (opcional)<textarea name="description" rows="3">${esc(v.description || '')}</textarea></label>` +
   (row ? `<div class="field"><span class="lbl">Arquivos atuais</span><ul class="curfiles">${(row.files || []).map((x, i) => `<li><span class="fname">${esc(mediaItemLabel(x))}</span><label class="chk"><input type="checkbox" name="rm_files" value="${i}"> remover</label></li>`).join('') || '<li class="mute">Nenhum arquivo.</li>'}</ul></div>` : '') +
-  `<label>${row ? 'Adicionar mais arquivos' : 'Arquivos'} (PDFs, imagens, vídeos e 3D; pode escolher vários)<input name="files" type="file" accept="application/pdf,.pdf,image/*,video/*${accept3d()}" multiple></label>` +
-  `<p class="mute">PDF até 25 MB, imagens até 10 MB, vídeos até 100 MB e arquivos 3D até 200 MB (${PL_3D.map(e => e.toUpperCase()).join(', ')}). Só GLB e GLTF abrem para visualização; os demais ficam guardados para baixar. Prefira o GLB.</p>`; };
+  `<label>${row ? 'Adicionar mais arquivos' : 'Arquivos'} (PDFs, imagens e vídeos; pode escolher vários)<input name="files" type="file" accept="application/pdf,.pdf,image/*,video/*" multiple></label>` +
+  `<p class="mute">PDF até 25 MB, imagens até 10 MB e vídeos até 100 MB.</p>`; };
 function openPlEdit(row) { modal('Editar planta técnica', `<p class="mute">Residência: <b>${esc(resName(row.residence_id))}</b></p>` + plFormBody(row), `data-form="edit:pl" data-id="${row.id}" data-rid="${row.residence_id}"`, 'Salvar alterações'); }
 async function savePl(f, o, op) {
   const picked = [...f.elements.files.files], store = sb.storage.from('documents'), row = op === 'edit' ? S.curPlan : null;
-  for (const x of picked) { const t = plKind2(x); if (!t) return { error: { message: `"${x.name}" não é PDF, imagem, vídeo nem formato 3D aceito.` } }; const mx = t === '3d' ? 200 : t === 'video' ? 100 : t === 'pdf' ? 25 : 10; if (x.size > mx * 1048576) return { error: { message: `"${x.name}" é maior que ${mx} MB.` } }; if ((t === 'image' || t === 'video') && !CLOUD_OK) return { error: { message: 'Imagens e vídeos precisam do Cloudinary configurado.' } }; }
+  for (const x of picked) { const t = plKind2(x); if (!t) return { error: { message: `"${x.name}" não é PDF, imagem nem vídeo.` } }; const mx = t === 'video' ? 100 : t === 'pdf' ? 25 : 10; if (x.size > mx * 1048576) return { error: { message: `"${x.name}" é maior que ${mx} MB.` } }; if ((t === 'image' || t === 'video') && !CLOUD_OK) return { error: { message: 'Imagens e vídeos precisam do Cloudinary configurado.' } }; }
   const rid = op === 'add' ? o.residence_id : row.residence_id, rm = [...f.querySelectorAll('[name=rm_files]:checked')].map(i => +i.value), old = (row && row.files) || [];
-  const keep = old.filter((x, i) => !rm.includes(i)); if (!f.dataset.iscopy && !picked.length && !(row && row.path) && !keep.length) return { error: { message: 'Envie ao menos um arquivo (PDF, imagem, vídeo ou 3D).' } };
+  const keep = old.filter((x, i) => !rm.includes(i)); if (!f.dataset.iscopy && !picked.length && !(row && row.path) && !keep.length) return { error: { message: 'Envie ao menos um arquivo (PDF, imagem ou vídeo).' } };
   const up = [], safe = n => n.replace(/[^\w.-]/g, '_'), sent = [], res = S.res.find(x => x.id === rid), folder = 'astell-home/' + String(res ? res.code : 'sem-codigo').replace(/[^\w-]/g, '_') + '/plantas';
   const undo = () => sent.length ? store.remove(sent) : null;
   try {
@@ -485,19 +562,25 @@ const plFileBlock = (x, url) => {
     : `<p class="mute">Este formato (${esc(plExt(x.name).toUpperCase())}) não abre no navegador. Use “Baixar” e abra no programa próprio.</p>`;
   return `<div class="card pfile">${head}${body}${btns}</div>`;
 };
+async function limparImagensPlantas() {   // remove de vez as imagens principais antigas (e os pontos marcados nelas)
+  if (S.plClean) return; S.plClean = true;
+  const { data } = await sb.from('floorplans').select('id,path').not('path', 'is', null); if (!data || !data.length) return;
+  const paths = [];
+  for (const p of data) { await sb.from('plan_points').delete().eq('floorplan_id', p.id); const r = await sb.from('floorplans').update({ path: null }).eq('id', p.id); if (!r.error) paths.push(p.path); }
+  if (paths.length) await sb.storage.from('documents').remove(paths);
+}
 async function plantaDetail(id) {
-  await loadOwners();
+  await loadOwners(); await limparImagensPlantas();
   const { data: fp } = await sb.from('floorplans').select('*').eq('id', id), cur = (fp || [])[0];
   const ptr = S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], ['Plantas Técnicas', '#res/' + S.scope + '/pl']] : [['Painel', '#res'], ['Planta técnica', '#pl']];   // dentro da residência a trilha e o "voltar" continuam nela
   if (!cur) { view.innerHTML = crumbs([...ptr, ['Não encontrada']]) + '<p class="empty">Planta não encontrada.</p>'; return; }
   S.curPlan = cur;
   const files = cur.files || [], [{ data: u }, { data: pts }, ...urls] = await Promise.all([cur.path ? sb.storage.from('documents').createSignedUrl(cur.path, 3600) : Promise.resolve({ data: null }), cur.path ? sb.from('plan_points').select('*').eq('floorplan_id', id).order('created_at') : Promise.resolve({ data: [] }), ...files.map(x => x.path ? sb.storage.from('documents').createSignedUrl(x.path, 3600) : Promise.resolve({ data: null }))]);
   view.innerHTML = crumbs([...ptr, [cur.title]]) + `<div class="pagehead"><div><h2>${esc(cur.title)}</h2>${metaHtml(cur.residence_id)}${cur.description ? `<p class="mute">${esc(cur.description)}</p>` : ''}</div></div>` +
-    acts(`<button class="link" data-pledit="${cur.id}">Editar</button>`, `<button class="link" data-copy="pl:${cur.id}">Copiar</button>`, cur.path && `<button class="link" data-place>${S.place ? 'Parar de marcar pontos' : 'Marcar pontos na planta'}</button>`, `<button class="link danger" data-delplan="${cur.id}">Excluir esta planta</button>`) + (S.place ? '<p class="notice">Toque na planta onde fica o ponto, conforme o projeto.</p>' : '') +
-    (cur.path ? `<div class="plan ${S.place ? 'placing' : ''}" style="margin-top:12px"><img data-plan="1" src="${u ? esc(u.signedUrl) : ''}" alt="${esc(cur.title)}">${(pts || []).map(p => `<span class="pin" title="${esc(p.label)}" style="left:${p.x}%;top:${p.y}%"></span>`).join('')}</div>` : '') +
+    acts(`<button class="link" data-pledit="${cur.id}">Editar</button>`, `<button class="link" data-copy="pl:${cur.id}">Copiar</button>`, `<button class="link danger" data-delplan="${cur.id}">Excluir esta planta</button>`) + emBtns('floorplans', cur) +
     (files.some(x => x.type === 'image' || x.type === 'video') ? `<h3>Imagens e vídeos</h3>${bldThumbs({ id: cur.id, media: files }, 'pm', true).replace(/data-bm="pm\|[^|]*\|/g, 'data-pm="')}` : '') +
     (files.some(x => x.type === 'pdf' || x.type === '3d') ? `<h3>Arquivos (PDF${files.some(x => x.type === '3d') ? ' e 3D' : ''})</h3>${files.map((x, i) => x.type === 'pdf' || x.type === '3d' ? plFileBlock(x, urls[i] && urls[i].data ? urls[i].data.signedUrl : '') : '').join('')}` : '') +
-    (cur.path ? '<h3>Pontos cadastrados</h3>' + ((pts || []).map(p => `<div class="card"><b>${esc(p.label)}</b><span class="mute">${esc(p.category)}</span><p>${esc(p.description)}</p>${acts(`<button class="link danger" data-del="plan_points:${p.id}">Excluir ponto</button>`)}</div>`).join('') || '<p class="empty">Nenhum ponto marcado.</p>') : '');
+    '';
   if (files.some(x => x.type === '3d' && PL_VIEW.includes(plExt(x.name)))) { loadMV(); view.querySelectorAll('model-viewer').forEach(m => m.addEventListener('error', () => { const p = m.parentElement.querySelector('.mvfail'); if (p) p.hidden = false; })); }
 }
 
@@ -549,7 +632,7 @@ async function dcList(key) {
   setItems({ mlist: data.map(d => {
     const e = d.extra || {}, lines = c.f.filter(([k]) => e[k]).map(([k, l, t]) => `<span class="mute meta">${l}: ${esc(t === 'date' ? fmt(e[k]) : e[k])}</span>`).join('');
     const files = (d.files || []).map(x => `<button type="button" class="link filelink" data-open="${esc(x.path)}" title="Abrir">${x.type === 'application/pdf' ? 'PDF' : 'Imagem'} · ${esc(x.name)}</button>`).join('');
-    return { hay: hayOf(d.residence_id, d.title, ...Object.values(e)), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute meta">Data: ${fmt(d.doc_date)}</span>${lines}${d.notes ? `<p class="mute">${esc(d.notes)}</p>` : ''}<div class="dfiles">${files}</div>${acts(`<button class="link" data-edit="dc:${d.id}">Editar</button>`, `<button class="link" data-copy="dc:${d.id}">Copiar</button>`, `<button class="link danger" data-deldc="${d.id}">Excluir</button>`)}</div>` };
+    return { hay: hayOf(d.residence_id, d.title, ...Object.values(e)), html: `<div class="card"><b>${esc(d.title)}</b>${metaHtml(d.residence_id)}<span class="mute meta">Data: ${fmt(d.doc_date)}</span>${lines}${d.notes ? `<p class="mute">${esc(d.notes)}</p>` : ''}${acts(`<button class="link" data-edit="dc:${d.id}">Editar</button>`, `<button class="link" data-copy="dc:${d.id}">Copiar</button>`, `<button class="link danger" data-deldc="${d.id}">Excluir</button>`)}${emBtns('doc_records', d)}</div>` };
   }) }, { mlist: `Nada cadastrado em ${c.l}. Toque em + para adicionar.` });
   view.innerHTML = head(c.l, 'dc:' + key, dcTrail(c)) + SHELL; paintItems();
 }
@@ -787,9 +870,9 @@ const PAGES = {
   async pl() { if (S.arg) return plantaDetail(S.arg); return plantasList(); },
 };
 async function plantasList() {
-  await loadOwners();
+  await loadOwners(); await limparImagensPlantas();
   const { data } = await scoped(sb.from('floorplans').select('*')).order('created_at', { ascending: false });
-  setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title, p.description), html: `<a class="card rescard" href="${S.scope ? `#res/${S.scope}/pl/${p.id}` : `#pl/${p.id}`}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}${p.description ? `<span class="mute meta">${esc(p.description)}</span>` : ''}<span class="mute meta">${[p.path ? 'Imagem da planta' : '', ...[['pdf', 'PDF', 'PDFs'], ['image', 'imagem', 'imagens'], ['video', 'vídeo', 'vídeos'], ['3d', 'arquivo 3D', 'arquivos 3D']].map(([t, a, b]) => { const n = (p.files || []).filter(x => x.type === t).length; return n ? n + ' ' + (n === 1 ? a : b) : ''; })].filter(Boolean).join(' · ') || 'Sem arquivos'}</span></a>` })) }, { mlist: 'Nenhuma planta cadastrada. Toque em + para cadastrar.' });
+  setItems({ mlist: (data || []).map(p => ({ hay: hayOf(p.residence_id, p.title, p.description), html: `<a class="card rescard" href="${S.scope ? `#res/${S.scope}/pl/${p.id}` : `#pl/${p.id}`}"><b>${esc(p.title)}</b>${metaHtml(p.residence_id)}${p.description ? `<span class="mute meta">${esc(p.description)}</span>` : ''}<span class="mute meta">${[...[['pdf', 'PDF', 'PDFs'], ['image', 'imagem', 'imagens'], ['video', 'vídeo', 'vídeos'], ['3d', 'arquivo 3D', 'arquivos 3D']].map(([t, a, b]) => { const n = (p.files || []).filter(x => x.type === t).length; return n ? n + ' ' + (n === 1 ? a : b) : ''; })].filter(Boolean).join(' · ') || 'Sem arquivos'}</span></a>` })) }, { mlist: 'Nenhuma planta cadastrada. Toque em + para cadastrar.' });
   view.innerHTML = head('Planta técnica', 'pl') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
 }
 
@@ -828,7 +911,7 @@ $('#resSearch').addEventListener('input', e => {   // filtra a lista do módulo 
 addEventListener('hashchange', () => { S.place = false; render(); });
 addEventListener('keydown', e => {
   if (!$('#lb').hidden) { if (e.key === 'Escape') lbClose(); else if (e.key === 'ArrowRight') lbMove(1); else if (e.key === 'ArrowLeft') lbMove(-1); return; }
-  if (e.key === 'Escape') { if (!closeFloating()) closeModal(); }
+  if (e.key === 'Escape') { if (!closeFloating()) { const em = !!document.querySelector('#modal .emsheet'); closeModal(); if (em) render(); } }
 });
 
 // ---------- acesso
@@ -865,7 +948,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-copy],[data-bm],[data-v3d],[data-pm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-copy],[data-em],[data-emup],[data-emtab],[data-emselmode],[data-emsid],[data-emdel],[data-emdd],[data-emvis],[data-emi],[data-bm],[data-v3d],[data-pm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -914,6 +997,18 @@ document.addEventListener('click', async e => {
   if (d.gvis) { const x = S.imgs.find(i => i.id === d.gvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await gallery(); }
   if (d.gdel && confirm('Excluir esta imagem do sistema? O arquivo continua guardado no Cloudinary.')) { const { error } = await sb.from('images').delete().eq('id', d.gdel); if (error) toast('Não foi possível excluir.', 1); else toast('Imagem excluída.'); await gallery(); }
   if (d.add) openAdd(d.add);
+  if (d.em) { const [ek, eid, ev] = d.em.split(':'); await emOpen(ek, eid, ev); }
+  if (d.emup) { const fi = $('#emFile'); if (fi) { const C = EM[S.em.k]; fi.dataset.kind = d.emup; fi.accept = d.emup === 'm' ? (C.vid ? 'image/*,video/*' : 'image/*') : '.pdf,application/pdf' + (S.em.k === 'building_items' && (emRow(S.em.k, S.em.id) || {}).category === 'Estrutura' ? accept3d() : ''); fi.click(); } }
+  if (d.emtab) { S.em.tab = d.emtab; S.em.sel = { on: false, ids: new Set() }; emRender(); }
+  if (d.emselmode !== undefined) { S.em.sel = { on: !S.em.sel.on, ids: new Set() }; emRender(); }
+  if (d.emsid) { const q = S.em.sel.ids; if (q.has(d.emsid)) q.delete(d.emsid); else q.add(d.emsid); emRender(); }
+  if (d.emdel !== undefined && S.em.sel.ids.size && confirm(`Excluir ${S.em.sel.ids.size} ${S.em.sel.ids.size === 1 ? 'item selecionado' : 'itens selecionados'}?`)) await emRemove([...S.em.sel.ids]);
+  if (d.emdd !== undefined && confirm('Excluir este documento?')) await emRemove(['a' + d.emdd]);
+  if (d.emvis) { const E = S.em, row = emRow(E.k, E.id), C = EM[E.k], vis = emSplit(E.k, row, E.imgs).m.find(x => x.key === d.emvis);
+    if (vis) { if (vis.src === 'i') { const r = await sb.from('images').update({ visible: !vis.visible }).eq('id', vis.id); if (r.error) toast('Não foi possível alterar.', 1); } else { const arr = (row[C.arr] || []).map((x, i) => i === vis.idx ? { ...x, visible: vis.visible ? false : true } : x); const r = await emSave(arr); if (r.error) toast('Não foi possível alterar.', 1); } await emLoad(); emRender(); } }
+  if (d.emi && !S.em.sel.on) { const E = S.em, row = emRow(E.k, E.id), m = emSplit(E.k, row, E.imgs).m; m.forEach(x => { if (x.path) x.url = E.urls[x.path]; }); const shown = { all: m, img: m.filter(x => x.type === 'image'), vid: m.filter(x => x.type === 'video') }[E.tab] || m, i = shown.findIndex(x => x.key === d.emi), x = shown[i];
+    const abrir = () => lbOpenList(shown.map(y => ({ id: y.key, url: y.url, media_type: y.type })), i);
+    if (x && x.type === 'video') abrir(); else if (x) { const t = Date.now(); if (S.lastEmi === d.emi && t - S.lastEmiT < 450) { S.lastEmi = null; abrir(); } else { S.lastEmi = d.emi; S.lastEmiT = t; } } }
   if (d.copy) { const [ck, ...cr] = d.copy.split(':'); openCopy(ck, cr.join(':')); }
   if (d.edit) { const [k, id] = d.edit.split(':'); openEdit(k, id); }
   if (d.vis) { const [k, id] = d.vis.split(':'), r = S.rows[k].find(x => x.id === id); const { error } = await sb.from(k).update({ visible: !r.visible }).eq('id', id); done(error && 'Não foi possível alterar.', r.visible ? 'Oculto do cliente.' : 'Visível ao cliente.'); }
@@ -948,6 +1043,7 @@ document.addEventListener('click', async e => {
   if (d.out !== undefined) sb.auth.signOut();
 });
 document.addEventListener('change', e => {
+  if (e.target.id === 'emFile') { const fl = [...e.target.files], kd = e.target.dataset.kind; e.target.value = ''; emUpload(fl, kd); return; }
   if (e.target.name === 'category' && e.target.form) { const mi = e.target.form.querySelector('input[name=media][data-d3]'); if (mi) { const on = e.target.value === mi.dataset.d3; mi.accept = mi.dataset.base + (on ? accept3d() : ''); const h = e.target.form.querySelector('[data-mhint]'); if (h) h.textContent = mediaHint('building_items', e.target.value); } }
   if (e.target.name === 'type' && e.target.closest && e.target.closest('.repform')) { const n = $('#repnote'); if (n) n.textContent = repNote(e.target.value); }
   if (e.target.id === 'fileIn') { stageFiles([...e.target.files]); e.target.value = ''; }
