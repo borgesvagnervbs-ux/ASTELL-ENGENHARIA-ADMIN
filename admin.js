@@ -516,9 +516,9 @@ async function emRemove(keys) {   // keys: 'a<posição>' (colunas do elemento) 
   for (const id of ids) { const r = await sb.from('images').delete().eq('id', id); if (r.error) return toast('Não foi possível excluir.', 1); }
   toast(keys.length === 1 ? 'Item excluído.' : keys.length + ' itens excluídos.'); E.sel = { on: false, ids: new Set() }; await emLoad(); emRender();
 }
-function astView(id, note) {   // janela editável da solicitação: situação e urgência trocam pela setinha; o texto da assistência grava no Salvar
+function astView(id, note, dt) {   // janela editável da solicitação: situação e urgência trocam pela setinha; o texto da assistência grava no Salvar
   const r = (S.rows.service_requests || []).find(x => x.id === id); if (!r) return;
-  modal('Assistência — ' + r.protocol, `<p class="mute">${esc(r.category || '')} · Residência: <b>${esc(resName(r.residence_id))}</b></p><div class="pickrow"><span class="pk"><span class="mute">Situação</span>${astStPick(r)}</span><span class="pk"><span class="mute">Urgência</span>${astUrPick(r)}</span></div><p class="mute meta">Local: ${esc(r.place || '—')}</p><div class="reqdesc"><span class="lbl">O que o cliente descreveu</span><p>${esc(r.description || '—')}</p></div><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p><label>Assistência que será feita (o cliente vê esta informação)<textarea name="staff_note" rows="6" placeholder="Descreva a assistência que será realizada, prazos e orientações.">${esc(note != null ? note : (r.staff_note || ''))}</textarea></label>`, `data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}"`, 'Salvar');
+  modal('Assistência — ' + r.protocol, `<p class="mute">${esc(r.category || '')} · Residência: <b>${esc(resName(r.residence_id))}</b></p><div class="pickrow"><span class="pk"><span class="mute">Situação</span>${astStPick(r)}</span><span class="pk"><span class="mute">Urgência</span>${astUrPick(r)}</span></div><p class="mute meta">Local: ${esc(r.place || '—')}</p><div class="reqdesc"><span class="lbl">O que o cliente descreveu</span><p>${esc(r.description || '—')}</p></div><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p><label>Assistência que será feita (o cliente vê esta informação)<textarea name="staff_note" rows="6" placeholder="Descreva a assistência que será realizada, prazos e orientações.">${esc(note != null ? note : (r.staff_note || ''))}</textarea></label><label>Data prevista do atendimento (aparece no cronograma do cliente)<input type="date" name="scheduled_for" value="${esc(dt != null ? dt : (r.scheduled_for || ''))}"></label>`, `data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}"`, 'Salvar');
 }
 async function listPage(k) {
   const c = T[k], cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;
@@ -995,7 +995,7 @@ document.addEventListener('click', async e => {
   if (d.stset) { const [tb, col, sid, sv] = d.stset.split('|'); const { error } = await sb.from(tb).update({ [col]: sv }).eq('id', sid);
     if (!error && tb === 'service_requests' && col === 'status') { const rr = (S.rows.service_requests || []).find(x => x.id === sid); if (rr) await sb.from('history_events').insert({ residence_id: rr.residence_id, category: 'Assistência', description: 'Solicitação atualizada: ' + sv }); }
     const msg = (col === 'urgency' ? 'Urgência alterada para ' : 'Situação alterada para ') + sv + '.';
-    if (el.closest('#modal')) { if (error) return toast('Não foi possível alterar.', 1); const rr = (S.rows.service_requests || []).find(x => x.id === sid); if (rr) rr[col] = sv; const ta = $('#modal textarea[name=staff_note]'); astView(sid, ta ? ta.value : undefined); return toast(msg); }
+    if (el.closest('#modal')) { if (error) return toast('Não foi possível alterar.', 1); const rr = (S.rows.service_requests || []).find(x => x.id === sid); if (rr) rr[col] = sv; const ta = $('#modal textarea[name=staff_note]'); const di = $('#modal input[name=scheduled_for]'); astView(sid, ta ? ta.value : undefined, di ? di.value : undefined); return toast(msg); }
     done(error && 'Não foi possível alterar.', msg); }
   if (d.stf) { if (d.stf === 'all') S.stf = new Set(); else { if (S.stMode === WST) S.stf = S.stf.has(d.stf) ? new Set() : new Set([d.stf]); else { if (S.stf.has(d.stf)) S.stf.delete(d.stf); else S.stf.add(d.stf); if (S.stf.size === Object.keys(stMap()).length) S.stf = new Set(); } } S.pages = {}; $('#stbar').innerHTML = stBarInner(); paintItems(); }
   if (d.v3d) { const [vp, vn, vs] = d.v3d.split('|'), { data: vu } = await sb.storage.from('documents').createSignedUrl(vp, 3600); $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Arquivo 3D"><div class="sheethead"><b>Arquivo 3D</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>${plFileBlock({ type: '3d', name: vn, path: vp, size: +vs }, vu ? vu.signedUrl : '')}</div>`; $('#modal').hidden = false; if (PL_VIEW.includes(plExt(vn))) { loadMV(); $('#modal').querySelectorAll('model-viewer').forEach(m => m.addEventListener('error', () => { const p = m.parentElement.querySelector('.mvfail'); if (p) p.hidden = false; })); } }
@@ -1119,7 +1119,7 @@ document.addEventListener('submit', async e => {
   }
   if (op === 'add' && (T[k] || ['docs', 'dc', 'pl'].includes(k)) && !o.residence_id) return toast('Selecione a residência (ou cadastre uma nova ao lado).', 1);
   const rid = o.residence_id;
-  if (id === 'ast') { r = await sb.from('service_requests').update({ staff_note: (o.staff_note || '').trim() || null }).eq('id', f.dataset.id); }
+  if (id === 'ast') { r = await sb.from('service_requests').update({ staff_note: (o.staff_note || '').trim() || null, scheduled_for: o.scheduled_for || null }).eq('id', f.dataset.id); }
   else if (id === 'add:res') {
     const { owner_ids, ...fields } = o; r = await sb.from('residences').insert(fields).select().single();
     if (!r.error) {
