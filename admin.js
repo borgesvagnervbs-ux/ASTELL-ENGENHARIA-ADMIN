@@ -2,11 +2,16 @@
 // Usa o mesmo banco Supabase do app do cliente: o que é cadastrado aqui aparece lá, conforme o CPF vinculado.
 
 // Cartão de confirmação (substitui o confirm() do navegador): devolve true se o usuário confirmar
+let lastClick = null; document.addEventListener('click', e => { lastClick = e.target; }, true);
 function ask(msg, ok = 'Excluir') {
   return new Promise(res => {
+    const del = ok === 'Excluir', btn = lastClick && lastClick.closest && lastClick.closest('[data-del],[data-deldoc],[data-deldc],[data-delplan],[data-emdd],[data-gdel]'),
+      card = del && btn ? btn.closest('.card,.gtile,.pfile,.item,.bthumb,.stagerow') : null, sub = del && !/^Excluir [^?]{0,40}\?$/.test(msg);
     const ov = document.createElement('div'); ov.className = 'askov'; ov.setAttribute('role', 'alertdialog'); ov.setAttribute('aria-modal', 'true');
-    ov.innerHTML = `<div class="askbox"><h3>Confirmar exclusão</h3><p></p><div class="askbtns"><button type="button" class="askno">Cancelar</button><button type="button" class="askyes">${ok}</button></div></div>`;
-    ov.querySelector('p').textContent = msg;
+    ov.innerHTML = `<div class="askbox"><div class="askitemwrap"></div><h3></h3><p class="asksub" hidden></p><div class="askbtns"><button type="button" class="askno">Cancelar</button><button type="button" class="askyes">${ok}</button></div></div>`;
+    ov.querySelector('h3').textContent = del ? 'Tem certeza que deseja fazer essa exclusão?' : msg;
+    if (sub) { const p = ov.querySelector('.asksub'); p.textContent = msg; p.hidden = false; }
+    if (card) { const c = card.cloneNode(true); c.querySelectorAll('.acts,form,button,[id]').forEach(x => x.remove()); c.removeAttribute('id'); c.classList.add('askitem'); ov.querySelector('.askitemwrap').appendChild(c); }
     const end = v => { document.removeEventListener('keydown', key, true); ov.remove(); res(v); }, key = e => { if (e.key === 'Escape') { e.stopPropagation(); end(false); } };
     ov.addEventListener('click', e => { e.stopPropagation(); if (e.target === ov || e.target.closest('.askno')) end(false); else if (e.target.closest('.askyes')) end(true); });
     document.addEventListener('keydown', key, true); document.body.appendChild(ov); ov.querySelector('.askno').focus();
@@ -531,7 +536,7 @@ async function emRemove(keys) {   // keys: 'a<posição>' (colunas do elemento) 
 }
 function astView(id, note, dt) {   // janela editável da solicitação: situação e urgência trocam pela setinha; o texto da assistência grava no Salvar
   const r = (S.rows.service_requests || []).find(x => x.id === id); if (!r) return;
-  modal('Assistência — ' + r.protocol, `<p class="mute">${esc(r.category || '')} · Residência: <b>${esc(resName(r.residence_id))}</b></p><div class="pickrow"><span class="pk"><span class="mute">Situação</span>${astStPick(r)}</span><span class="pk"><span class="mute">Urgência</span>${astUrPick(r)}</span></div><p class="mute meta">Local: ${esc(r.place || '—')}</p><div class="reqdesc"><span class="lbl">O que o cliente descreveu</span><p>${esc(r.description || '—')}</p></div><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p><label>Assistência que será feita (o cliente vê esta informação)<textarea name="staff_note" rows="6" placeholder="Descreva a assistência que será realizada, prazos e orientações.">${esc(note != null ? note : (r.staff_note || ''))}</textarea></label><label>Data prevista do atendimento (aparece no cronograma do cliente)<input type="date" name="scheduled_for" value="${esc(dt != null ? dt : (r.scheduled_for || ''))}"></label>`, `data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}"`, 'Salvar');
+  modal('Assistência — ' + r.protocol, `<p class="mute">${esc(r.category || '')} · Residência: <b>${esc(resName(r.residence_id))}</b></p><div class="pickrow"><span class="pk"><span class="mute">Situação</span>${astStPick(r)}</span><span class="pk"><span class="mute">Urgência</span>${astUrPick(r)}</span></div><p class="mute meta">Local: ${esc(r.place || '—')}</p><div class="reqdesc"><span class="lbl">O que o cliente descreveu</span><p>${esc(r.description || '—')}</p></div><p class="mute">Contato: ${esc(r.contact_time || '—')} · aberta em ${fmt(r.created_at)}</p><label>Assistência que será feita (o cliente vê esta informação)<textarea name="staff_note" rows="6" placeholder="Descreva a assistência que será realizada, prazos e orientações.">${esc(note != null ? note : (r.staff_note || ''))}</textarea></label>${dateField('scheduled_for', 'Data prevista do atendimento (aparece no cronograma do cliente)', dt != null ? dt : (r.scheduled_for || ''), false)}`, `data-form="ast" data-id="${r.id}" data-rid="${r.residence_id}"`, 'Salvar');
 }
 async function listPage(k) {
   const c = T[k], cat = k === 'building_items' && S.cat ? BCATS[S.cat] : null;
