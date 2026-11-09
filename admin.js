@@ -70,12 +70,13 @@ function wState(w) { const start = new Date(w.start_date + 'T00:00'), end = w._e
 // Inspeções preventivas: mesma linha do tempo das garantias (início = última execução, fim = próxima execução)
 const perTxt = r => r.interval_months ? `${r.interval_months} ${+r.interval_months === 1 ? 'mês' : 'meses'}` : (r.frequency || '');
 function mInfo(r) {
-  if (!r.next_due || ['Concluída', 'Cancelada'].includes(r.status || 'Pendente')) return null;
+  if (!r.next_due || r.status === 'Cancelada') return null;   // concluídas também mostram a barra
   const n = +r.interval_months || 0, endD = new Date(r.next_due + 'T00:00'), iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const startIso = r.last_done || (n ? iso(addMonths(r.next_due, -n)) : null); if (!startIso || isNaN(endD)) return null;
   const tot = n || Math.max(1, Math.round((endD - new Date(startIso + 'T00:00')) / 2629800000));
   return wInfo({ start_date: startIso, months: tot, _end: endD });
 }
+const effSt = r => { const st = r.status || 'Pendente'; if (st !== 'Concluída') return st; const w = mInfo(r); return w && w.kind !== 'ok' ? 'Pendente' : st; };   // concluída que chegou perto do vencimento volta a ser Pendente
 function mBox(r) {
   const w = mInfo(r); if (!w) return '';
   return `<div class="wbox w-${w.kind}">${w.kind === 'warn' ? `<p class="wwarn">Inspeção próxima do vencimento - faltam ${w.txt}</p>` : w.kind === 'bad' ? `<p class="wexp">Inspeção vencida em ${w.end.toLocaleDateString('pt-BR')}</p>` : ''}<div class="wfig"><div><span class="wnum wtot">${w.total}</span><span class="wlbl">Periodicidade</span></div><div><span class="wnum wrem">${w.kind === 'bad' ? 'Vencida' : w.big}</span><span class="wlbl">${w.kind === 'bad' ? 'Prazo esgotado' : 'Restantes'}</span></div></div><div class="wbar" role="img" aria-label="Tempo restante até a próxima execução"><i style="width:${w.pct.toFixed(1)}%"></i></div><span class="wpill">${w.s}</span></div>`;
@@ -579,6 +580,10 @@ async function listPage(k) {
   const { data, error } = await qy.order('created_at', { ascending: false });
   if (error) throw error; S.rows[k] = data; S.stMode = k === 'warranties' ? WST : null;
   const im = {};
+  if (k === 'maintenance_tasks') {   // inspeção concluída que ficou próxima do vencimento (ou vencida) volta sozinha para Pendente
+    const volta = data.filter(r => r.status === 'Concluída' && effSt(r) === 'Pendente'); volta.forEach(r => { r.status = 'Pendente'; });
+    if (volta.length) await Promise.all(volta.map(r => sb.from('maintenance_tasks').update({ status: 'Pendente' }).eq('id', r.id)));
+  }
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
