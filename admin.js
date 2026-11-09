@@ -11,7 +11,7 @@ function ask(msg, ok = 'Excluir') {
 .askdlg .asksub{margin:0 0 14px;color:#8a9aa6;font-size:.88rem;text-align:center}
 .askdlg .askbtns{display:flex;gap:10px;justify-content:center;margin-top:16px}
 .askdlg .askbtns button{margin:0!important;width:auto!important;min-height:44px;padding:0 20px!important;border-radius:12px;font-weight:600;font-size:1rem;cursor:pointer}
-.askdlg .askbtns .askno{background:transparent!important;color:#e8eef2!important;border:1px solid #3a4b5c!important}
+.askdlg .askbtns .askno{background:#3dc08c!important;color:#04231a!important;border:0!important}
 .askdlg .askbtns .askyes{background:#e5534b!important;color:#fff!important;border:0!important}
 .askhl{position:relative!important;z-index:2147482999!important;border:2px solid #3dc08c!important;box-shadow:0 0 0 4px rgba(61,192,140,.25),0 0 24px rgba(61,192,140,.35)!important}
 `; document.head.appendChild(st); }   // estilo próprio: não depende do style.css
