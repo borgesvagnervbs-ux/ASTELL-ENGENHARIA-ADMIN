@@ -1,5 +1,18 @@
 // ASTELL HOME — Painel administrativo (página separada: admin.html).
 // Usa o mesmo banco Supabase do app do cliente: o que é cadastrado aqui aparece lá, conforme o CPF vinculado.
+
+// Cartão de confirmação (substitui o confirm() do navegador): devolve true se o usuário confirmar
+function ask(msg, ok = 'Excluir') {
+  return new Promise(res => {
+    const ov = document.createElement('div'); ov.className = 'askov'; ov.setAttribute('role', 'alertdialog'); ov.setAttribute('aria-modal', 'true');
+    ov.innerHTML = `<div class="askbox"><h3>Confirmar exclusão</h3><p></p><div class="askbtns"><button type="button" class="askno">Cancelar</button><button type="button" class="askyes">${ok}</button></div></div>`;
+    ov.querySelector('p').textContent = msg;
+    const end = v => { document.removeEventListener('keydown', key, true); ov.remove(); res(v); }, key = e => { if (e.key === 'Escape') { e.stopPropagation(); end(false); } };
+    ov.addEventListener('click', e => { e.stopPropagation(); if (e.target === ov || e.target.closest('.askno')) end(false); else if (e.target.closest('.askyes')) end(true); });
+    document.addEventListener('keydown', key, true); document.body.appendChild(ov); ov.querySelector('.askno').focus();
+  });
+}
+
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = d => d ? new Date(String(d).slice(0, 10) + 'T00:00').toLocaleDateString('pt-BR') : '—';
@@ -61,10 +74,10 @@ const PT_CATS = ['Elétrica', 'Hidráulica', 'Gás', 'Climatização', 'Estrutur
 
 const DEFREQ = ['system', 'name', 'description', 'months', 'start_date', 'event_date', 'title'];
 const fld = ([k, l, t = 'text', req], v = {}) => {
-  const val = v[k] ?? '', r = (req ?? DEFREQ.includes(k)) ? 'required' : '';
+  const val = v[k] ?? (k === 'months' ? 1 : ''), r = (req ?? DEFREQ.includes(k)) ? 'required' : '';
   if (t === 'date') return dateField(k, l, val, r === 'required');
   if (Array.isArray(t)) return `<label>${l}<select name="${k}">${t.map(o => `<option ${o === val ? 'selected' : ''}>${o}</option>`).join('')}</select></label>`;
-  return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}${t === 'number' && /months/.test(k) ? ' min="0" step="1" inputmode="numeric" data-nonneg' : ''}>`}</label>`;
+  return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}${t === 'number' && /months/.test(k) ? ` min="${k === 'months' ? 1 : 0}" step="1" inputmode="numeric" data-nonneg` : ''}>`}</label>`;
 };
 const RES_F = [['code', 'Código (ex.: AST-2026-002)', 'text', true], ['name', 'Nome da residência', 'text', true], ['address', 'Endereço'], ['area_m2', 'Área construída (m²)', 'number'], ['floors', 'Pavimentos', 'number'], ['build_system', 'Sistema construtivo'], ['project_no', 'Nº do projeto'], ['start_date', 'Início da obra', 'date', false], ['delivery_date', 'Entrega', 'date', false], ['tech_lead', 'Responsável técnico'], ['notes', 'Observações', 'textarea']];
 const DOC_F = [['title', 'Título'], ['category', 'Categoria', DOC_CATS], ['version', 'Versão'], ['description', 'Descrição', 'text', false]];
@@ -1010,7 +1023,7 @@ document.addEventListener('click', async e => {
   if (d.selid) { const s = S.sel.ids; if (s.has(d.selid)) s.delete(d.selid); else s.add(d.selid); renderMedia(); }
   if (d.seldel !== undefined && S.sel.ids.size) {
     const ids = [...S.sel.ids];
-    if (confirm(`Excluir ${ids.length} ${ids.length === 1 ? 'item selecionado' : 'itens selecionados'}? Eles deixam de aparecer no app. Os arquivos continuam guardados no Cloudinary.`)) {
+    if (await ask(`Excluir ${ids.length} ${ids.length === 1 ? 'item selecionado' : 'itens selecionados'}? Eles deixam de aparecer no app. Os arquivos continuam guardados no Cloudinary.`)) {
       const { error } = await sb.from('images').delete().in('id', ids);
       if (error) toast('Não foi possível excluir.', 1); else toast(ids.length === 1 ? 'Item excluído.' : ids.length + ' itens excluídos.');
       resetSel(); await loadMedia(); renderMedia();
@@ -1018,15 +1031,15 @@ document.addEventListener('click', async e => {
   }
   if (d.mvis) { const x = S.mediaRows.find(i => i.id === d.mvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await loadMedia(); renderMedia(); }
   if (d.gvis) { const x = S.imgs.find(i => i.id === d.gvis); const { error } = await sb.from('images').update({ visible: x.visible === false }).eq('id', x.id); if (error) toast('Não foi possível alterar.', 1); await gallery(); }
-  if (d.gdel && confirm('Excluir esta imagem do sistema? O arquivo continua guardado no Cloudinary.')) { const { error } = await sb.from('images').delete().eq('id', d.gdel); if (error) toast('Não foi possível excluir.', 1); else toast('Imagem excluída.'); await gallery(); }
+  if (d.gdel && await ask('Excluir esta imagem do sistema? O arquivo continua guardado no Cloudinary.')) { const { error } = await sb.from('images').delete().eq('id', d.gdel); if (error) toast('Não foi possível excluir.', 1); else toast('Imagem excluída.'); await gallery(); }
   if (d.add) openAdd(d.add);
   if (d.em) { const [ek, eid, ev] = d.em.split(':'); await emOpen(ek, eid, ev); }
   if (d.emup) { const fi = $('#emFile'); if (fi) { const C = EM[S.em.k]; fi.dataset.kind = d.emup; fi.accept = d.emup === 'm' ? (C.vid ? 'image/*,video/*' : 'image/*') : '.pdf,application/pdf' + (S.em.k === 'building_items' && (emRow(S.em.k, S.em.id) || {}).category === 'Estrutura' ? accept3d() : ''); fi.click(); } }
   if (d.emtab) { S.em.tab = d.emtab; S.em.sel = { on: false, ids: new Set() }; emRender(); }
   if (d.emselmode !== undefined) { S.em.sel = { on: !S.em.sel.on, ids: new Set() }; emRender(); }
   if (d.emsid) { const q = S.em.sel.ids; if (q.has(d.emsid)) q.delete(d.emsid); else q.add(d.emsid); emRender(); }
-  if (d.emdel !== undefined && S.em.sel.ids.size && confirm(`Excluir ${S.em.sel.ids.size} ${S.em.sel.ids.size === 1 ? 'item selecionado' : 'itens selecionados'}?`)) await emRemove([...S.em.sel.ids]);
-  if (d.emdd !== undefined && confirm('Excluir este documento?')) await emRemove(['a' + d.emdd]);
+  if (d.emdel !== undefined && S.em.sel.ids.size && await ask(`Excluir ${S.em.sel.ids.size} ${S.em.sel.ids.size === 1 ? 'item selecionado' : 'itens selecionados'}?`)) await emRemove([...S.em.sel.ids]);
+  if (d.emdd !== undefined && await ask('Excluir este documento?')) await emRemove(['a' + d.emdd]);
   if (d.emvis) { const E = S.em, row = emRow(E.k, E.id), C = EM[E.k], vis = emSplit(E.k, row, E.imgs).m.find(x => x.key === d.emvis);
     if (vis) { if (vis.src === 'i') { const r = await sb.from('images').update({ visible: !vis.visible }).eq('id', vis.id); if (r.error) toast('Não foi possível alterar.', 1); } else { const arr = (row[C.arr] || []).map((x, i) => i === vis.idx ? { ...x, visible: vis.visible ? false : true } : x); const r = await emSave(arr); if (r.error) toast('Não foi possível alterar.', 1); } await emLoad(); emRender(); } }
   if (d.emi && !S.em.sel.on) { const E = S.em, row = emRow(E.k, E.id), m = emSplit(E.k, row, E.imgs).m; m.forEach(x => { if (x.path) x.url = E.urls[x.path]; }); const shown = { all: m, img: m.filter(x => x.type === 'image'), vid: m.filter(x => x.type === 'video') }[E.tab] || m, i = shown.findIndex(x => x.key === d.emi), x = shown[i];
@@ -1035,9 +1048,9 @@ document.addEventListener('click', async e => {
   if (d.copy) { const [ck, ...cr] = d.copy.split(':'); openCopy(ck, cr.join(':')); }
   if (d.edit) { const [k, id] = d.edit.split(':'); openEdit(k, id); }
   if (d.vis) { const [k, id] = d.vis.split(':'), r = S.rows[k].find(x => x.id === id); const { error } = await sb.from(k).update({ visible: !r.visible }).eq('id', id); done(error && 'Não foi possível alterar.', r.visible ? 'Oculto do cliente.' : 'Visível ao cliente.'); }
-  if (d.del && confirm('Excluir este registro?')) { const [k, id] = d.del.split(':'), old = ((S.rows[k] || []).find(x => x.id === id) || {}).media || []; const { error } = await sb.from(k).delete().eq('id', id); const pp = old.filter(x => x.path).map(x => x.path); if (!error && pp.length) await sb.storage.from('documents').remove(pp); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
-  if (d.deldoc && confirm('Excluir este documento?')) { const [id, p] = d.deldoc.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('documents').delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Documento excluído.'); }
-  if (d.delplan && confirm('Excluir esta planta, os arquivos dela e todos os pontos marcados nela?')) { const cp = S.curPlan, paths = cp ? [cp.path, ...(cp.files || []).map(x => x.path)].filter(Boolean) : []; const { error } = await sb.from('floorplans').delete().eq('id', d.delplan); if (!error && paths.length) await sb.storage.from('documents').remove(paths); if (error) toast('Não foi possível excluir.', 1); else { toast('Planta excluída.'); location.hash = S.scope ? '#res/' + S.scope + '/pl' : '#pl'; } }
+  if (d.del && await ask('Excluir este registro?')) { const [k, id] = d.del.split(':'), old = ((S.rows[k] || []).find(x => x.id === id) || {}).media || []; const { error } = await sb.from(k).delete().eq('id', id); const pp = old.filter(x => x.path).map(x => x.path); if (!error && pp.length) await sb.storage.from('documents').remove(pp); done(error && 'Não foi possível excluir.', 'Registro excluído.'); }
+  if (d.deldoc && await ask('Excluir este documento?')) { const [id, p] = d.deldoc.split('|'); await sb.storage.from('documents').remove([p]); const { error } = await sb.from('documents').delete().eq('id', id); done(error && 'Não foi possível excluir.', 'Documento excluído.'); }
+  if (d.delplan && await ask('Excluir esta planta, os arquivos dela e todos os pontos marcados nela?')) { const cp = S.curPlan, paths = cp ? [cp.path, ...(cp.files || []).map(x => x.path)].filter(Boolean) : []; const { error } = await sb.from('floorplans').delete().eq('id', d.delplan); if (!error && paths.length) await sb.storage.from('documents').remove(paths); if (error) toast('Não foi possível excluir.', 1); else { toast('Planta excluída.'); location.hash = S.scope ? '#res/' + S.scope + '/pl' : '#pl'; } }
   if (d.pledit && S.curPlan) openPlEdit(S.curPlan);
   if (d.dl) { const [dp, dn] = d.dl.split('|'); const { data, error } = await sb.storage.from('documents').createSignedUrl(dp, 60, { download: dn }); if (error) toast('Não foi possível baixar.', 1); else { const a = document.createElement('a'); a.href = data.signedUrl; a.download = dn; document.body.appendChild(a); a.click(); a.remove(); } }
   if (d.open) { const { data, error } = await sb.storage.from('documents').createSignedUrl(d.open, 60); error ? toast('Não foi possível abrir.', 1) : window.open(data.signedUrl, '_blank', 'noopener'); }
@@ -1051,10 +1064,10 @@ document.addEventListener('click', async e => {
   if (d.addopt) comboPick(el.closest('.combo'), d.addopt);
   if (d.reunlink) { const box = el.closest('.resmulti'), h = box.querySelector('[name=res_ids]'); h.value = h.value.split(',').filter(x => x && x !== d.reunlink).join(','); refreshResMulti(box); }
   if (d.reedit) { const box = el.closest('.resmulti'); pushModal(() => refreshResMulti(box)); openEdit('res', d.reedit, { fromOwner: true }); }
-  if (d.rel && confirm('Liberar este CPF? O acesso atual do cliente será removido e outro cadastro poderá usá-lo.')) { const { error } = await sb.rpc('admin_release_cpf', { p_cpf: d.rel }); done(error && 'Não foi possível liberar.', 'CPF liberado.'); }
+  if (d.rel && await ask('Liberar este CPF? O acesso atual do cliente será removido e outro cadastro poderá usá-lo.', 'Liberar')) { const { error } = await sb.rpc('admin_release_cpf', { p_cpf: d.rel }); done(error && 'Não foi possível liberar.', 'CPF liberado.'); }
   if (d.place !== undefined) { S.place = !S.place; render(); }
   if (d.plan && S.place) { const b = el.getBoundingClientRect(); S.pend = { x: +((e.clientX - b.left) / b.width * 100).toFixed(2), y: +((e.clientY - b.top) / b.height * 100).toFixed(2) }; modal('Novo ponto na planta', fld(['category', 'Categoria', PT_CATS]) + '<label>Identificação<input name="label" required></label><label>Detalhes<textarea name="description" rows="3"></textarea></label>', 'data-form="add:pt"', 'Salvar ponto'); }
-  if (d.deldc && confirm('Excluir este registro e os arquivos dele?')) {
+  if (d.deldc && await ask('Excluir este registro e os arquivos dele?')) {
     const row = (S.rows.doc_records || []).find(x => x.id === d.deldc), paths = row ? (row.files || []).map(x => x.path) : [];
     const { error } = await sb.from('doc_records').delete().eq('id', d.deldc); if (!error && paths.length) await sb.storage.from('documents').remove(paths);
     done(error && 'Não foi possível excluir.', 'Registro excluído.');
@@ -1062,7 +1075,7 @@ document.addEventListener('click', async e => {
   if (d.reprint !== undefined) repPrint();
   if (d.repcsv !== undefined) repCsv();
   if (d.bk) runBackup(d.bk === 'full', !!($('#bkhash') && $('#bkhash').checked));
-  if (d.logodel !== undefined && confirm('Remover a logo? O sistema volta a mostrar o texto ASTELL.')) { const { error } = await sb.from('app_settings').delete().eq('key', 'logo_url'); if (error) toast('Não foi possível remover.', 1); else { S.logo = null; applyLogo(); toast('Logo removida.'); render(); } }
+  if (d.logodel !== undefined && await ask('Remover a logo? O sistema volta a mostrar o texto ASTELL.', 'Remover')) { const { error } = await sb.from('app_settings').delete().eq('key', 'logo_url'); if (error) toast('Não foi possível remover.', 1); else { S.logo = null; applyLogo(); toast('Logo removida.'); render(); } }
   if (d.out !== undefined) sb.auth.signOut();
 });
 document.addEventListener('change', e => {
