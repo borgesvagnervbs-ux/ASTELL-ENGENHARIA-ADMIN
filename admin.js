@@ -65,8 +65,21 @@ const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user']
 
 // ---------- dados e campos
 const addMonths = (d, m) => { const x = new Date(d + 'T00:00'); x.setMonth(x.getMonth() + m); return x; };
-function wState(w) { const start = new Date(w.start_date + 'T00:00'), end = addMonths(w.start_date, w.months), left = end - new Date(), total = end - start;   // vigente; próxima do vencimento = resta 1/4 do prazo ou menos; expirada
+function wState(w) { const start = new Date(w.start_date + 'T00:00'), end = w._end || addMonths(w.start_date, w.months), left = end - new Date(), total = end - start;   // vigente; próxima do vencimento = resta 1/4 do prazo ou menos; expirada
   return left <= 0 ? ['Expirada', 'bad', end] : left <= total / 4 ? ['Próxima do vencimento', 'warn', end] : ['Vigente', 'ok', end]; }
+// Inspeções preventivas: mesma linha do tempo das garantias (início = última execução, fim = próxima execução)
+const perTxt = r => r.interval_months ? `${r.interval_months} ${+r.interval_months === 1 ? 'mês' : 'meses'}` : (r.frequency || '');
+function mInfo(r) {
+  if (!r.next_due || ['Concluída', 'Cancelada'].includes(r.status || 'Pendente')) return null;
+  const n = +r.interval_months || 0, endD = new Date(r.next_due + 'T00:00'), iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const startIso = r.last_done || (n ? iso(addMonths(r.next_due, -n)) : null); if (!startIso || isNaN(endD)) return null;
+  const tot = n || Math.max(1, Math.round((endD - new Date(startIso + 'T00:00')) / 2629800000));
+  return wInfo({ start_date: startIso, months: tot, _end: endD });
+}
+function mBox(r) {
+  const w = mInfo(r); if (!w) return '';
+  return `<div class="wbox w-${w.kind}">${w.kind === 'warn' ? `<p class="wwarn">Inspeção próxima do vencimento - faltam ${w.txt}</p>` : w.kind === 'bad' ? `<p class="wexp">Inspeção vencida em ${w.end.toLocaleDateString('pt-BR')}</p>` : ''}<div class="wfig"><div><span class="wnum wtot">${w.total}</span><span class="wlbl">Periodicidade</span></div><div><span class="wnum wrem">${w.kind === 'bad' ? 'Vencida' : w.big}</span><span class="wlbl">${w.kind === 'bad' ? 'Prazo esgotado' : 'Restantes'}</span></div></div><div class="wbar" role="img" aria-label="Tempo restante até a próxima execução"><i style="width:${w.pct.toFixed(1)}%"></i></div><span class="wpill">${w.s}</span></div>`;
+}
 function wInfo(w) {   // tudo que o cartão da garantia mostra: tempo restante (meses e dias), % da barra e frase de alerta
   const [s, c, end] = wState(w), start = new Date(w.start_date + 'T00:00'), now = new Date(), total = end - start, left = Math.max(0, end - now), from = now < start ? start : now;
   let m = 0, d = 0; if (left > 0) { m = (end.getFullYear() - from.getFullYear()) * 12 + end.getMonth() - from.getMonth(); let t = new Date(from); t.setMonth(t.getMonth() + m); if (t > end) { m--; t = new Date(from); t.setMonth(t.getMonth() + m); } d = Math.floor((end - t) / 864e5); }
@@ -87,15 +100,16 @@ const astUrPick = r => pickOf('service_requests', 'urgency', r.id, UR[r.urgency]
 const urBarInner = () => Object.entries(UR).map(([k, c]) => `<button type="button" class="stf uf uf-${c}" data-urf="${k}" aria-pressed="${S.urf.has(k)}">${k}</button>`).join('');
 const WST = { 'Vigente': ['conc', 'Vigentes'], 'Próxima do vencimento': ['lar', 'Próximas do vencimento'], 'Expirada': ['canc', 'Expiradas'] };   // garantias: situação vem do prazo; só uma por vez
 const stMap = () => S.stMode || ST;
+const vgBarInner = () => Object.entries(WST).map(([k, [c, l]]) => `<button type="button" class="stf stf-${c}" data-vgf="${k}" aria-pressed="${S.vgf === k}">${l}</button>`).join('');   // vigência das inspeções: mesmos 3 botões e cores das garantias
 const stBarInner = () => `<button type="button" class="stf stf-all" data-stf="all" aria-pressed="${!S.stf.size}">Todas</button>` + Object.entries(stMap()).map(([k, [c, l]]) => `<button type="button" class="stf stf-${c}" data-stf="${k}" aria-pressed="${S.stf.has(k)}">${l}</button>`).join('');
 const PT_CATS = ['Elétrica', 'Hidráulica', 'Gás', 'Climatização', 'Estrutura', 'Paredes', 'Equipamentos'];
 
-const DEFREQ = ['system', 'name', 'description', 'months', 'start_date', 'event_date', 'title'];
+const DEFREQ = ['system', 'name', 'description', 'months', 'interval_months', 'start_date', 'event_date', 'title'];
 const fld = ([k, l, t = 'text', req], v = {}) => {
-  const val = v[k] ?? (k === 'months' ? 1 : ''), r = (req ?? DEFREQ.includes(k)) ? 'required' : '';
+  const val = v[k] ?? (k === 'months' || k === 'interval_months' ? 1 : ''), r = (req ?? DEFREQ.includes(k)) ? 'required' : '';
   if (t === 'date') return dateField(k, l, val, r === 'required');
   if (Array.isArray(t)) return `<label>${l}<select name="${k}">${t.map(o => `<option ${o === val ? 'selected' : ''}>${o}</option>`).join('')}</select></label>`;
-  return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}${t === 'number' && /months/.test(k) ? ` min="${k === 'months' ? 1 : 0}" step="1" inputmode="numeric" data-nonneg` : ''}>`}</label>`;
+  return `<label>${l}${t === 'textarea' ? `<textarea name="${k}" rows="3" ${r}>${esc(val)}</textarea>` : `<input name="${k}" type="${t}" value="${esc(val)}" ${r}${t === 'number' && /months/.test(k) ? ` min="${k === 'months' || k === 'interval_months' ? 1 : 0}" step="1" inputmode="numeric" data-nonneg` : ''}>`}</label>`;
 };
 const RES_F = [['code', 'Código (ex.: AST-2026-002)', 'text', true], ['name', 'Nome da residência', 'text', true], ['address', 'Endereço'], ['area_m2', 'Área construída (m²)', 'number'], ['floors', 'Pavimentos', 'number'], ['build_system', 'Sistema construtivo'], ['project_no', 'Nº do projeto'], ['start_date', 'Início da obra', 'date', false], ['delivery_date', 'Entrega', 'date', false], ['tech_lead', 'Responsável técnico'], ['notes', 'Observações', 'textarea']];
 const DOC_F = [['title', 'Título'], ['category', 'Categoria', DOC_CATS], ['version', 'Versão'], ['description', 'Descrição', 'text', false]];
@@ -103,8 +117,8 @@ const T = {
   warranties: { label: 'Garantias', order: 'start_date', f: [['system', 'Sistema ou componente'], ['coverage', 'Descrição da cobertura'], ['start_date', 'Data inicial', 'date'], ['months', 'Prazo (meses)', 'number'], ['notes', 'Condições e exclusões', 'textarea']],
     row: r => { const w = wInfo(r); return `<b>${esc(r.system)}</b><div class="wbox w-${w.kind}">${w.kind === 'warn' ? `<p class="wwarn">Garantia próxima do vencimento - faltam ${w.txt}</p>` : w.kind === 'bad' ? `<p class="wexp">Garantia expirada em ${w.end.toLocaleDateString('pt-BR')}</p>` : ''}<div class="wfig"><div><span class="wnum wtot">${w.total}</span><span class="wlbl">Prazo total</span></div><div><span class="wnum wrem">${w.kind === 'bad' ? 'Expirada' : w.big}</span><span class="wlbl">${w.kind === 'bad' ? 'Vencida' : 'Restantes'}</span></div></div><div class="wbar" role="img" aria-label="Tempo restante da garantia"><i style="width:${w.pct.toFixed(1)}%"></i></div><span class="wpill">${w.s}</span></div><p>${esc(r.coverage)}</p><span class="mute">${fmt(r.start_date)} até ${w.end.toLocaleDateString('pt-BR')}</span><p class="mute">${esc(r.notes)}</p>`; },
     note: 'Os prazos valem conforme contrato, fabricante e lei. As condições contratuais e legais prevalecem sobre os indicadores do aplicativo.' },
-  maintenance_tasks: { label: 'Inspeções Preventivas', order: 'next_due', f: [['name', 'Tarefa'], ['system', 'Sistema'], ['frequency', 'Periodicidade (texto)'], ['last_done', 'Última execução', 'date'], ['next_due', 'Próxima data', 'date'], ['interval_months', 'Repetir a cada (meses)', 'number'], ['status', 'Situação', ['Pendente', 'Em andamento', 'Concluída', 'Cancelada']], ['instructions', 'Instruções', 'textarea']],
-    row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> ${stPick(r)}${late ? ' <span class="badge bad">Atrasada</span>' : ''}<p class="mute">${esc(r.system)} · ${esc(r.frequency)}</p>Última: ${fmt(r.last_done)} · Próxima: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
+  maintenance_tasks: { label: 'Inspeções Preventivas', order: 'next_due', f: [['name', 'Tarefa'], ['system', 'Sistema'], ['interval_months', 'Periodicidade (meses)', 'number'], ['last_done', 'Última execução', 'date'], ['next_due', 'Próxima execução', 'date'], ['status', 'Situação', ['Pendente', 'Em andamento', 'Concluída', 'Cancelada']], ['instructions', 'Instruções', 'textarea']],
+    row: r => { const st = r.status || 'Pendente', late = r.next_due && new Date(r.next_due + 'T00:00') < new Date() && !['Concluída', 'Cancelada'].includes(st); return `<b>${esc(r.name)}</b> ${stPick(r)}${late ? ' <span class="badge bad">Atrasada</span>' : ''}<p class="mute">${esc(r.system)} · ${esc(perTxt(r))}</p>${mBox(r)}Última: ${fmt(r.last_done)} · Próxima execução: ${fmt(r.next_due)}<p class="mute">${esc(r.instructions)}</p>`; } },
   equipment: { label: 'Equipamentos', f: [['name', 'Nome'], ['category', 'Categoria'], ['maker', 'Fabricante'], ['model', 'Modelo'], ['serial', 'Nº de série'], ['location', 'Localização'], ['description', 'Descrição do equipamento', 'textarea', false], ['warranty_months', 'Tempo de garantia (meses)', 'number', false], ['supplier', 'Fornecedor ou loja de compra', 'text', false]],
     row: r => `<b>${esc(r.name)}</b><span class="mute">${esc(r.category)} · ${esc(r.location)}</span><p>${esc(r.maker)} ${esc(r.model)} ${r.serial ? '· Série ' + esc(r.serial) : ''}</p>${r.description ? `<p class="mute">${esc(r.description)}</p>` : ''}${r.warranty_months ? `<span class="mute meta">Garantia: ${esc(r.warranty_months)} ${+r.warranty_months === 1 ? 'mês' : 'meses'}</span>` : ''}${r.supplier ? `<span class="mute meta">Fornecedor / loja: ${esc(r.supplier)}</span>` : ''}` },
   building_items: { label: 'Construção', f: [['category', 'Seção do app', ['Estrutura', 'Sistemas', 'Materiais', 'Infraestrutura']], ['title', 'Título'], ['description', 'Descrição', 'textarea', false], ['highlights', 'Destaques (um por linha)', 'textarea']],
@@ -186,7 +200,14 @@ const brOf = iso => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0,
 function parseBr(t) { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t || ''); if (!m) return null; const d = new Date(+m[3], +m[2] - 1, +m[1]); return d.getFullYear() === +m[3] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[1] ? `${m[3]}-${m[2]}-${m[1]}` : null; }
 const CAL_SVG = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
 const dateField = (name, label, iso = '', req = false) => `<div class="field"><span class="lbl">${label}${req ? ' *' : ''}</span><div class="dateinp" data-date><input class="datetxt" type="text" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10" autocomplete="off" value="${esc(brOf(iso))}" aria-label="${esc(label)}" ${req ? 'required' : ''}><button type="button" class="calbtn" data-cal aria-label="Abrir calendário — ${esc(label)}">${CAL_SVG}</button><input type="hidden" name="${name}" value="${esc(iso || '')}"><div class="calpop" hidden></div></div></div>`;
-function calSet(box, iso) { box.querySelector('[type=hidden]').value = iso || ''; const t = box.querySelector('.datetxt'); t.value = brOf(iso); t.setCustomValidity(''); }
+function calSet(box, iso) { box.querySelector('[type=hidden]').value = iso || ''; const t = box.querySelector('.datetxt'); t.value = brOf(iso); t.setCustomValidity(''); if (box.querySelector('[type=hidden]').name === 'last_done') maintAuto(box.closest('form')); }
+// inspeções: a próxima execução é preenchida sozinha (última execução + periodicidade em meses)
+function maintAuto(f) {
+  if (!f) return; const li = f.querySelector('[name=interval_months]'), ld = f.querySelector('[name=last_done]'), nd = f.querySelector('[name=next_due]'); if (!li || !ld || !nd) return;
+  const n = parseInt(li.value, 10); if (!ld.value || !(n >= 1)) return; const d = addMonths(ld.value, n); if (isNaN(d)) return;
+  const iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); calSet(nd.closest('[data-date]'), iso);
+}
+document.addEventListener('input', e => { if (e.target.name === 'interval_months') maintAuto(e.target.closest('form')); });
 function calRender(box, y, m) {
   const pop = box.querySelector('.calpop'), sel = box.querySelector('[type=hidden]').value, n = new Date(), hoje = isoOf(n.getFullYear(), n.getMonth(), n.getDate());
   const ini = new Date(y, m, 1).getDay(), dias = new Date(y, m + 1, 0).getDate(); let cells = '<span></span>'.repeat(ini);
@@ -417,9 +438,9 @@ function paintItems() {
   const q = norm(S.q).trim(), raw = S.q.trim(), noun = S.noun || ['item', 'itens'];
   Object.entries(S.items || {}).forEach(([id, items], n) => {
     const el = $('#' + id); if (!el) return;
-    const list = items.filter(i => (!q || hit(i.hay, q)) && (!S.stf.size || i.st === undefined || S.stf.has(i.st)) && (!S.urf.size || i.ur === undefined || S.urf.has(i.ur))), filtrado = !!q || ((S.stf.size > 0 || S.urf.size > 0) && items.some(i => i.st !== undefined || i.ur !== undefined)), pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
+    const list = items.filter(i => (!q || hit(i.hay, q)) && (!S.stf.size || i.st === undefined || S.stf.has(i.st)) && (!S.urf.size || i.ur === undefined || S.urf.has(i.ur)) && (!S.vgf || i.vg === undefined || i.vg === S.vgf)), filtrado = !!q || ((S.stf.size > 0 || S.urf.size > 0 || !!S.vgf) && items.some(i => i.st !== undefined || i.ur !== undefined)), pages = Math.max(1, Math.ceil(list.length / S.pp)), pg = Math.min(Math.max(1, S.pages[id] || 1), pages);
     S.pages[id] = pg;
-    el.innerHTML = list.length ? list.slice((pg - 1) * S.pp, pg * S.pp).map(i => i.html).join('') : `<p class="empty">${items.length ? (raw ? `Nada encontrado para “${esc(raw)}”${S.stf.size || S.urf.size ? ' com o filtro escolhido' : ''}.` : 'Nenhum item com o filtro escolhido.') : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
+    el.innerHTML = list.length ? list.slice((pg - 1) * S.pp, pg * S.pp).map(i => i.html).join('') : `<p class="empty">${items.length ? (raw ? `Nada encontrado para “${esc(raw)}”${S.stf.size || S.urf.size || S.vgf ? ' com o filtro escolhido' : ''}.` : 'Nenhum item com o filtro escolhido.') : ((S.empties || {})[id] || 'Nada cadastrado ainda. Toque em + para adicionar.')}</p>`;
     const bar = $('#pg-' + id); if (bar) bar.innerHTML = list.length ? pagerHtml(id, list.length, pg, pages) : '';
     const c = n === 0 && $('#mcount'); if (c) c.textContent = filtrado ? `${list.length} de ${items.length} ${items.length === 1 ? noun[0] : noun[1]}` : `${items.length} ${items.length === 1 ? noun[0] : noun[1]}`;
   });
@@ -561,9 +582,9 @@ async function listPage(k) {
   if (k === 'maintenance_tasks') { const { data: ii } = await scoped(sb.from('images').select('url,ref_id').eq('kind', 'maintenance')).order('created_at'); (ii || []).forEach(x => (im[x.ref_id] = im[x.ref_id] || []).push(x)); }
   setItems({ mlist: data.map(r => {
     const raw = c.row(r), i = raw.indexOf('</b>') + 4;
-    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? wState(r)[0] : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, `<button class="link" data-copy="${k}:${r.id}">Copiar</button>`, 'visible' in r && visBtn(k, r), `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}${EM[k] ? emBtns(k, r, (im[r.id] || []).length) : ''}</div>` };
+    return { st: k === 'maintenance_tasks' ? (ST[r.status] ? r.status : 'Pendente') : k === 'warranties' ? wState(r)[0] : undefined, vg: k === 'maintenance_tasks' ? (mInfo(r) || { s: '' }).s || '' : undefined, hay: hayOf(r.residence_id, TITLE[k](r)), html: `<div class="card">${raw.slice(0, i)}${metaHtml(r.residence_id)}${raw.slice(i)}${hid(r)}${acts(`<button class="link" data-edit="${k}:${r.id}">Editar</button>`, `<button class="link" data-copy="${k}:${r.id}">Copiar</button>`, 'visible' in r && visBtn(k, r), `<button class="link danger" data-del="${k}:${r.id}">Excluir</button>`)}${EM[k] ? emBtns(k, r, (im[r.id] || []).length) : ''}</div>` };
   }) });
-  view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + (k === 'maintenance_tasks' || k === 'warranties' ? `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div>` : '') + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
+  view.innerHTML = head(cat ? cat[0] : c.label, k, cat ? bldTrail() : undefined) + (k === 'maintenance_tasks' || k === 'warranties' ? `<div class="stbar" id="stbar" role="group" aria-label="Filtrar por situação">${stBarInner()}</div>` : '') + (k === 'maintenance_tasks' ? `<div class="stbar" id="vgbar" role="group" aria-label="Filtrar por vigência">${vgBarInner()}</div>` : '') + SHELL + (c.note ? `<p class="notice">${c.note}</p>` : '');
   paintItems();
 }
 
@@ -847,7 +868,7 @@ async function repBuild(type, rids, from, to) {
       rows: rs.map(r => [r.name, r.code, own(r.id), n(dg, r.id) + n(dr, r.id), n(eq, r.id), n(ga, r.id, w => wState(w)[0] !== 'Expirada'), n(ma, r.id, aberta), n(ma, r.id, m => aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje), n(as, r.id, s => !['Concluída', 'Encerrada'].includes(s.status))]) };
   }
   if (type === 'gar') return { group: 5, cols: ['Residência', 'Sistema', 'Cobertura', 'Início', 'Término', 'Situação'], rows: (await repFetch('warranties', rids, 'start_date', from, to)).sort(byRes).map(w => { const [s, , end] = wState(w); return [rn(w.residence_id), v(w.system), v(w.coverage), br(w.start_date), isNaN(end) ? '—' : end.toLocaleDateString('pt-BR'), s]; }) };
-  if (type === 'man') return { group: 5, cols: ['Residência', 'Tarefa', 'Sistema', 'Última execução', 'Próxima data', 'Situação'], rows: (await repFetch('maintenance_tasks', rids, 'next_due', from, to)).sort(byRes).map(m => [rn(m.residence_id), v(m.name), v(m.system), br(m.last_done), br(m.next_due), aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje ? 'Atrasada' : (m.status || 'Pendente')]) };
+  if (type === 'man') return { group: 5, cols: ['Residência', 'Tarefa', 'Sistema', 'Última execução', 'Próxima execução', 'Situação'], rows: (await repFetch('maintenance_tasks', rids, 'next_due', from, to)).sort(byRes).map(m => [rn(m.residence_id), v(m.name), v(m.system), br(m.last_done), br(m.next_due), aberta(m) && m.next_due && new Date(m.next_due + 'T00:00') < hoje ? 'Atrasada' : (m.status || 'Pendente')]) };
   if (type === 'eq') return { group: 2, cols: ['Residência', 'Equipamento', 'Categoria', 'Fabricante', 'Modelo', 'Nº de série', 'Localização', 'Garantia (meses)', 'Fornecedor / loja'], rows: (await repFetch('equipment', rids)).sort(byRes).map(e => [rn(e.residence_id), v(e.name), v(e.category), v(e.maker), v(e.model), v(e.serial), v(e.location), v(e.warranty_months), v(e.supplier)]) };
   if (type === 'ast') return { group: 3, cols: ['Residência', 'Protocolo', 'Categoria', 'Situação', 'Urgência', 'Abertura'], rows: (await repFetch('service_requests', rids, 'created_at', from, to)).sort(byRes).map(a => [rn(a.residence_id), v(a.protocol), v(a.category), v(a.status), v(a.urgency), br(a.created_at)]) };
   const [dg, dr] = await Promise.all([repFetch('documents', rids, 'created_at', from, to), repFetch('doc_records', rids, 'doc_date', from, to).catch(() => [])]);
@@ -934,7 +955,7 @@ async function render() {
   view.classList.toggle('wide', !!S.arg);
   $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat) || (S.menu === 'docs' && !S.dcat) || (S.menu === 'pl' && !!S.arg) || !!S.plan || ['rep', 'logo', 'bk'].includes(S.menu);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
   const tela = S.menu + '|' + (S.sub || '') + '|' + (S.cat || '') + '|' + (S.dcat || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
-  if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; S.stf = new Set(); S.urf = new Set(); }
+  if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; S.stf = new Set(); S.urf = new Set(); S.vgf = null; }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
   document.querySelectorAll('#drawer a[data-m]').forEach(a => a.classList.toggle('on', a.dataset.m === S.menu));
   S.items = null;
@@ -996,7 +1017,7 @@ document.addEventListener('click', async e => {
   if (e.target.id === 'lb') { if ($('#lb').classList.contains('fresh')) return; return lbClose(); }   // logo após abrir, um segundo clique do duplo clique não fecha
   if (e.target.classList && e.target.classList.contains('comboq')) comboList(e.target.closest('.combo'));
   closeFloating(e.target);   // clique fora fecha calendário e listas de pesquisa
-  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-urf],[data-astv],[data-copy],[data-em],[data-emup],[data-emtab],[data-emselmode],[data-emsid],[data-emdel],[data-emdd],[data-emvis],[data-emi],[data-bm],[data-v3d],[data-pm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
+  const el = e.target.closest('[data-lbx],[data-lbn],[data-mi],[data-dclose],[data-cal],[data-calnav],[data-day],[data-caltoday],[data-calclear],[data-pg],[data-newres],[data-newown],[data-ownunlink],[data-ownedit],[data-oedit],[data-addopt],[data-reedit],[data-reunlink],[data-upl],[data-pickfiles],[data-unstage],[data-savefiles],[data-mtab],[data-selmode],[data-selid],[data-seldel],[data-mvis],[data-gal],[data-gvis],[data-gdel],[data-add],[data-edit],[data-vis],[data-del],[data-done],[data-open],[data-rel],[data-deldoc],[data-delplan],[data-close],[data-place],[data-plan],[data-pledit],[data-dl],[data-stopen],[data-stset],[data-stf],[data-urf],[data-vgf],[data-astv],[data-copy],[data-em],[data-emup],[data-emtab],[data-emselmode],[data-emsid],[data-emdel],[data-emdd],[data-emvis],[data-emi],[data-bm],[data-v3d],[data-pm],[data-deldc],[data-reprint],[data-repcsv],[data-bk],[data-logodel],[data-out]');
   if (!el) return; const d = el.dataset, done = (err, ok) => { err ? toast(err, 1) : toast(ok); render(); };
   if (d.close !== undefined) { if (S.stack.length) popModal(null); else { hardClose(); await render(); } }
   // botão "Cadastrar" ao lado do select de residência: abre o cadastro por cima e, ao salvar, volta com a nova residência já selecionada
@@ -1028,6 +1049,7 @@ document.addEventListener('click', async e => {
     const msg = (col === 'urgency' ? 'Urgência alterada para ' : 'Situação alterada para ') + sv + '.';
     if (el.closest('#modal')) { if (error) return toast('Não foi possível alterar.', 1); const rr = (S.rows.service_requests || []).find(x => x.id === sid); if (rr) rr[col] = sv; const ta = $('#modal textarea[name=staff_note]'); const di = $('#modal input[name=scheduled_for]'); astView(sid, ta ? ta.value : undefined, di ? di.value : undefined); return toast(msg); }
     done(error && 'Não foi possível alterar.', msg); }
+  if (d.vgf) { S.vgf = S.vgf === d.vgf ? null : d.vgf; S.pages = {}; $('#vgbar').innerHTML = vgBarInner(); paintItems(); }
   if (d.stf) { if (d.stf === 'all') S.stf = new Set(); else { if (S.stMode === WST) S.stf = S.stf.has(d.stf) ? new Set() : new Set([d.stf]); else { if (S.stf.has(d.stf)) S.stf.delete(d.stf); else S.stf.add(d.stf); if (S.stf.size === Object.keys(stMap()).length) S.stf = new Set(); } } S.pages = {}; $('#stbar').innerHTML = stBarInner(); paintItems(); }
   if (d.v3d) { const [vp, vn, vs] = d.v3d.split('|'), { data: vu } = await sb.storage.from('documents').createSignedUrl(vp, 3600); $('#modal').innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Arquivo 3D"><div class="sheethead"><b>Arquivo 3D</b><button type="button" class="x" data-close aria-label="Fechar">×</button></div>${plFileBlock({ type: '3d', name: vn, path: vp, size: +vs }, vu ? vu.signedUrl : '')}</div>`; $('#modal').hidden = false; if (PL_VIEW.includes(plExt(vn))) { loadMV(); $('#modal').querySelectorAll('model-viewer').forEach(m => m.addEventListener('error', () => { const p = m.parentElement.querySelector('.mvfail'); if (p) p.hidden = false; })); } }
   if (d.pm) { const [pi] = d.pm.split('|'), cp = S.curPlan, vis = ((cp && cp.files) || []).map((x, j) => ({ x, j })).filter(o => o.x.type === 'image' || o.x.type === 'video'); lbOpenList(vis.map(({ x, j }) => ({ id: cp.id + j, url: x.url, media_type: x.type })), Math.max(0, vis.findIndex(o => o.j === +pi))); }
@@ -1114,6 +1136,7 @@ document.addEventListener('input', e => {
     const box = t.closest('[data-date]'), d = t.value.replace(/\D/g, '').slice(0, 8);
     t.value = d.length > 4 ? `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}` : d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
     const iso = parseBr(t.value); box.querySelector('[type=hidden]').value = iso || ''; t.setCustomValidity(t.value && !iso ? 'Data inválida. Use dd/mm/aaaa.' : '');
+    if (iso && box.querySelector('[type=hidden]').name === 'last_done') maintAuto(t.closest('form'));
     if (iso && !box.querySelector('.calpop').hidden) calRender(box, +iso.slice(0, 4), +iso.slice(5, 7) - 1);
   }
   if (t.classList.contains('comboq')) { const box = t.closest('.combo'); if (box.dataset.combo === 'res') { box.querySelector('[name=residence_id]').value = ''; if (t.required) t.setCustomValidity('Escolha uma residência da lista.'); } comboList(box); }
@@ -1135,6 +1158,7 @@ document.addEventListener('submit', async e => {
   if (id === 'gal') return uploadImages(f);
   const o = clean(Object.fromEntries(new FormData(f))), [op, k] = id.split(':'), nested = S.stack.length > 0; let r;
   if (id === 'rep') return runReport(f);
+  if (k === 'maintenance_tasks' && o.interval_months) o.frequency = `${o.interval_months} ${+o.interval_months === 1 ? 'mês' : 'meses'}`;
   if (id === 'logo') {
     const file = f.file.files[0]; if (!file) return;
     if (!/^image\/(png|jpeg|svg\+xml|webp)$/.test(file.type)) return toast('Envie PNG, JPG, SVG ou WEBP.', 1);
