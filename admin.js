@@ -7,14 +7,16 @@ function ask(msg, ok = 'Excluir') {
   return new Promise(res => {
     const del = ok === 'Excluir', btn = lastClick && lastClick.closest && lastClick.closest('[data-del],[data-deldoc],[data-deldc],[data-delplan],[data-emdd],[data-gdel]'),
       card = del && btn ? btn.closest('.card,.gtile,.pfile,.item,.bthumb,.stagerow') : null, sub = del && !/^Excluir [^?]{0,40}\?$/.test(msg);
-    const ov = document.createElement('div'); ov.className = 'askov'; ov.setAttribute('role', 'alertdialog'); ov.setAttribute('aria-modal', 'true');
-    ov.innerHTML = `<div class="askbox"><div class="askitemwrap"></div><h3></h3><p class="asksub" hidden></p><div class="askbtns"><button type="button" class="askno">Cancelar</button><button type="button" class="askyes">${ok}</button></div></div>`;
-    ov.querySelector('h3').textContent = del ? 'Tem certeza que deseja fazer essa exclusão?' : msg;
-    if (sub) { const p = ov.querySelector('.asksub'); p.textContent = msg; p.hidden = false; }
-    if (card) { const c = card.cloneNode(true); c.querySelectorAll('.acts,form,button,[id]').forEach(x => x.remove()); c.removeAttribute('id'); c.classList.add('askitem'); ov.querySelector('.askitemwrap').appendChild(c); }
-    const end = v => { document.removeEventListener('keydown', key, true); ov.remove(); res(v); }, key = e => { if (e.key === 'Escape') { e.stopPropagation(); end(false); } };
-    ov.addEventListener('click', e => { e.stopPropagation(); if (e.target === ov || e.target.closest('.askno')) end(false); else if (e.target.closest('.askyes')) end(true); });
-    document.addEventListener('keydown', key, true); document.body.appendChild(ov); ov.querySelector('.askno').focus();
+    const back = document.createElement('div'); back.className = 'askov';
+    const dlg = document.createElement('div'); dlg.className = 'askdlg'; dlg.setAttribute('role', 'alertdialog'); dlg.setAttribute('aria-modal', 'true');
+    dlg.innerHTML = `<div class="askbox"><h3></h3><p class="asksub" hidden></p><div class="askbtns"><button type="button" class="askno">Cancelar</button><button type="button" class="askyes">${ok}</button></div></div>`;
+    dlg.querySelector('h3').textContent = del ? 'Tem certeza que deseja fazer essa exclusão?' : msg;
+    if (sub) { const p = dlg.querySelector('.asksub'); p.textContent = msg; p.hidden = false; }
+    if (card) card.classList.add('askhl');   // o elemento continua no lugar, destacado com borda verde
+    const end = v => { document.removeEventListener('keydown', key, true); if (card) card.classList.remove('askhl'); back.remove(); dlg.remove(); res(v); }, key = e => { if (e.key === 'Escape') { e.stopPropagation(); end(false); } };
+    back.addEventListener('click', e => { e.stopPropagation(); end(false); });
+    dlg.addEventListener('click', e => { e.stopPropagation(); if (e.target.closest('.askno')) end(false); else if (e.target.closest('.askyes')) end(true); });
+    document.addEventListener('keydown', key, true); document.body.append(back, dlg); dlg.querySelector('.askno').focus();
   });
 }
 
