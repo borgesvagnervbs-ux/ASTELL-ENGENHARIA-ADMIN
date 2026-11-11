@@ -990,14 +990,40 @@ addEventListener('keydown', e => {
 });
 
 // ---------- acesso
-function loginScreen() {
+// Login do painel: CPF + senha (cada CPF vira um e-mail interno no Supabase) ou conta Google
+const CPF_DOMAIN = '@cpf.astellhome.app', cpfEmail = d => d + CPF_DOMAIN, cpfFromEmail = m => { const x = /^(\d{11})@cpf\.astellhome\.app$/i.exec(String(m || '')); return x ? x[1] : ''; };
+const PW_RULES = [['Mínimo de 8 caracteres', p => p.length >= 8], ['Letra maiúscula', p => /[A-Z]/.test(p)], ['Letra minúscula', p => /[a-z]/.test(p)], ['Número', p => /\d/.test(p)], ['Caractere especial (! @ # $ ...)', p => /[^A-Za-z0-9]/.test(p)]];
+const pwList = p => PW_RULES.map(([t, f]) => `<li class="${f(p) ? 'ok' : ''}">${f(p) ? '✓' : '○'} ${t}</li>`).join('');
+const strongPw = p => PW_RULES.every(([, f]) => f(p));
+document.addEventListener('input', e => { const t = e.target; if (t.id === 'pw' && document.getElementById('pr')) document.getElementById('pr').innerHTML = pwList(t.value); });
+function loginScreen(mode = 'login') {
   $('#top').hidden = true; drawer(false);
-  view.innerHTML = `<div class="login"><form id="lf"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><p class="tag">Acesso restrito à equipe Astell.</p><h2>Entrar</h2>
-    <button type="button" class="btn-google" id="gg">${GOOGLE_SVG}<span>Entrar com o Google</span></button><div class="or"><span>ou</span></div>
-    <label>E-mail<input id="em" type="email" required autocomplete="username"></label><label>Senha<input id="pw" type="password" required autocomplete="current-password"></label>
-    <button class="btn-main">Entrar no painel</button><p class="fine"><a href="index.html" style="color:#9fb5c1">Ir para o aplicativo do cliente</a></p></form></div>`;
-  $('#gg').onclick = async () => { if (location.protocol === 'file:') return toast('O login com Google não funciona com o arquivo aberto direto. Abra por um endereço http ou https.', 1); const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); if (error) toast('Não foi possível entrar com o Google.', 1); };
-  $('#lf').onsubmit = async e => { e.preventDefault(); const { error } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value }); if (error) toast('E-mail ou senha incorretos.', 1); };
+  const su = mode === 'signup';
+  view.innerHTML = `<div class="login"><form id="lf"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><p class="tag">Acesso restrito à equipe Astell.</p><h2>${su ? 'Primeiro acesso: crie sua senha' : 'Entrar'}</h2>
+    ${su ? '' : `<button type="button" class="btn-google" id="gg">${GOOGLE_SVG}<span>Entrar com o Google</span></button><div class="or"><span>ou</span></div>`}
+    <label>CPF<input id="cp" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required autocomplete="off"></label>
+    <label>Senha<input id="pw" type="password" required autocomplete="${su ? 'new-password' : 'current-password'}"></label>
+    ${su ? `<ul class="pwrules" id="pr">${pwList('')}</ul><label>Confirmar senha<input id="pw2" type="password" required autocomplete="new-password"></label>` : ''}
+    <button class="btn-main">${su ? 'Criar senha e entrar' : 'Entrar no painel'}</button>
+    <p class="switch">${su ? 'Já criou sua senha?' : 'Primeiro acesso?'} <button type="button" id="sw" class="btn-text">${su ? 'Entrar' : 'Criar senha'}</button></p>
+    <p class="fine"><a href="index.html" style="color:#9fb5c1">Ir para o aplicativo do cliente</a></p></form></div>`;
+  $('#sw').onclick = () => loginScreen(su ? 'login' : 'signup');
+  if ($('#gg')) $('#gg').onclick = async () => { if (location.protocol === 'file:') return toast('O login com Google não funciona com o arquivo aberto direto. Abra por um endereço http ou https.', 1); const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); if (error) toast('Não foi possível entrar com o Google.', 1); };
+  $('#lf').onsubmit = async e => {
+    e.preventDefault(); const cpf = cpfDigits($('#cp').value), password = $('#pw').value, btn = $('#lf .btn-main');
+    if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1);
+    if (!su) {
+      if (!strongPw(password)) return toast('CPF ou senha incorretos.', 1);
+      btn.disabled = true; const { error } = await sb.auth.signInWithPassword({ email: cpfEmail(cpf), password }); btn.disabled = false;
+      if (error) toast(/rate|too many/i.test(error.message) ? 'Muitas tentativas. Aguarde alguns minutos.' : 'CPF ou senha incorretos. Se for o primeiro acesso, toque em "Criar senha".', 1); return;
+    }
+    if (!strongPw(password)) return toast('A senha não atende a todos os requisitos.', 1);
+    if (password !== $('#pw2').value) return toast('As senhas não são iguais.', 1);
+    btn.disabled = true; const { data, error } = await sb.auth.signUp({ email: cpfEmail(cpf), password }); btn.disabled = false;
+    if (error) return toast(/registered|exists/i.test(error.message) ? 'Este CPF já tem senha criada. Toque em "Entrar".' : 'Não foi possível criar a senha: ' + error.message, 1);
+    if (data.user && data.user.identities && data.user.identities.length === 0) return toast('Este CPF já tem senha criada. Toque em "Entrar".', 1);
+    if (!data.session) { loginScreen('login'); toast('Cadastro criado, mas o Supabase ainda exige confirmação de e-mail. Desligue "Confirm email" no Supabase.', 1); }
+  };
 }
 function deniedScreen() {
   $('#top').hidden = true; drawer(false);
@@ -1005,6 +1031,7 @@ function deniedScreen() {
 }
 async function start(session) {
   if (!session) { S.profile = null; S.cur = null; return loginScreen(); }
+  if (cpfFromEmail(session.user.email)) await sb.rpc('claim_my_cpf');   // libera o painel para CPFs autorizados (staff_cpfs)
   const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
   S.profile = data;
   if (!data || data.role !== 'admin') return deniedScreen();
