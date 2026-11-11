@@ -991,39 +991,73 @@ addEventListener('keydown', e => {
 
 // ---------- acesso
 // Login do painel: CPF + senha (cada CPF vira um e-mail interno no Supabase) ou conta Google
-const CPF_DOMAIN = '@cpf.astellhome.app', cpfEmail = d => d + CPF_DOMAIN, cpfFromEmail = m => { const x = /^(\d{11})@cpf\.astellhome\.app$/i.exec(String(m || '')); return x ? x[1] : ''; };
 const PW_RULES = [['Mínimo de 8 caracteres', p => p.length >= 8], ['Letra maiúscula', p => /[A-Z]/.test(p)], ['Letra minúscula', p => /[a-z]/.test(p)], ['Número', p => /\d/.test(p)], ['Caractere especial (! @ # $ ...)', p => /[^A-Za-z0-9]/.test(p)]];
 const pwList = p => PW_RULES.map(([t, f]) => `<li class="${f(p) ? 'ok' : ''}">${f(p) ? '✓' : '○'} ${t}</li>`).join('');
 const strongPw = p => PW_RULES.every(([, f]) => f(p));
 document.addEventListener('input', e => { const t = e.target; if (t.id === 'pw' && document.getElementById('pr')) document.getElementById('pr').innerHTML = pwList(t.value); });
+const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10.7 10.7 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.2 4.2M6.6 6.6A17 17 0 002 12s3.6 7 10 7a10.5 10.5 0 004.4-1M9.9 9.9a3 3 0 004.2 4.2"/></svg>';
+const pwInput = (id, label, auto) => `<label>${label}<span class="pwbox"><input id="${id}" type="password" required autocomplete="${auto}"><button type="button" class="pweye" data-eye aria-label="Mostrar senha" aria-pressed="false">${EYE}</button></span></label>`;
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-eye]'); if (!b) return; const i = b.parentElement.querySelector('input'), show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.innerHTML = show ? EYE_OFF : EYE; b.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha'); b.setAttribute('aria-pressed', String(show)); });
+let REC_FLOW = /[#&]type=recovery/.test(location.hash);   // aberto pelo link de recuperação de senha
+const msgBox = (el, html) => { el.innerHTML = html; el.hidden = !html; };
+const CPFIN = '<label>CPF<input id="cp" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required autocomplete="off"></label>';
 function loginScreen(mode = 'login') {
   $('#top').hidden = true; drawer(false);
   const su = mode === 'signup';
   view.innerHTML = `<div class="login"><form id="lf"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><p class="tag">Acesso restrito à equipe Astell.</p><h2>${su ? 'Primeiro acesso: crie sua senha' : 'Entrar'}</h2>
-    ${su ? '' : `<button type="button" class="btn-google" id="gg">${GOOGLE_SVG}<span>Entrar com o Google</span></button><div class="or"><span>ou</span></div>`}
-    <label>CPF<input id="cp" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required autocomplete="off"></label>
-    <label>Senha<input id="pw" type="password" required autocomplete="${su ? 'new-password' : 'current-password'}"></label>
-    ${su ? `<ul class="pwrules" id="pr">${pwList('')}</ul><label>Confirmar senha<input id="pw2" type="password" required autocomplete="new-password"></label>` : ''}
-    <button class="btn-main">${su ? 'Criar senha e entrar' : 'Entrar no painel'}</button>
+    ${su ? '<p class="lead">Informe o CPF e o e-mail liberados para o painel. Sugerimos o Gmail que você usa no celular: enviaremos um link de confirmação e a recuperação de senha também vai por ele.</p>' : `<button type="button" class="btn-google" id="gg">${GOOGLE_SVG}<span>Entrar com o Google</span></button><div class="or"><span>ou</span></div>`}
+    ${CPFIN}${su ? '<label>E-mail<input id="em" type="email" required autocomplete="email" placeholder="seuemail@gmail.com"></label>' : ''}
+    ${pwInput('pw', 'Senha', su ? 'new-password' : 'current-password')}
+    ${su ? `<ul class="pwrules" id="pr">${pwList('')}</ul>${pwInput('pw2', 'Confirmar senha', 'new-password')}` : ''}
+    <p class="warn" id="lm" hidden></p>
+    <button class="btn-main">${su ? 'Criar acesso' : 'Entrar no painel'}</button>
+    ${su ? '' : '<button type="button" id="fg" class="btn-text">Esqueci minha senha</button>'}
     <p class="switch">${su ? 'Já criou sua senha?' : 'Primeiro acesso?'} <button type="button" id="sw" class="btn-text">${su ? 'Entrar' : 'Criar senha'}</button></p>
     <p class="fine"><a href="index.html" style="color:#9fb5c1">Ir para o aplicativo do cliente</a></p></form></div>`;
   $('#sw').onclick = () => loginScreen(su ? 'login' : 'signup');
+  if ($('#fg')) $('#fg').onclick = forgotScreen;
   if ($('#gg')) $('#gg').onclick = async () => { if (location.protocol === 'file:') return toast('O login com Google não funciona com o arquivo aberto direto. Abra por um endereço http ou https.', 1); const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); if (error) toast('Não foi possível entrar com o Google.', 1); };
   $('#lf').onsubmit = async e => {
-    e.preventDefault(); const cpf = cpfDigits($('#cp').value), password = $('#pw').value, btn = $('#lf .btn-main');
+    e.preventDefault(); const cpf = cpfDigits($('#cp').value), password = $('#pw').value, btn = $('#lf .btn-main'), lm = $('#lm'); msgBox(lm, '');
     if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1);
     if (!su) {
       if (!strongPw(password)) return toast('CPF ou senha incorretos.', 1);
-      btn.disabled = true; const { error } = await sb.auth.signInWithPassword({ email: cpfEmail(cpf), password }); btn.disabled = false;
-      if (error) toast(/rate|too many/i.test(error.message) ? 'Muitas tentativas. Aguarde alguns minutos.' : 'CPF ou senha incorretos. Se for o primeiro acesso, toque em "Criar senha".', 1); return;
+      btn.disabled = true; const { data: em } = await sb.rpc('cpf_login_email', { p_cpf: cpf });
+      const r = em ? await sb.auth.signInWithPassword({ email: em, password }) : { error: { message: 'x' } }; btn.disabled = false;
+      if (r.error) msgBox(lm, /confirm/i.test(r.error.message) ? 'Confirme seu e-mail pelo link que enviamos e tente de novo.' : /rate|too many/i.test(r.error.message) ? 'Muitas tentativas. Aguarde alguns minutos.' : 'CPF ou senha incorretos. Se acabou de criar o acesso, confirme primeiro o link enviado ao seu e-mail.'); return;
     }
+    const email = $('#em').value.trim().toLowerCase();
     if (!strongPw(password)) return toast('A senha não atende a todos os requisitos.', 1);
     if (password !== $('#pw2').value) return toast('As senhas não são iguais.', 1);
-    btn.disabled = true; const { data, error } = await sb.auth.signUp({ email: cpfEmail(cpf), password }); btn.disabled = false;
-    if (error) return toast(/registered|exists/i.test(error.message) ? 'Este CPF já tem senha criada. Toque em "Entrar".' : 'Não foi possível criar a senha: ' + error.message, 1);
-    if (data.user && data.user.identities && data.user.identities.length === 0) return toast('Este CPF já tem senha criada. Toque em "Entrar".', 1);
-    if (!data.session) { loginScreen('login'); toast('Cadastro criado, mas o Supabase ainda exige confirmação de e-mail. Desligue "Confirm email" no Supabase.', 1); }
+    btn.disabled = true; const { data: ck } = await sb.rpc('signup_check', { p_cpf: cpf, p_email: email, p_scope: 'admin' });
+    if (!ck || !ck.ok) { btn.disabled = false; return msgBox(lm, 'Este CPF e e-mail não estão liberados para o painel.'); }
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: { cpf }, emailRedirectTo: location.origin + location.pathname } }); btn.disabled = false;
+    if (error) return msgBox(lm, /registered|exists/i.test(error.message) ? 'Este e-mail já tem acesso. Toque em "Entrar" ou use "Esqueci minha senha".' : 'Não foi possível criar o acesso: ' + esc(error.message));
+    if (data.user && data.user.identities && data.user.identities.length === 0) return msgBox(lm, 'Este e-mail já tem acesso. Toque em "Entrar" ou use "Esqueci minha senha".');
+    if (!data.session) confirmScreen(email, true);
   };
+}
+function forgotScreen() {
+  $('#top').hidden = true; drawer(false);
+  view.innerHTML = `<div class="login"><form id="ff"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><h2>Recuperar senha</h2><p class="lead">Informe seu CPF. Enviaremos um link para o e-mail usado no primeiro acesso.</p>${CPFIN}<p class="warn" id="lm" hidden></p><button class="btn-main">Enviar link</button><button type="button" id="bk" class="btn-text">Voltar</button></form></div>`;
+  $('#bk').onclick = () => loginScreen();
+  $('#ff').onsubmit = async e => { e.preventDefault(); const cpf = cpfDigits($('#cp').value), btn = $('#ff .btn-main'); if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1);
+    btn.disabled = true; const { data: em } = await sb.rpc('cpf_login_email', { p_cpf: cpf }); if (em) await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }); btn.disabled = false;
+    msgBox($('#lm'), 'Se o CPF tiver acesso, enviamos o link para o e-mail cadastrado. Confira também a caixa de spam.'); };
+}
+function recoveryScreen() {
+  $('#top').hidden = true; drawer(false);
+  view.innerHTML = `<div class="login"><form id="rf"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><h2>Crie uma nova senha</h2>${pwInput('pw', 'Nova senha', 'new-password')}<ul class="pwrules" id="pr">${pwList('')}</ul>${pwInput('pw2', 'Confirmar nova senha', 'new-password')}<button class="btn-main">Salvar nova senha</button></form></div>`;
+  $('#rf').onsubmit = async e => { e.preventDefault(); const p = $('#pw').value; if (!strongPw(p)) return toast('A senha não atende a todos os requisitos.', 1); if (p !== $('#pw2').value) return toast('As senhas não são iguais.', 1);
+    const { error } = await sb.auth.updateUser({ password: p }); if (error) return toast('Não foi possível salvar a senha: ' + error.message, 1);
+    REC_FLOW = false; history.replaceState(null, '', location.pathname); toast('Senha alterada! Entre com seu CPF e a nova senha.'); await sb.auth.signOut(); };
+}
+function confirmScreen(email, fresh) {
+  $('#top').hidden = true; drawer(false);
+  view.innerHTML = `<div class="login"><form id="cm"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><h2>Confirme seu e-mail</h2><p class="lead">${fresh ? 'Acesso criado! ' : ''}Enviamos um link de confirmação para <b>${esc(email)}</b>. Toque no link (veja também o spam) e volte aqui para entrar.</p><button type="button" id="rs" class="btn-main">Reenviar e-mail</button><button type="button" id="bk" class="btn-text">Voltar ao login</button></form></div>`;
+  $('#bk').onclick = async () => { await sb.auth.signOut(); loginScreen(); };
+  $('#rs').onclick = async () => { const { error } = await sb.auth.resend({ type: 'signup', email }); toast(error ? 'Não foi possível reenviar agora. Tente em alguns minutos.' : 'E-mail reenviado.', !!error); };
 }
 function deniedScreen() {
   $('#top').hidden = true; drawer(false);
@@ -1031,7 +1065,8 @@ function deniedScreen() {
 }
 async function start(session) {
   if (!session) { S.profile = null; S.cur = null; return loginScreen(); }
-  if (cpfFromEmail(session.user.email)) await sb.rpc('claim_my_cpf');   // libera o painel para CPFs autorizados (staff_cpfs)
+  if (REC_FLOW) return recoveryScreen();
+  if (/^\d{11}$/.test(String((session.user.user_metadata || {}).cpf || ''))) { const { data: c } = await sb.rpc('claim_my_cpf'); if (c && c.code === 'UNCONFIRMED') return confirmScreen(session.user.email); }   // libera o painel para CPF + e-mail autorizados (staff_cpfs)
   const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
   S.profile = data;
   if (!data || data.role !== 'admin') return deniedScreen();
@@ -1039,6 +1074,7 @@ async function start(session) {
 }
 sb.auth.getSession().then(({ data }) => start(data.session));
 sb.auth.onAuthStateChange((ev, s) => {
+  if (ev === 'PASSWORD_RECOVERY') REC_FLOW = true;
   if (ev === 'SIGNED_IN' && S.profile && s && S.profile.id === s.user.id) return;
   if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT') setTimeout(() => start(s), 0);
 });
