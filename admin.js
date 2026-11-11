@@ -1033,8 +1033,11 @@ function loginScreen(mode = 'login') {
     btn.disabled = true; const { data: ck } = await sb.rpc('signup_check', { p_cpf: cpf, p_email: email, p_scope: 'admin' });
     if (!ck || !ck.ok) { btn.disabled = false; return msgBox(lm, 'Este CPF e e-mail não estão liberados para o painel.'); }
     const { data, error } = await sb.auth.signUp({ email, password, options: { data: { cpf }, emailRedirectTo: location.origin + location.pathname } }); btn.disabled = false;
-    if (error) return msgBox(lm, /registered|exists/i.test(error.message) ? 'Este e-mail já tem acesso. Toque em "Entrar" ou use "Esqueci minha senha".' : 'Não foi possível criar o acesso: ' + esc(error.message));
-    if (data.user && data.user.identities && data.user.identities.length === 0) return msgBox(lm, 'Este e-mail já tem acesso. Toque em "Entrar" ou use "Esqueci minha senha".');
+    if ((error && /registered|exists/i.test(error.message)) || (data && data.user && data.user.identities && data.user.identities.length === 0)) {   // e-mail que já tem acesso (ex.: Google): o dono define a senha pelo link enviado ao próprio e-mail
+      const r = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      return msgBox(lm, r.error ? 'Este e-mail já tem acesso, mas não foi possível enviar o link agora (' + esc(r.error.message) + '). Tente em alguns minutos.' : 'Este e-mail já tinha acesso. Enviamos um link para você definir a senha de CPF: abra o e-mail (veja o spam), toque no link, informe o CPF e crie a senha.');
+    }
+    if (error) return msgBox(lm, 'Não foi possível criar o acesso: ' + esc(error.message));
     if (!data.session) confirmScreen(email, true);
   };
 }
@@ -1043,15 +1046,26 @@ function forgotScreen() {
   view.innerHTML = `<div class="login"><form id="ff"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><h2>Recuperar senha</h2><p class="lead">Informe seu CPF. Enviaremos um link para o e-mail usado no primeiro acesso.</p>${CPFIN}<p class="warn" id="lm" hidden></p><button class="btn-main">Enviar link</button><button type="button" id="bk" class="btn-text">Voltar</button></form></div>`;
   $('#bk').onclick = () => loginScreen();
   $('#ff').onsubmit = async e => { e.preventDefault(); const cpf = cpfDigits($('#cp').value), btn = $('#ff .btn-main'); if (!cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1);
-    btn.disabled = true; const { data: em } = await sb.rpc('cpf_login_email', { p_cpf: cpf }); if (em) await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }); btn.disabled = false;
+    btn.disabled = true; const { data: em } = await sb.rpc('cpf_login_email', { p_cpf: cpf }); const rr = em ? await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }) : {}; btn.disabled = false;
+    if (rr.error) return msgBox($('#lm'), 'Não foi possível enviar o e-mail agora (' + esc(rr.error.message) + '). Tente novamente em alguns minutos.');
     msgBox($('#lm'), 'Se o CPF tiver acesso, enviamos o link para o e-mail cadastrado. Confira também a caixa de spam.'); };
 }
-function recoveryScreen() {
+function recoveryScreen(session) {
   $('#top').hidden = true; drawer(false);
-  view.innerHTML = `<div class="login"><form id="rf"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><h2>Crie uma nova senha</h2>${pwInput('pw', 'Nova senha', 'new-password')}<ul class="pwrules" id="pr">${pwList('')}</ul>${pwInput('pw2', 'Confirmar nova senha', 'new-password')}<button class="btn-main">Salvar nova senha</button></form></div>`;
-  $('#rf').onsubmit = async e => { e.preventDefault(); const p = $('#pw').value; if (!strongPw(p)) return toast('A senha não atende a todos os requisitos.', 1); if (p !== $('#pw2').value) return toast('As senhas não são iguais.', 1);
-    const { error } = await sb.auth.updateUser({ password: p }); if (error) return toast('Não foi possível salvar a senha: ' + error.message, 1);
-    REC_FLOW = false; history.replaceState(null, '', location.pathname); toast('Senha alterada! Entre com seu CPF e a nova senha.'); await sb.auth.signOut(); };
+  const needCpf = !/^\d{11}$/.test(String(((session && session.user && session.user.user_metadata) || {}).cpf || ''));   // conta que já existia (ex.: Google): confirma o CPF aqui
+  view.innerHTML = `<div class="login"><form id="rf"><h1>ASTELL<span>PAINEL ADMINISTRATIVO</span></h1><h2>${needCpf ? 'Crie sua senha de acesso' : 'Crie uma nova senha'}</h2>
+    ${needCpf ? CPFIN : ''}${pwInput('pw', 'Nova senha', 'new-password')}<ul class="pwrules" id="pr">${pwList('')}</ul>${pwInput('pw2', 'Confirmar nova senha', 'new-password')}<button class="btn-main">Salvar senha</button></form></div>`;
+  $('#rf').onsubmit = async e => {
+    e.preventDefault(); const p = $('#pw').value, cpf = needCpf ? cpfDigits($('#cp').value) : '';
+    if (needCpf && !cpfOk(cpf)) return toast('CPF inválido. Confira os números.', 1); if (!strongPw(p)) return toast('A senha não atende a todos os requisitos.', 1); if (p !== $('#pw2').value) return toast('As senhas não são iguais.', 1);
+    const { error } = await sb.auth.updateUser(needCpf ? { password: p, data: { cpf } } : { password: p }); if (error) return toast('Não foi possível salvar a senha: ' + error.message, 1);
+    if (needCpf) {   // vincula a conta ao CPF (exige e-mail confirmado igual ao cadastrado pela Astell)
+      const { data: c } = await sb.rpc('claim_my_cpf');
+      if (!c || !c.ok) { toast('Senha salva, mas o CPF e o e-mail não conferem com o cadastro. Fale com a Astell.', 1); REC_FLOW = false; history.replaceState(null, '', location.pathname); const { data: s2 } = await sb.auth.getSession(); return start(s2.session); }
+      REC_FLOW = false; history.replaceState(null, '', location.pathname); toast('Senha criada! Da próxima vez entre com CPF e senha.'); const { data: s2 } = await sb.auth.getSession(); return start(s2.session);
+    }
+    REC_FLOW = false; history.replaceState(null, '', location.pathname); toast('Senha alterada! Entre com seu CPF e a nova senha.'); await sb.auth.signOut();
+  };
 }
 function confirmScreen(email, fresh) {
   $('#top').hidden = true; drawer(false);
@@ -1065,7 +1079,7 @@ function deniedScreen() {
 }
 async function start(session) {
   if (!session) { S.profile = null; S.cur = null; return loginScreen(); }
-  if (REC_FLOW) return recoveryScreen();
+  if (REC_FLOW) return recoveryScreen(session);
   if (/^\d{11}$/.test(String((session.user.user_metadata || {}).cpf || ''))) { const { data: c } = await sb.rpc('claim_my_cpf'); if (c && c.code === 'UNCONFIRMED') return confirmScreen(session.user.email); }   // libera o painel para CPF + e-mail autorizados (staff_cpfs)
   const { data } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
   S.profile = data;
