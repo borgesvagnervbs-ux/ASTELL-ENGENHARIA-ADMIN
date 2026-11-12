@@ -130,6 +130,7 @@ const fieldsFor = k => k === 'res' ? RES_F : k === 'documents' ? DOC_F : T[k].f;
 
 // CPF
 function cpfDigits(v) { return String(v || '').replace(/\D/g, '').slice(0, 11); }
+const cpfShow = m => String(m || '').replace(/-\d{2}$/, '-**');   // máscara exibida: ***.507.350-** (cadastros antigos: ***.***.***-**)
 function cpfMask(v) { return cpfDigits(v).replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1-$2'); }
 function cpfOk(d) { if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false; for (let t = 9; t < 11; t++) { let s = 0; for (let i = 0; i < t; i++) s += d[i] * (t + 1 - i); if ((s * 10) % 11 % 10 != d[t]) return false; } return true; }
 
@@ -159,7 +160,7 @@ const resSelect = () => `<div class="field combo" data-combo="res"><span class="
 const ownPickHtml = ids => `<div class="ownpick field combo" data-combo="own"><span class="lbl">Proprietários vinculados (opcional)</span><div class="selrow"><div class="comboin"><input class="comboq" type="search" placeholder="Pesquisar proprietário pelo nome…" autocomplete="off" role="combobox" aria-expanded="false" aria-label="Pesquisar proprietário"><ul class="combolist" role="listbox" hidden></ul></div><button type="button" data-newown>Cadastrar</button></div><div class="reslinked" data-ownlist></div><input type="hidden" name="owner_ids" value="${ids.join(',')}"></div>`;
 function refreshOwnPick(box) {   // lista numerada dos proprietários escolhidos (a gravação acontece ao salvar a residência)
   const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean), os = ids.map(id => S.owners.find(x => x.id === id)).filter(Boolean);
-  box.querySelector('[data-ownlist]').innerHTML = os.length ? `<h4 class="reshead">Proprietários vinculados (${os.length})</h4><ol class="reslist">${os.map(o => `<li><div class="rname"><b>${esc(o.name)}</b><span class="mute">${esc(o.cpf_mask)}</span></div>${acts(`<button type="button" class="link" data-ownedit="${o.id}">Editar</button>`, `<button type="button" class="link danger" data-ownunlink="${o.id}">Desvincular</button>`)}</li>`).join('')}</ol>` : '<p class="mute reshead">Nenhum proprietário vinculado.</p>';
+  box.querySelector('[data-ownlist]').innerHTML = os.length ? `<h4 class="reshead">Proprietários vinculados (${os.length})</h4><ol class="reslist">${os.map(o => `<li><div class="rname"><b>${esc(o.name)}</b><span class="mute">${esc(cpfShow(o.cpf_mask))}</span></div>${acts(`<button type="button" class="link" data-ownedit="${o.id}">Editar</button>`, `<button type="button" class="link danger" data-ownunlink="${o.id}">Desvincular</button>`)}</li>`).join('')}</ol>` : '<p class="mute reshead">Nenhum proprietário vinculado.</p>';
 }
 // lista de resultados da pesquisa: só o NOME da residência (ou do proprietário) é considerado
 function comboList(box) {
@@ -173,7 +174,7 @@ function comboList(box) {
     items = S.res.filter(r => !ids.includes(r.id) && (!q || hit(norm(r.name + ' ' + r.code), q))).sort(byName).map(r => ({ id: r.id, label: r.name, sub: r.code }));
   } else {
     const ids = box.querySelector('[name=owner_ids]').value.split(',').filter(Boolean);
-    items = S.owners.filter(o => !ids.includes(o.id) && (!q || norm(o.name).includes(q))).sort(byName).map(o => ({ id: o.id, label: o.name, sub: o.cpf_mask }));
+    items = S.owners.filter(o => !ids.includes(o.id) && (!q || norm(o.name).includes(q))).sort(byName).map(o => ({ id: o.id, label: o.name, sub: cpfShow(o.cpf_mask) }));
   }
   if (!items.length) return comboClose(box);   // nenhuma opção contém o que foi digitado: a caixa não aparece
   ul.innerHTML = items.map((it, i) => `<li role="option" data-opt="${it.id}" class="${i ? '' : 'on'}">${type === 'resmulti' || type === 'own' ? `<span class="lname"><b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span></span><button type="button" data-addopt="${it.id}">Adicionar</button>` : `<b>${esc(it.label)}</b><span class="mute">${esc(it.sub)}</span>`}</li>`).join('');
@@ -241,7 +242,7 @@ function openOwnerAdd(nested) {   // nested = aberto de dentro do cadastro de re
 function openOwnerEdit(id, opts = {}) {
   const c = (S.owners || []).find(x => x.id === id); if (!c) return;
   const ids = (S.links || []).filter(l => l.cpf_id === id).map(l => S.res.find(r => r.id === l.residence_id)).filter(Boolean).sort(byName).map(r => r.id);
-  modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<input value="${esc(c.cpf_mask)}" disabled></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label>${telField('phone', 'Celular', c.phone || '')}${telField('whatsapp', 'WhatsApp', c.whatsapp || '')}${opts.fromRes ? '' : resMultiHtml(ids)}`, `data-form="edit:own" data-id="${id}"`, 'Salvar');
+  modal('Editar proprietário', `<label>Nome<input name="name" value="${esc(c.name)}" required></label><label>CPF atual<span class="pwbox"><input id="cpfv" value="${esc(cpfShow(c.cpf_mask))}" readonly><button type="button" class="pweye" data-cpfeye="${id}" aria-label="Mostrar CPF" aria-pressed="false">${EYE}</button></span></label><label>Novo CPF (deixe em branco para manter)<input name="cpf" class="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label><label>E-mail do proprietário<input name="email" type="email" value="${esc(c.expected_email || '')}"></label>${telField('phone', 'Celular', c.phone || '')}${telField('whatsapp', 'WhatsApp', c.whatsapp || '')}${opts.fromRes ? '' : resMultiHtml(ids)}`, `data-form="edit:own" data-id="${id}"`, 'Salvar');
 }
 function presetCat(cat) { return `<div class="field"><span class="lbl">Tipo de construção</span><div class="presetres"><b>${cat[0]}</b></div><input type="hidden" name="category" value="${cat[2]}"></div>`; }
 // imagens e vídeos nos cadastros da Construção (Cloudinary; os endereços ficam na coluna "media" de building_items)
@@ -472,7 +473,7 @@ async function resDetail(id) {
   const info = [['Código', r.code], ['Nome da residência', r.name], ['Endereço', r.address], ['Área construída', r.area_m2 != null && r.area_m2 !== '' ? r.area_m2 + ' m²' : ''], ['Pavimentos', r.floors], ['Sistema construtivo', r.build_system], ['Nº do projeto', r.project_no], ['Início da obra', r.start_date ? fmt(r.start_date) : ''], ['Entrega', r.delivery_date ? fmt(r.delivery_date) : ''], ['Responsável técnico', r.tech_lead], ['Observações', r.notes]];
   view.innerHTML = crumbs([['Painel', '#res'], ['Residências', '#res'], [r.name]]) + `<div class="pagehead"><div><h2>${esc(r.name)}</h2><p class="mute">${esc(r.code)}</p></div><button type="button" class="up" data-edit="res:${r.id}">Editar cadastro</button></div>` +
     `<div class="detailgrid"><section class="card"><h3 style="margin-top:0">Cadastro</h3><div class="info">${info.map(([l, x]) => `<div><span class="mute">${l}</span><b>${v(x)}</b></div>`).join('')}</div></section>` +
-    `<section class="card"><h3 style="margin-top:0">Proprietários (${ow.length})</h3>${ow.length ? `<ol class="numlist">${ow.map(o => `<li><b>${esc(o.name)}</b><span class="mute">${esc(o.cpf_mask)} · ${o.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}</span>${contactLine(o)}</li>`).join('')}</ol>` : '<p class="empty">Nenhum proprietário vinculado.</p>'}</section></div>` +
+    `<section class="card"><h3 style="margin-top:0">Proprietários (${ow.length})</h3>${ow.length ? `<ol class="numlist">${ow.map(o => `<li><b>${esc(o.name)}</b><span class="mute">${esc(cpfShow(o.cpf_mask))} · ${o.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}</span>${contactLine(o)}</li>`).join('')}</ol>` : '<p class="empty">Nenhum proprietário vinculado.</p>'}</section></div>` +
     `<div class="modgrid">${Object.entries(SECTIONS).map(([k, [l, i]]) => `<a class="card rescard modcard" href="#res/${r.id}/${k}">${ico(IC[i])}<b>${l}</b></a>`).join('')}</div>`;
 }
 // telas de cada módulo dentro da residência: só o que é dela, com o + já com a residência definida
@@ -926,7 +927,7 @@ const PAGES = {
     await loadOwners();
     setItems({ mlist: S.owners.map(c => {
       const rs = S.links.filter(l => l.cpf_id === c.id).map(l => S.res.find(r => r.id === l.residence_id)).filter(Boolean);
-      return { hay: norm([c.name, ...rs.map(r => r.name + ' ' + r.code)].join(' ')), html: `<div class="card"><b>${esc(c.name)}</b><span class="mute meta">Residências: ${rs.map(r => esc(r.name)).join(', ') || '—'}</span><span class="mute meta">${esc(c.cpf_mask)} · ${c.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}${c.expected_email ? ' · ' + esc(c.expected_email) : ''}</span>${contactLine(c)}${acts(`<button class="link" data-oedit="${c.id}">Editar</button>`, c.claimed_by && `<button class="link danger" data-rel="${c.id}">Liberar CPF</button>`)}</div>` };
+      return { hay: norm([c.name, ...rs.map(r => r.name + ' ' + r.code)].join(' ')), html: `<div class="card"><b>${esc(c.name)}</b><span class="mute meta">Residências: ${rs.map(r => esc(r.name)).join(', ') || '—'}</span><span class="mute meta">${esc(cpfShow(c.cpf_mask))} · ${c.claimed_by ? 'Acesso ativo' : 'Aguardando primeiro acesso'}${c.expected_email ? ' · ' + esc(c.expected_email) : ''}</span>${contactLine(c)}${acts(`<button class="link" data-oedit="${c.id}">Editar</button>`, c.claimed_by && `<button class="link danger" data-rel="${c.id}">Liberar CPF</button>`)}</div>` };
     }) });
     view.innerHTML = head('Proprietários', 'own') + SHELL + '<p class="notice">Uma residência pode ter vários proprietários, cada um com o seu CPF. Cada um cria a própria conta no app e informa o CPF para ver a casa. Se você cadastrar o e-mail do proprietário, só a conta com esse e-mail consegue usar o CPF.</p>';
     paintItems();
@@ -998,6 +999,14 @@ document.addEventListener('input', e => { const t = e.target; if (t.id === 'pw' 
 const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10.7 10.7 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.2 4.2M6.6 6.6A17 17 0 002 12s3.6 7 10 7a10.5 10.5 0 004.4-1M9.9 9.9a3 3 0 004.2 4.2"/></svg>';
 const pwInput = (id, label, auto) => `<label>${label}<span class="pwbox"><input id="${id}" type="password" required autocomplete="${auto}"><button type="button" class="pweye" data-eye aria-label="Mostrar senha" aria-pressed="false">${EYE}</button></span></label>`;
+document.addEventListener('click', async e => {   // olho do CPF no "Editar proprietário"
+  const b = e.target.closest && e.target.closest('[data-cpfeye]'); if (!b) return; const i = $('#cpfv'), c = (S.owners || []).find(x => x.id === b.dataset.cpfeye); if (!i || !c) return;
+  if (b.getAttribute('aria-pressed') === 'true') { i.value = cpfShow(c.cpf_mask); b.innerHTML = EYE; b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', 'Mostrar CPF'); return; }
+  b.disabled = true; const { data, error } = await sb.rpc('admin_reveal_cpf', { p_id: c.id }); b.disabled = false;
+  if (error) return toast('Não foi possível mostrar o CPF: ' + error.message, 1);
+  if (!data) return toast('O CPF completo deste proprietário ainda não está guardado. Digite-o em "Novo CPF" e salve para poder visualizá-lo.', 1);
+  i.value = cpfMask(data); b.innerHTML = EYE_OFF; b.setAttribute('aria-pressed', 'true'); b.setAttribute('aria-label', 'Ocultar CPF');
+});
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-eye]'); if (!b) return; const i = b.parentElement.querySelector('input'), show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.innerHTML = show ? EYE_OFF : EYE; b.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha'); b.setAttribute('aria-pressed', String(show)); });
 let REC_FLOW = /[#&]type=recovery/.test(location.hash);   // aberto pelo link de recuperação de senha
 const msgBox = (el, html) => { el.innerHTML = html; el.hidden = !html; };
@@ -1288,7 +1297,7 @@ document.addEventListener('submit', async e => {
     r = await sb.rpc('admin_register_cpf', ownerParams(o, cpf));
     if (!r.error) {
       const newId = r.data;
-      if (f.dataset.nested === '1') { S.owners.push({ id: newId, name: o.name, cpf_mask: '***.***.***-' + cpf.slice(-2), claimed_by: null, expected_email: o.email || null, phone: o.phone || null, whatsapp: o.whatsapp || null }); popModal({ id: newId }); return toast('Proprietário cadastrado e selecionado.'); }
+      if (f.dataset.nested === '1') { S.owners.push({ id: newId, name: o.name, cpf_mask: '***.' + cpf.slice(3, 6) + '.' + cpf.slice(6, 9) + '-**', claimed_by: null, expected_email: o.email || null, phone: o.phone || null, whatsapp: o.whatsapp || null }); popModal({ id: newId }); return toast('Proprietário cadastrado e selecionado.'); }
       let falha = null;   // a residência é opcional: vincula todas as que estiverem na lista
       for (const rr of (o.res_ids || '').split(',').filter(Boolean)) { const l = await sb.rpc('admin_link_cpf', { p_cpf: newId, p_res: rr }); if (l.error) falha = l; }
       r = falha || { error: null };
