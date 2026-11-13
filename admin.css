@@ -332,3 +332,7 @@ body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 .stf-lar{--c:#f08a3c;--cx:#04231a}
 
 .badge.st-late,.stopt.st-late,.stf-late{--c:#e5534b;--cx:#fff}
+
+.calpop{scroll-margin-bottom:90px}
+
+.calpop.up{top:auto;bottom:calc(100% + 6px)}

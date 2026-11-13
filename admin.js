@@ -218,7 +218,11 @@ function calRender(box, y, m) {
   pop.dataset.y = y; pop.dataset.m = m;
   pop.innerHTML = `<div class="calhead"><button type="button" data-calnav="-12" aria-label="Ano anterior">«</button><button type="button" data-calnav="-1" aria-label="Mês anterior">‹</button><b>${MESES[m]} ${y}</b><button type="button" data-calnav="1" aria-label="Próximo mês">›</button><button type="button" data-calnav="12" aria-label="Próximo ano">»</button></div><div class="calgrid">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(x => `<i>${x}</i>`).join('')}${cells}</div><div class="calfoot"><button type="button" data-caltoday>Hoje</button><button type="button" data-calclear>Limpar</button></div>`;
 }
-function calOpen(box) { closeFloating(box); const v = box.querySelector('[type=hidden]').value, d = v ? new Date(v + 'T00:00') : new Date(); calRender(box, d.getFullYear(), d.getMonth()); box.querySelector('.calpop').hidden = false; }
+function calOpen(box) { closeFloating(box); const v = box.querySelector('[type=hidden]').value, d = v ? new Date(v + 'T00:00') : new Date(); calRender(box, d.getFullYear(), d.getMonth()); const pp = box.querySelector('.calpop'); pp.hidden = false; calReveal(pp); }
+function calReveal(pop) {   // sem espaço embaixo: abre para cima; se também não couber, rola a tela
+  pop.classList.remove('up'); const br = pop.parentElement.getBoundingClientRect(), h = pop.offsetHeight;
+  if (br.bottom + 6 + h > innerHeight - 20 && br.top - 6 - h > 60) pop.classList.add('up'); else requestAnimationFrame(() => pop.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }));
+}   // mantém o calendário inteiro visível
 // fecha calendários e listas de pesquisa abertos (menos o que contém `except`); devolve se fechou algo
 function closeFloating(except) {
   let any = false;
@@ -1123,7 +1127,7 @@ document.addEventListener('click', async e => {
     else { const t = Date.now(); if (S.lastMi === d.mi && t - S.lastMiT < 450) { S.lastMi = null; lbOpen(d.mi); } else { S.lastMi = d.mi; S.lastMiT = t; } }   // imagem: dois cliques seguidos (vale também no toque do celular)
   }
   if (d.cal !== undefined) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'); if (pop.hidden) calOpen(box); else pop.hidden = true; }
-  if (d.calnav) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'), dt = new Date(+pop.dataset.y, +pop.dataset.m + +d.calnav, 1); calRender(box, dt.getFullYear(), dt.getMonth()); }
+  if (d.calnav) { const box = el.closest('[data-date]'), pop = box.querySelector('.calpop'), dt = new Date(+pop.dataset.y, +pop.dataset.m + +d.calnav, 1); calRender(box, dt.getFullYear(), dt.getMonth()); calReveal(pop); }
   if (d.day) { const box = el.closest('[data-date]'); calSet(box, d.day); box.querySelector('.calpop').hidden = true; }
   if (d.caltoday !== undefined) { const box = el.closest('[data-date]'), n = new Date(); calSet(box, isoOf(n.getFullYear(), n.getMonth(), n.getDate())); box.querySelector('.calpop').hidden = true; }
   if (d.calclear !== undefined) { const box = el.closest('[data-date]'); calSet(box, ''); box.querySelector('.calpop').hidden = true; }
