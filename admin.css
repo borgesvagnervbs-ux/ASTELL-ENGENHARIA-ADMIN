@@ -330,3 +330,5 @@ body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 .wbar.sm.w-ok{--wc:#2fbf71}.wbar.sm.w-warn{--wc:#f08a3c}.wbar.sm.w-bad{--wc:#e5534b}
 .wpill{display:inline-block;margin-top:10px;padding:3px 12px;border-radius:999px;font-size:.82rem;font-weight:700;background:var(--wp);color:var(--wpx)}
 .stf-lar{--c:#f08a3c;--cx:#04231a}
+
+.badge.st-late,.stopt.st-late,.stf-late{--c:#e5534b;--cx:#fff}
