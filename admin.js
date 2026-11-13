@@ -35,7 +35,13 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = d => d ? new Date(String(d).slice(0, 10) + 'T00:00').toLocaleDateString('pt-BR') : '—';
 const clean = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v === '' ? null : v]));
-function toast(m, err) { const t = $('#toast'); t.textContent = m; t.className = 'show' + (err ? ' err' : ''); setTimeout(() => t.className = '', 3500); }
+let toastTimer;
+function toast(m, err) {   // aviso no topo da tela: verde (salvo/sucesso) ou vermelho (erro), com ícone
+  const t = $('#toast'); t.setAttribute('role', err ? 'alert' : 'status'); t.textContent = '';
+  const ic = document.createElement('i'); ic.className = 'tic'; ic.textContent = err ? '!' : '✓';
+  const tx = document.createElement('span'); tx.textContent = m; t.append(ic, tx);
+  t.className = 'show' + (err ? ' err' : ' ok'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = '', err ? 5000 : 3500);
+}
 
 let sb; try { sb = supabase.createClient(new URL(SUPABASE_URL.trim()).origin, SUPABASE_KEY.trim()); } catch (e) { sb = null; }
 const view = $('#view');

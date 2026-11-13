@@ -30,7 +30,7 @@ header .menubtn:hover{background:#16283a;filter:none}
 .sheethead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .sheethead .x{width:40px;min-height:40px;margin:0;padding:0;background:none;color:var(--ink);font-size:1.6rem}
 .sheet form>button{width:100%}
-#toast{z-index:50}
+#toast{z-index:300}
 .statusform{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
 @media(min-width:900px){#drawer{width:300px}}
 @media print{#drawer,#modal,.pagehead,.acts,.pager,.crumbs{display:none!important}}
