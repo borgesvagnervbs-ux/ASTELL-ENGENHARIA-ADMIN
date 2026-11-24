@@ -1083,6 +1083,8 @@ function obPaint() {
   ${obLocked() ? '<p class="notice">Este orçamento foi aprovado pelo cliente e está bloqueado para edição. Para alterar valores ou escopo, crie uma nova versão na última etapa.</p>' : ''}
   <div id="obbody" class="${obLocked() ? 'oblock' : ''}">${obStepHtml()}</div>
   <div class="obnav"><button type="button" class="ghost2" data-obprev ${o.step === 0 ? 'hidden' : ''}>Voltar</button><button type="button" class="obsave" data-obsave>Salvar</button><button type="button" data-obnext ${o.step === OB_STEPS.length - 1 ? 'hidden' : ''}>Avançar</button></div>`;
+  const hd = document.querySelector('header'); view.style.setProperty('--obtop', ((hd && hd.offsetHeight) || 56) + 'px');
+  const on = view.querySelector('.obsteps .on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
   if (o.step === 3) obBreak(); if (o.step === 4) obGantt(); window.scrollTo(0, 0);
 }
 const iv = (p, v, ex = '') => `<input data-ob="${p}" value="${esc(v ?? '')}" ${ex}>`;

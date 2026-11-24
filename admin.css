@@ -369,3 +369,8 @@ body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 @media(max-width:700px){.obkpis{grid-template-columns:1fr 1fr}.obfilter{grid-template-columns:1fr}.obgrid,.obg3{grid-template-columns:1fr}.obit{grid-template-columns:1fr 1fr 40px}.obit .s4,.obit .s2{grid-column:1/-1}.obsched{grid-template-columns:1fr 1fr}.obsched b{grid-column:1/-1;margin:0}.ogr{grid-template-columns:100px 1fr}}
 .obit .s4{grid-column:1/-2}.obsec p b,.obsec li b,.obcard .mute b,.obint p b{display:inline;margin:0}
 @media(max-width:700px){.obit .s4{grid-column:1/-1}}
+
+/* Gerador de Orçamentos — etapas e ações sempre visíveis */
+.obsteps{position:sticky;top:var(--obtop,56px);z-index:6;margin:0 -16px 14px;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line);scrollbar-width:none}
+.obsteps::-webkit-scrollbar{display:none}
+.obnav{position:sticky;bottom:0;z-index:6;margin:10px -16px 0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -8px 18px #0008}
