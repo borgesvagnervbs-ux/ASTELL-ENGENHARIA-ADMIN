@@ -336,3 +336,36 @@ body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 .calpop{scroll-margin-bottom:90px}
 
 .calpop.up{top:auto;bottom:calc(100% + 6px)}
+
+/* ---------- Gerador de Orçamentos ---------- */
+.obtabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--line);overflow-x:auto}.obtabs a{padding:10px 14px;color:var(--mute);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;font-weight:600}.obtabs a.on{color:var(--gold);border-bottom-color:var(--gold)}
+.obkpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.obkpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}.obkpi small{display:block;color:var(--mute);font-size:.78rem}.obkpi b{display:block;font-size:1.6rem;margin:2px 0;color:var(--ink)}.obkpi span{font-size:.78rem}
+.obper{display:flex;justify-content:flex-end;margin-bottom:8px}.obper label{display:flex;align-items:center;gap:8px;margin:0}.obper select{width:auto;padding:8px 10px}
+.obfilter{display:grid;grid-template-columns:1fr 240px;gap:10px;margin-bottom:12px}
+.obcard .obtop{display:flex;justify-content:space-between;align-items:center;gap:8px}.obcard .obtop b{margin:0;color:var(--gold);letter-spacing:.04em}.obname{font-weight:600;font-size:1.02rem;margin-top:4px}.obval{font-size:1.35rem;font-weight:700;margin:6px 0 2px}
+.obbadge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:.74rem;font-weight:700;white-space:nowrap}
+.ob-gray{background:#64748b33;color:#aab6c4}.ob-warn{background:#d9770633;color:#f0a65a}.ob-blue{background:#3b82f633;color:#7db2f7}.ob-ok{background:#1fa85533;color:#4fd68a}.ob-bad{background:#dc262633;color:#f08a8a}
+.obsteps{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;padding-bottom:4px}.obsteps button{display:flex;align-items:center;gap:8px;margin:0;min-height:42px;padding:0 14px;background:var(--card);color:var(--mute);border:1px solid var(--line);border-radius:99px;font-weight:600;white-space:nowrap}.obsteps button i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#16283a;font-style:normal;font-size:.78rem}.obsteps button.on{border-color:var(--gold);color:var(--gold)}.obsteps button.on i{background:var(--gold);color:#04231a}.obsteps button.done i{background:#1fa85555;color:#4fd68a}
+.obsec h3{margin:0 0 8px}.obgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.obgrid .s2{grid-column:1/-1}.obg3{grid-template-columns:repeat(3,1fr)}
+.obint{border-color:#3dc08c55;background:linear-gradient(180deg,#0f2230,#101b28)}.obtag{display:inline-block;margin-bottom:6px;padding:3px 10px;border-radius:99px;background:#3dc08c22;color:var(--gold);font-size:.72rem;font-weight:700;letter-spacing:.08em}
+.obtotal{margin-top:6px;font-size:1.05rem}.obtotal b{color:var(--gold)}
+.obstage{padding:0}.obstage>summary{display:flex;align-items:center;gap:10px;padding:14px;cursor:pointer;list-style:none}.obstage>summary::-webkit-details-marker{display:none}.obstage>summary b{margin:0;flex:1}.obsn{color:var(--gold);font-weight:700}.obsub{font-weight:700}
+.obstage[open]>summary{border-bottom:1px solid var(--line)}.obstage>.obitem,.obstage>.obadds{margin:0 14px}.obstage>.obitem{padding:12px 0;border-bottom:1px dashed var(--line)}.obadds{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 0 14px}.obadds select{width:auto;max-width:100%}.obadds button{margin:0}
+.obit{display:grid;grid-template-columns:repeat(4,1fr) 40px;gap:0 10px;align-items:end}.obit .s2{grid-column:span 2}.obit .s4{grid-column:span 4}.obit label{margin:6px 0 2px}.obit input,.obit select{padding:10px}
+.obit .obx{margin:0 0 2px;min-height:42px;width:40px;padding:0;background:#3a1f22;color:#f08a8a;font-size:1.2rem}.obspec{margin-top:8px}
+.obcomp{margin-top:6px}.obcomp>summary{cursor:pointer;color:var(--gold);font-size:.88rem;padding:6px 0}.obcl{padding:6px 0 8px 12px;border-left:2px solid var(--gold)}.obcomp>button{margin:6px 0 0}
+.obsched{grid-template-columns:1fr 130px 130px;align-items:end;padding:6px 0;border-bottom:1px solid var(--line)}.obsched b{margin:0 0 10px}
+.obpayrow{grid-template-columns:1fr 110px 40px}
+.obgantt{margin-top:14px}.ogr{display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center;padding:5px 0;font-size:.85rem}.ogt{height:12px;background:#16283a;border-radius:6px;position:relative}.ogt i{position:absolute;top:0;bottom:0;background:var(--gold);border-radius:6px;min-width:4px}
+.obtbl{width:100%;border-collapse:collapse}.obtbl td{padding:8px 4px;border-bottom:1px solid var(--line)}.obtbl .r{text-align:right;white-space:nowrap}.obtbl tr.tot td{font-weight:700;border-top:2px solid var(--gold)}
+.obprice{margin-top:14px;padding:16px;border-radius:14px;background:#0b1623;border:1px solid var(--gold)}.obprice small{color:var(--gold);letter-spacing:.12em;font-weight:700}.obprice b{display:block;font-size:2rem;color:var(--gold)}.obprice span{color:var(--mute);font-size:.85rem}
+.obcheck{list-style:none;padding:0;margin:0}.obcheck li{padding:5px 0}.obcheck .ok{color:#4fd68a}.obcheck .no{color:#f0a65a}
+.obpdfbtns{display:flex;gap:10px;flex-wrap:wrap}.obpdfbtns button{margin-top:6px}
+.obvers{list-style:none;padding:0;margin:0 0 8px}.obvers li{padding:10px 0;border-bottom:1px solid var(--line)}.obvers li.cur{background:#3dc08c11}.obdiff{margin:6px 0 0;padding-left:18px;font-size:.85rem;color:var(--mute)}
+.obcatrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.obcatrow small{display:block}
+.obnav{position:sticky;bottom:0;display:flex;gap:10px;justify-content:space-between;align-items:center;padding:10px 0;background:linear-gradient(180deg,transparent,var(--bg) 30%);margin-top:10px}.obnav button{margin:0}.obnav .obsave{margin-left:auto}
+.oblock input:not([data-obrow]),.oblock textarea,.oblock select:not([data-obrow]),.oblock .obitem button,.oblock .obadds,.oblock [data-obstageadd],.oblock [data-obpayadd]{pointer-events:none;opacity:.6}
+.obcover{max-width:100%;border-radius:12px;margin-bottom:8px}
+@media(max-width:700px){.obkpis{grid-template-columns:1fr 1fr}.obfilter{grid-template-columns:1fr}.obgrid,.obg3{grid-template-columns:1fr}.obit{grid-template-columns:1fr 1fr 40px}.obit .s4,.obit .s2{grid-column:1/-1}.obsched{grid-template-columns:1fr 1fr}.obsched b{grid-column:1/-1;margin:0}.ogr{grid-template-columns:100px 1fr}}
+.obit .s4{grid-column:1/-2}.obsec p b,.obsec li b,.obcard .mute b,.obint p b{display:inline;margin:0}
+@media(max-width:700px){.obit .s4{grid-column:1/-1}}

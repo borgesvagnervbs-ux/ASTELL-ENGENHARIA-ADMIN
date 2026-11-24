@@ -63,11 +63,11 @@ const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x
 
 // ---------- ícones
 const ico = d => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
-const IC = { drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15', prefeitura: 'M3 21h18|M5 10v11|M9 10v11|M15 10v11|M19 10v11|M2 10l10-7 10 7z', banco: 'M2 6h20v12H2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M6 12h.01|M18 12h.01', capacete: 'M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5|M14 6a6 6 0 0 1 6 6v3|M4 15v-3a6 6 0 0 1 6-6|M3 15h18v4H3z', regua: 'M3 17L17 3l4 4L7 21z|M14 6l2 2|M11 9l2 2|M8 12l2 2|M5 15l2 2', estrada: 'M4 21L8 3|M20 21L16 3|M12 4v3|M12 11v3|M12 18v3', compasso: 'M12 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z|M11 5.5L5 21|M13 5.5L19 21|M8 15h8', chart: 'M3 3v18h18|M8 17v-6|M13 17V7|M18 17v-4', star: 'M12 2l3 7 7 .6-5.3 4.6 1.7 7.3L12 17.8 5.6 21.5l1.7-7.3L2 9.6 9 9z', dbase: 'M12 8c4.4 0 8-1.1 8-2.5S16.4 3 12 3 4 4.1 4 5.5 7.6 8 12 8z|M4 5.5v6C4 12.9 7.6 14 12 14s8-1.1 8-2.5v-6|M4 11.5v6C4 18.9 7.6 20 12 20s8-1.1 8-2.5v-6' };
+const IC = { calc: 'M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z|M8 6h8|M8 11h.01|M12 11h.01|M16 11h.01|M8 15h.01|M12 15h.01|M16 15h.01|M8 19h8', drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15', prefeitura: 'M3 21h18|M5 10v11|M9 10v11|M15 10v11|M19 10v11|M2 10l10-7 10 7z', banco: 'M2 6h20v12H2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M6 12h.01|M18 12h.01', capacete: 'M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5|M14 6a6 6 0 0 1 6 6v3|M4 15v-3a6 6 0 0 1 6-6|M3 15h18v4H3z', regua: 'M3 17L17 3l4 4L7 21z|M14 6l2 2|M11 9l2 2|M8 12l2 2|M5 15l2 2', estrada: 'M4 21L8 3|M20 21L16 3|M12 4v3|M12 11v3|M12 18v3', compasso: 'M12 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z|M11 5.5L5 21|M13 5.5L19 21|M8 15h8', chart: 'M3 3v18h18|M8 17v-6|M13 17V7|M18 17v-4', star: 'M12 2l3 7 7 .6-5.3 4.6 1.7 7.3L12 17.8 5.6 21.5l1.7-7.3L2 9.6 9 9z', dbase: 'M12 8c4.4 0 8-1.1 8-2.5S16.4 3 12 3 4 4.1 4 5.5 7.6 8 12 8z|M4 5.5v6C4 12.9 7.6 14 12 14s8-1.1 8-2.5v-6|M4 11.5v6C4 18.9 7.6 20 12 20s8-1.1 8-2.5v-6' };
 const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 
 // ---------- menus (o primeiro é a tela inicial)
-const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user'], ['docs', 'Documentos', 'doc'], ['eq', 'Equipamentos', 'layers'], ['gar', 'Garantias', 'shield'], ['man', 'Inspeções Preventivas', 'wrench'], ['ast', 'Assistência', 'phones'], ['bld', 'Construção', 'home'], ['pl', 'Planta técnica', 'map'], ['rep', 'Relatórios', 'chart'], ['logo', 'Logo', 'star'], ['bk', 'Backup', 'dbase']];
+const MENU = [['res', 'Residências', 'casa'], ['own', 'Proprietários', 'user'], ['docs', 'Documentos', 'doc'], ['eq', 'Equipamentos', 'layers'], ['gar', 'Garantias', 'shield'], ['man', 'Inspeções Preventivas', 'wrench'], ['ast', 'Assistência', 'phones'], ['bld', 'Construção', 'home'], ['pl', 'Planta técnica', 'map'], ['orc', 'Gerador de Orçamentos', 'calc'], ['rep', 'Relatórios', 'chart'], ['logo', 'Logo', 'star'], ['bk', 'Backup', 'dbase']];
 
 // ---------- dados e campos
 const addMonths = (d, m) => { const x = new Date(d + 'T00:00'); x.setMonth(x.getMonth() + m); return x; };
@@ -931,7 +931,458 @@ function repPrint() {   // abre uma página própria (clara, para papel) e chama
   w.document.close(); w.focus(); setTimeout(() => { try { w.print(); } catch (e) { /* o usuário imprime manualmente */ } }, 500);
 }
 
+// ---------- Gerador de Orçamentos: orçamento interno (custos, preço, margem) + proposta comercial em PDF
+const OB_ST = ['Em elaboração', 'Aguardando aprovação interna', 'Aprovado internamente', 'Enviado ao cliente', 'Em negociação', 'Aprovado pelo cliente', 'Recusado', 'Expirado', 'Cancelado'];
+const OB_ST_C = { 'Em elaboração': 'ob-gray', 'Aguardando aprovação interna': 'ob-warn', 'Aprovado internamente': 'ob-blue', 'Enviado ao cliente': 'ob-blue', 'Em negociação': 'ob-warn', 'Aprovado pelo cliente': 'ob-ok', 'Recusado': 'ob-bad', 'Expirado': 'ob-bad', 'Cancelado': 'ob-gray' };
+const OB_MOD = ['Estimativa preliminar', 'Pré-orçamento revisado', 'Orçamento definitivo'];
+const OB_TIPO = ['Residencial', 'Comercial', 'Industrial', 'Reforma', 'Serviço isolado'];
+const OB_PROJ = ['Projeto preliminar', 'Projeto arquitetônico aprovado', 'Projetos executivos disponíveis', 'Projeto ainda em desenvolvimento'];
+const OB_PADRAO = ['Simples', 'Médio', 'Alto', 'Premium'];
+const OB_UN = ['m²', 'm³', 'm', 'un', 'vb', 'kg', 'h', 'dia', 'mês', 'conjunto'];
+const OB_STAGES = ['Preliminares', 'Fundação', 'Estrutura', 'Fechamentos', 'Cobertura', 'Instalações', 'Esquadrias', 'Impermeabilização', 'Revestimentos', 'Forros', 'Pintura', 'Acabamentos', 'Entrega', 'Gestão e engenharia'];
+const OB_STEPS = ['Identificação', 'Projeto', 'Serviços e custos', 'Preço', 'Prazo e pagamento', 'Escopo e textos', 'Revisão e PDF'];
+const OB_COMP_T = ['Material', 'Mão de obra', 'Equipamento', 'Outros'];
+const OB_CFG0 = {
+  company: { name: 'Astell Engenharia', cnpj: '', phone: '', email: '', site: '', city: '', crea: '' },
+  pricing: { indirect: 10, contingency: 5, admin: 3, tax: 0, commission: 0, margin: 15 },
+  valid_days: 15,
+  about: 'A Astell Engenharia atua desde o desenvolvimento do projeto até a execução, com foco em engenharia, gestão de processos, qualidade, sustentabilidade e industrialização da construção. Busca entregar obras com maior previsibilidade, menor desperdício e soluções adequadas a cada projeto.',
+  intro: 'Esta proposta apresenta o escopo, o investimento e as condições para a execução da sua obra, conforme as informações disponíveis nesta etapa do projeto.',
+  guidelines: 'Atendimento técnico e personalizado.\nExecução orientada por planejamento e controle de etapas.\nAplicação do sistema construtivo conforme as especificações técnicas do projeto.\nAcompanhamento e execução sob responsabilidade do engenheiro responsável técnico.',
+  compliance: 'Os projetos da Astell são acompanhados por engenheiros com registro no CREA. O sistema Steel Frame segue a ABNT NBR 16970:2022.',
+  systems: {
+    'Steel Frame': 'O Steel Frame é um sistema construtivo industrializado, formado por perfis de aço galvanizado que compõem a estrutura das paredes, pisos e cobertura. A industrialização reduz desperdícios e prazos, garante precisão dimensional e uma obra mais limpa, com qualidade controlada em cada etapa.',
+    'Alvenaria convencional': 'Sistema construtivo tradicional em alvenaria e concreto armado, executado com mão de obra qualificada, controle de materiais e acompanhamento técnico em todas as etapas da obra.',
+    'Madeira': 'Sistema construtivo em madeira engenheirada, com estrutura leve, execução rápida e bom desempenho térmico, conforme projeto e especificações técnicas.',
+    'Outro': ''
+  },
+  method: 'Planejamento e projeto|Definição de escopo, quantitativos e especificações antes do início da obra.\nExecução industrializada|Etapas organizadas, com controle de qualidade e redução de desperdícios.\nAcompanhamento técnico|Engenheiro responsável acompanhando a obra do início à entrega.',
+  ours: 'Mão de obra e materiais descritos no escopo técnico.\nAcompanhamento e execução pelo engenheiro responsável técnico.\nAplicativo Astell Home para gestão e monitoramento da residência.',
+  client: 'Material de pintura (massa corrida, tinta, entre outros).\nPiso, porcelanato e tabuão.\nRevestimentos de parede (azulejos e porcelanatos).\nTomadas e suportes de lâmpadas.\nLouças e metais.\nChuveiros e torneiras elétricas.\nSistema de alarme e internet.\nPaisagismo.',
+  excl: 'Desenvolvimento dos projetos e aprovação junto à Prefeitura.\nAprovação do agente financiador, quando aplicável.\nServiços, materiais e instalações não listados no escopo técnico.\nPortas fora do padrão do projeto (ACM, madeira, entre outros).',
+  warranty: 'A Astell Engenharia responde pela execução dos serviços contratados nos prazos previstos na legislação e nas normas técnicas aplicáveis. Os termos de garantia de cada sistema e instalação serão entregues ao final da obra, junto ao Manual do Proprietário.',
+  adjust: 'Valores válidos pela data-base e prazo de validade desta proposta. Eventuais reajustes seguirão o índice acordado em contrato.',
+  closing: 'A Astell Engenharia agradece a oportunidade de apresentar esta proposta. Nosso objetivo é unir engenharia, organização de obra e industrialização para entregar uma execução clara e tecnicamente orientada.'
+};
+const obClone = o => JSON.parse(JSON.stringify(o));
+const obMerge = (a, b) => { const o = obClone(a); Object.entries(b || {}).forEach(([k, v]) => { o[k] = v && typeof v === 'object' && !Array.isArray(v) && typeof a[k] === 'object' ? obMerge(a[k], v) : v; }); return o; };
+const pn = v => { if (typeof v === 'number') return isFinite(v) ? v : 0; const s = String(v == null ? '' : v).trim().replace(/[^\d,.-]/g, ''); if (!s) return 0; const t = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : (/^-?\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, '') : s); const n = parseFloat(t); return isFinite(n) ? n : 0; };
+const r2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+const obBrl = n => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const obPct = n => (Math.round(n * 100) / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '%';
+const obNum = n => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+const todayIso = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
+const addDaysIso = (iso, n) => { const d = new Date(iso + 'T00:00'); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const obLines = t => String(t || '').split('\n').map(x => x.trim()).filter(Boolean);
+const getPath = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+const setPath = (o, p, v) => { const ks = p.split('.'); const last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; };
+
+// ----- cálculo (todas as fórmulas ficam aqui, num só lugar)
+const obCompLine = l => r2(pn(l.q) * pn(l.p));
+const obUnitCost = it => (it.comp && it.comp.length) ? r2(it.comp.reduce((a, l) => a + obCompLine(l), 0)) : pn(it.cost);
+const obItemTotal = it => r2(pn(it.qty) * obUnitCost(it));
+const obStageDirect = st => r2((st.items || []).reduce((a, it) => a + obItemTotal(it), 0));
+function obCalc(d) {
+  const P = d.pricing || {}, direct = r2((d.stages || []).reduce((a, s) => a + obStageDirect(s), 0));
+  const indirect = r2(direct * pn(P.indirect) / 100), s1 = r2(direct + indirect), cont = r2(s1 * pn(P.contingency) / 100), s2 = r2(s1 + cont), adm = r2(s2 * pn(P.admin) / 100), cost = r2(s2 + adm);
+  const rate = (pn(P.tax) + pn(P.commission) + pn(P.margin)) / 100, ok = rate < 1 && direct > 0, price = ok ? r2(cost / (1 - rate)) : 0;
+  const tax = r2(price * pn(P.tax) / 100), comm = r2(price * pn(P.commission) / 100), margin = r2(price - cost - tax - comm);
+  const area = pn(d.obra && d.obra.area_built), per_m2 = area > 0 && price ? r2(price / area) : 0, markup = cost > 0 ? (price / cost - 1) * 100 : 0;
+  // valor de cada etapa para o cliente: preço proporcional ao custo direto da etapa; a última absorve os centavos
+  const act = (d.stages || []).map((s, i) => ({ s, i, dir: obStageDirect(s) })).filter(x => x.dir > 0), sp = {};
+  let acc = 0; act.forEach((x, k) => { const v = k === act.length - 1 ? r2(price - acc) : r2(price * x.dir / (direct || 1)); sp[x.i] = v; acc = r2(acc + v); });
+  return { direct, indirect, cont, adm, cost, tax, comm, margin, price, per_m2, markup, ok, rate, stagePrice: sp };
+}
+const obEff = r => (r.status !== 'Aprovado pelo cliente' && r.status !== 'Recusado' && r.status !== 'Cancelado' && r.valid_until && r.valid_until < todayIso() && ['Aprovado internamente', 'Enviado ao cliente', 'Em negociação', 'Aguardando aprovação interna'].includes(r.status)) ? 'Expirado' : r.status;
+function obBlank(cfg) {
+  const t = todayIso(), P = cfg.pricing, id = crypto.randomUUID();
+  return { row: { id, root_id: id, version: 1, number: '', status: 'Em elaboração', modality: OB_MOD[0], isNew: true }, step: 0, dirty: false,
+    d: { client: { name: '', doc: '', phone: '', email: '' }, residence_id: '', obra: { title: '', local: '', tipo: OB_TIPO[0], area_built: '', area_useful: '', system: 'Steel Frame', system_text: cfg.systems['Steel Frame'], floors: '1', padrao: OB_PADRAO[1], foundation: '', project_status: OB_PROJ[0], notes: '' },
+      issued_on: t, valid_until: addDaysIso(t, cfg.valid_days || 15), responsible: (S.profile && S.profile.name) || '', duration_days: '', model: 'premium', intro: cfg.intro, cover_url: '', refused_reason: '',
+      stages: OB_STAGES.map(n => ({ name: n, items: [], ini: '', dur: '' })), pricing: { indirect: P.indirect, contingency: P.contingency, admin: P.admin, tax: P.tax, commission: P.commission, margin: P.margin },
+      payment: { entry_pct: '30', schedule: [{ d: 'Entrada na assinatura do contrato', pct: '30' }, { d: 'Medições mensais conforme avanço da obra', pct: '60' }, { d: 'Na entrega da obra', pct: '10' }], adjust: cfg.adjust, notes: '' },
+      scope: { ours: cfg.ours, client: cfg.client, excl: cfg.excl }, warranty: cfg.warranty } };
+}
+
+// ----- acesso aos dados
+async function obCfg() {
+  if (S.obCfg) return S.obCfg;
+  const { data, error } = await sb.from('budget_settings').select('value').eq('key', 'cfg').maybeSingle();
+  if (error) throw new Error('Rode o schema_v38.sql no Supabase para habilitar o Gerador de Orçamentos.');
+  S.obCfg = obMerge(OB_CFG0, (data && data.value) || {}); return S.obCfg;
+}
+const OB_LIST_COLS = 'id,root_id,version,number,status,modality,client_name,title,total,valid_until,sent_at,approved_at,created_at,updated_at';
+function obPayload() {
+  const { row, d } = S.ob, c = obCalc(d); const st = row.status;
+  const p = { root_id: row.root_id, version: row.version, status: st, modality: row.modality, client_name: d.client.name || null, title: d.obra.title || null, valid_until: d.valid_until || null, residence_id: d.residence_id || null, total: c.price,
+    data: JSON.parse(JSON.stringify(d, (k, v) => k.startsWith('_') ? undefined : v)) };
+  if (st === 'Enviado ao cliente' && !row.sent_at) p.sent_at = new Date().toISOString();
+  if (st === 'Aprovado pelo cliente' && !row.approved_at) p.approved_at = new Date().toISOString();
+  return p;
+}
+let obTimer = null;
+function obDirty() { if (!S.ob) return; S.ob.dirty = true; const el = $('#obsaved'); if (el) el.textContent = 'Alterações ainda não salvas…'; clearTimeout(obTimer); obTimer = setTimeout(() => obSave(true), 2500); }
+async function obSave(silent) {
+  clearTimeout(obTimer); const o = S.ob; if (!o || o.saving) return true; o.saving = true;
+  try {
+    const p = obPayload(); let r;
+    if (o.row.isNew) { r = await sb.from('budgets').insert({ id: o.row.id, ...p }).select('number').single(); if (!r.error) { o.row.isNew = false; o.row.number = r.data.number; } }
+    else r = await sb.from('budgets').update(p).eq('id', o.row.id);
+    if (r.error) { toast('Não foi possível salvar o orçamento: ' + r.error.message, 1); return false; }
+    if (p.sent_at) o.row.sent_at = p.sent_at; if (p.approved_at) o.row.approved_at = p.approved_at;
+    o.dirty = false; const el = $('#obsaved'); if (el) el.textContent = 'Salvo às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const nb = $('#obnum'); if (nb) nb.textContent = o.row.number + ' · v' + o.row.version;
+    if (!silent) toast('Orçamento salvo.'); return true;
+  } finally { o.saving = false; }
+}
+window.addEventListener('beforeunload', e => { if (S.ob && S.ob.dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+// ----- lista / indicadores
+async function obList() {
+  const cfg = await obCfg(); void cfg;
+  const { data, error } = await sb.from('budgets').select(OB_LIST_COLS).order('created_at', { ascending: false });
+  if (error) { view.innerHTML = head('Gerador de Orçamentos', null) + '<p class="empty">Rode o schema_v38.sql no Supabase para habilitar o Gerador de Orçamentos.</p>'; return; }
+  const latest = {}; (data || []).forEach(r => { if (!latest[r.root_id] || r.version > latest[r.root_id].version) latest[r.root_id] = r; });
+  S.obRows = Object.values(latest).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))); S.obAll = data || [];
+  view.innerHTML = obTabs('list') + `<div class="pagehead"><div><h2>Gerador de Orçamentos</h2><p class="mute">Formação de preço e propostas comerciais</p></div></div><a class="newreq" href="#orc/new">+ Novo orçamento</a><div id="obdash"></div><div class="obfilter"><input id="obq" type="search" placeholder="Pesquisar por número, cliente ou obra" autocomplete="off" aria-label="Pesquisar orçamentos"><select id="obst" aria-label="Filtrar por situação"><option value="">Todas as situações</option>${OB_ST.map(s => `<option>${s}</option>`).join('')}</select></div><div id="oblist"></div>`;
+  obPaintList();
+}
+const obTabs = on => `<div class="obtabs" role="tablist">${[['list', 'Orçamentos', '#orc'], ['cat', 'Banco de serviços', '#orc/cat'], ['cfg', 'Configurações', '#orc/cfg']].map(([k, l, h]) => `<a href="${h}" role="tab" aria-selected="${on === k}" class="${on === k ? 'on' : ''}">${l}</a>`).join('')}</div>`;
+function obPaintList() {
+  const per = S.obPer || 'all', now = new Date(), from = per === 'all' ? '' : new Date(now.getTime() - (per === '30' ? 30 : per === '90' ? 90 : 365) * 864e5).toISOString();
+  const inP = S.obRows.filter(r => !from || String(r.created_at) >= from), eff = r => obEff(r);
+  const emit = inP.filter(r => r.sent_at || ['Enviado ao cliente', 'Em negociação', 'Aprovado pelo cliente', 'Recusado', 'Expirado'].includes(eff(r))), neg = inP.filter(r => ['Enviado ao cliente', 'Em negociação'].includes(eff(r))), apr = inP.filter(r => eff(r) === 'Aprovado pelo cliente');
+  const conv = emit.length ? apr.length / emit.length * 100 : 0, sum = a => a.reduce((s, r) => s + Number(r.total || 0), 0);
+  $('#obdash').innerHTML = `<div class="obper"><label>Período <select id="obper"><option value="all">Todo o histórico</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Últimos 12 meses</option></select></label></div><div class="obkpis"><div class="obkpi"><small>Orçamentos emitidos</small><b>${emit.length}</b><span class="mute">${obBrl(sum(emit))}</span></div><div class="obkpi"><small>Em negociação</small><b>${neg.length}</b><span class="mute">${obBrl(sum(neg))}</span></div><div class="obkpi"><small>Aprovados</small><b>${apr.length}</b><span class="mute">${obBrl(sum(apr))}</span></div><div class="obkpi"><small>Taxa de conversão</small><b>${obPct(conv)}</b><span class="mute">aprovados ÷ emitidos</span></div></div>`;
+  $('#obper').value = per;
+  const q = norm($('#obq').value || ''), st = $('#obst').value;
+  const rows = S.obRows.filter(r => (!st || eff(r) === st) && (!q || norm([r.number, r.client_name, r.title].join(' ')).includes(q)));
+  $('#oblist').innerHTML = rows.map(r => { const e = eff(r), vs = S.obAll.filter(x => x.root_id === r.root_id).length;
+    return `<div class="card obcard"><div class="obtop"><b>${esc(r.number)}${r.version > 1 ? ` · v${r.version}` : ''}</b><span class="obbadge ${OB_ST_C[e]}">${esc(e)}</span></div><div class="obname">${esc(r.client_name || 'Cliente não informado')}</div><span class="mute meta">${esc(r.title || 'Sem título')} · ${esc(r.modality)}</span><div class="obval">${obBrl(r.total)}</div><span class="mute meta">Validade: ${fmt(r.valid_until)}${vs > 1 ? ` · ${vs} versões` : ''}</span>${acts(`<a class="link" href="#orc/${r.id}">Abrir</a>`, `<button type="button" class="link" data-obpdf="${r.id}|premium">PDF completo</button>`, `<button type="button" class="link" data-obpdf="${r.id}|resumido">PDF resumido</button>`, `<button type="button" class="link" data-obdup="${r.id}">Duplicar</button>`, `<button type="button" class="link danger" data-obdel="${r.root_id}">Excluir</button>`)}</div>`; }).join('') || '<p class="empty">Nenhum orçamento encontrado. Toque em “+ Novo orçamento”.</p>';
+}
+document.addEventListener('input', e => { if (e.target.id === 'obq' && S.obRows) obPaintList(); });
+document.addEventListener('change', e => { if (e.target.id === 'obst' && S.obRows) obPaintList(); if (e.target.id === 'obper' && S.obRows) { S.obPer = e.target.value; obPaintList(); } });
+
+// ----- editor (assistente em 7 etapas)
+async function obOpen(id) {
+  const cfg = await obCfg(); let o;
+  if (id === 'new') o = obBlank(cfg);
+  else {
+    const { data, error } = await sb.from('budgets').select('*').eq('id', id).single(); if (error || !data) { view.innerHTML = head('Gerador de Orçamentos', null) + '<p class="empty">Orçamento não encontrado.</p>'; return; }
+    const d = obMerge(obBlank(cfg).d, data.data || {}); d.stages = (data.data && data.data.stages) || d.stages;
+    o = { row: { id: data.id, root_id: data.root_id, version: data.version, number: data.number, status: data.status, modality: data.modality, sent_at: data.sent_at, approved_at: data.approved_at, isNew: false }, d, step: 0, dirty: false };
+  }
+  await loadOwners().catch(() => {});
+  if (S.ob && S.ob.row.id === o.row.id && S.ob.dirty) o = S.ob; S.ob = o; obPaint();
+}
+const obLocked = () => S.ob.row.status === 'Aprovado pelo cliente';
+function obPaint() {
+  const o = S.ob, r = o.row; view.classList.add('wide');
+  view.innerHTML = crumbs([['Painel', '#res'], ['Gerador de Orçamentos', '#orc'], [r.isNew ? 'Novo orçamento' : r.number + ' · v' + r.version]]) + `<div class="pagehead"><div><h2 id="obnum">${r.isNew ? 'Novo orçamento' : esc(r.number) + ' · v' + r.version}</h2><p class="mute" id="obsaved">${r.isNew ? 'Ainda não salvo' : 'Salvo'}</p></div></div>
+  <nav class="obsteps" aria-label="Etapas do orçamento">${OB_STEPS.map((s, i) => `<button type="button" class="${i === o.step ? 'on' : ''}${i < o.step ? ' done' : ''}" data-obstep="${i}"><i>${i + 1}</i><span>${s}</span></button>`).join('')}</nav>
+  ${obLocked() ? '<p class="notice">Este orçamento foi aprovado pelo cliente e está bloqueado para edição. Para alterar valores ou escopo, crie uma nova versão na última etapa.</p>' : ''}
+  <div id="obbody" class="${obLocked() ? 'oblock' : ''}">${obStepHtml()}</div>
+  <div class="obnav"><button type="button" class="ghost2" data-obprev ${o.step === 0 ? 'hidden' : ''}>Voltar</button><button type="button" class="obsave" data-obsave>Salvar</button><button type="button" data-obnext ${o.step === OB_STEPS.length - 1 ? 'hidden' : ''}>Avançar</button></div>`;
+  if (o.step === 3) obBreak(); if (o.step === 4) obGantt(); window.scrollTo(0, 0);
+}
+const iv = (p, v, ex = '') => `<input data-ob="${p}" value="${esc(v ?? '')}" ${ex}>`;
+const obSelOpts = (list, cur) => list.map(x => `<option${x === cur ? ' selected' : ''}>${esc(x)}</option>`).join('');
+function obStepHtml() {
+  const o = S.ob, d = o.d, r = o.row, cfg = S.obCfg;
+  if (o.step === 0) {
+    const owners = (S.owners || []).map(x => x.name).filter(Boolean);
+    return `<div class="card obsec"><h3>Cliente e obra</h3>
+    <div class="obgrid"><label>Número do orçamento<input value="${esc(r.number || 'Gerado automaticamente ao salvar')}" disabled></label>
+    <label>Tipo de orçamento<select data-ob="obra.tipo">${obSelOpts(OB_TIPO, d.obra.tipo)}</select></label>
+    <label class="s2">Cliente (nome ou razão social) *<input data-ob="client.name" list="obowners" value="${esc(d.client.name)}" placeholder="Digite ou escolha um proprietário cadastrado" autocomplete="off"><datalist id="obowners">${owners.map(n => `<option value="${esc(n)}">`).join('')}</datalist></label>
+    <label>CPF / CNPJ<input data-ob="client.doc" value="${esc(d.client.doc)}"></label><label>Telefone<input data-ob="client.phone" value="${esc(d.client.phone)}" inputmode="tel"></label>
+    <label class="s2">E-mail<input data-ob="client.email" type="email" value="${esc(d.client.email)}"></label>
+    <label class="s2">Vincular a uma residência cadastrada (opcional)<select data-obres><option value="">Nenhuma</option>${(S.res || []).map(x => `<option value="${x.id}"${x.id === d.residence_id ? ' selected' : ''}>${esc(x.name)} — ${esc(x.code || '')}</option>`).join('')}</select></label>
+    <label class="s2">Título da obra *<input data-ob="obra.title" value="${esc(d.obra.title)}" placeholder="Ex.: Ampliação industrial"></label>
+    <label class="s2">Local da obra<input data-ob="obra.local" value="${esc(d.obra.local)}" placeholder="Cidade / UF"></label></div></div>
+    <div class="card obsec"><h3>Controle do orçamento</h3><div class="obgrid">
+    <label>Modalidade<select data-obrow="modality">${obSelOpts(OB_MOD, r.modality)}</select></label>
+    <label>Situação<select data-obrow="status">${obSelOpts(OB_ST, r.status)}</select></label>
+    <label>Responsável pela elaboração<input data-ob="responsible" value="${esc(d.responsible)}"></label>
+    <label>Data de emissão<input type="date" data-ob="issued_on" value="${esc(d.issued_on)}"></label>
+    <label>Validade da proposta *<input type="date" data-ob="valid_until" value="${esc(d.valid_until)}"></label></div>
+    <p class="mute">Estimativa preliminar: projetos ainda incompletos. Pré-orçamento revisado: projetos mais avançados. Orçamento definitivo: escopo e quantitativos conferidos.</p></div>`;
+  }
+  if (o.step === 1) return `<div class="card obsec"><h3>Características do projeto</h3><div class="obgrid">
+    <label>Área construída (m²)<input data-ob="obra.area_built" inputmode="decimal" value="${esc(d.obra.area_built)}"></label><label>Área útil (m²)<input data-ob="obra.area_useful" inputmode="decimal" value="${esc(d.obra.area_useful)}"></label>
+    <label>Sistema construtivo<select data-ob="obra.system" data-obsys>${obSelOpts(Object.keys(cfg.systems), d.obra.system)}</select></label><label>Nº de pavimentos<input data-ob="obra.floors" inputmode="numeric" value="${esc(d.obra.floors)}"></label>
+    <label>Padrão de acabamento<select data-ob="obra.padrao">${obSelOpts(OB_PADRAO, d.obra.padrao)}</select></label><label>Tipo de fundação<input data-ob="obra.foundation" value="${esc(d.obra.foundation)}" placeholder="Ex.: radier, sapatas"></label>
+    <label class="s2">Situação dos projetos<select data-ob="obra.project_status">${obSelOpts(OB_PROJ, d.obra.project_status)}</select></label>
+    <label class="s2">Observações técnicas<textarea data-ob="obra.notes" rows="3">${esc(d.obra.notes)}</textarea></label>
+    <label class="s2">Texto do sistema construtivo (aparece na proposta)<textarea data-ob="obra.system_text" rows="5">${esc(d.obra.system_text)}</textarea></label></div></div>`;
+  if (o.step === 2) return obServices();
+  if (o.step === 3) { const P = d.pricing; return `<div class="card obsec obint"><span class="obtag">USO INTERNO — nunca aparece para o cliente</span><h3>Formação do preço de venda</h3>
+    <p class="mute">Custos indiretos, contingência e despesas administrativas são aplicados em sequência sobre o custo direto. Tributos, comissão e margem incidem sobre o <b>preço de venda</b>: preço = custo total ÷ (1 − tributos − comissão − margem).</p>
+    <div class="obgrid obg3">${[['indirect', 'Custos indiretos (%)'], ['contingency', 'Contingência (%)'], ['admin', 'Despesas comerciais e administrativas (%)'], ['tax', 'Tributos sobre o preço (%)'], ['commission', 'Comissão comercial (%)'], ['margin', 'Margem de resultado sobre o preço (%)']].map(([k, l]) => `<label>${l}<input data-ob="pricing.${k}" inputmode="decimal" value="${esc(P[k])}"></label>`).join('')}</div></div><div id="obbreak"></div>`; }
+  if (o.step === 4) return `<div class="card obsec"><h3>Prazo de execução</h3><div class="obgrid"><label>Prazo total (dias) *<input data-ob="duration_days" inputmode="numeric" value="${esc(d.duration_days)}" placeholder="Ex.: 210"></label></div>
+    <p class="mute">O prazo fica num único campo e é repetido em toda a proposta. Não inclui o desenvolvimento do projeto nem aprovações, salvo se informado nas exclusões.</p>
+    <h3>Cronograma físico-financeiro</h3><p class="mute">Informe o início (dia da obra) e a duração de cada etapa. Se o início ficar em branco, a etapa começa quando a anterior termina.</p>
+    <div id="obstages">${d.stages.map((s, i) => obStageDirect(s) > 0 ? `<div class="obit obsched"><b>${esc(s.name)}</b><label>Início (dia)<input data-ob="stages.${i}.ini" inputmode="numeric" value="${esc(s.ini)}"></label><label>Duração (dias)<input data-ob="stages.${i}.dur" inputmode="numeric" value="${esc(s.dur)}"></label></div>` : '').join('') || '<p class="empty">Informe serviços na etapa 3 para montar o cronograma.</p>'}</div><div id="obgantt"></div></div>
+    <div class="card obsec"><h3>Condições de pagamento</h3><div class="obgrid"><label>Entrada (%)<input data-ob="payment.entry_pct" inputmode="decimal" value="${esc(d.payment.entry_pct)}"></label></div>
+    <p class="mute">Cronograma de pagamento (a soma deve fechar 100%). O prazo de pagamento é diferente do prazo de execução, mas deve acompanhá-lo.</p>
+    <div id="obpay">${obPayRows()}</div><button type="button" class="ghost2" data-obpayadd>+ Adicionar parcela / medição</button>
+    <div class="obgrid"><label class="s2">Reajuste e observações de pagamento<textarea data-ob="payment.adjust" rows="3">${esc(d.payment.adjust)}</textarea></label></div></div>`;
+  if (o.step === 5) return `<div class="card obsec"><h3>Textos da proposta</h3><div class="obgrid">
+    <label class="s2">Mensagem de apresentação<textarea data-ob="intro" rows="4">${esc(d.intro)}</textarea></label>
+    <label class="s2">Fornecido e executado pela Astell (um item por linha)<textarea data-ob="scope.ours" rows="6">${esc(d.scope.ours)}</textarea></label>
+    <label class="s2">Fornecido pelo cliente (um item por linha)<textarea data-ob="scope.client" rows="7">${esc(d.scope.client)}</textarea></label>
+    <label class="s2">Não contemplado na proposta (um item por linha)<textarea data-ob="scope.excl" rows="5">${esc(d.scope.excl)}</textarea></label>
+    <label class="s2">Garantias e responsabilidades<textarea data-ob="warranty" rows="4">${esc(d.warranty)}</textarea></label></div></div>
+    <div class="card obsec"><h3>Imagem da capa (opcional)</h3>${d.cover_url ? `<img class="obcover" src="${esc(cld(d.cover_url, 700))}" alt="Capa"><div class="acts"><button type="button" class="link danger" data-obcoverdel>Remover imagem</button></div>` : '<p class="mute">Foto ou renderização da obra, exibida na capa da proposta.</p>'}<label>Enviar imagem<input type="file" accept="image/*" data-obcover></label></div>`;
+  return obReview();
+}
+const obPayRows = () => S.ob.d.payment.schedule.map((s, i) => `<div class="obit obpayrow"><label class="s2">Descrição<input data-ob="payment.schedule.${i}.d" value="${esc(s.d)}"></label><label>%<input data-ob="payment.schedule.${i}.pct" inputmode="decimal" value="${esc(s.pct)}"></label><button type="button" class="obx" data-obpaydel="${i}" aria-label="Remover">×</button></div>`).join('');
+function obServices() {
+  const d = S.ob.d, cat = S.obCat || [];
+  return `<div class="card obsec obint"><span class="obtag">USO INTERNO — custos não aparecem na proposta</span><h3>Serviços e custos por etapa</h3><p class="mute">Escolha serviços do banco ou crie personalizados. Informe o custo unitário direto, ou use a composição (materiais, mão de obra e equipamentos) para calculá-lo.</p><div class="obtotal">Custo direto total: <b data-sum="direct">${obBrl(obCalc(d).direct)}</b></div></div>` +
+    d.stages.map((s, i) => { const opts = cat.filter(c => norm(c.stage) === norm(s.name)), dir = obStageDirect(s);
+      return `<details class="card obstage" ${s.items.length || s._open ? 'open' : ''} data-stage="${i}"><summary><span class="obsn">${String(i + 1).padStart(2, '0')}</span><b>${esc(s.name)}</b><span class="obsub" data-sum="st${i}">${obBrl(dir)}</span></summary>
+      ${s.items.map((it, j) => obItemHtml(i, j, it)).join('')}
+      <div class="obadds">${opts.length ? `<select data-obcatadd="${i}"><option value="">+ Serviço do banco…</option>${opts.map(c => `<option value="${c.id}">${esc(c.name)} (${esc(c.unit)})</option>`).join('')}</select>` : ''}<button type="button" class="ghost2" data-obitemadd="${i}">+ Serviço personalizado</button>${i >= OB_STAGES.length ? `<button type="button" class="link danger" data-obstagedel="${i}">Remover etapa</button>` : ''}</div></details>`; }).join('') +
+    `<div class="card obsec"><div class="obgrid"><label class="s2">Nova etapa personalizada<input id="obnewstage" placeholder="Nome da etapa"></label></div><button type="button" class="ghost2" data-obstageadd>+ Adicionar etapa</button></div><datalist id="obun">${OB_UN.map(u => `<option value="${u}">`).join('')}</datalist>`;
+}
+function obItemHtml(i, j, it) {
+  const p = `stages.${i}.items.${j}`, hasC = it.comp && it.comp.length;
+  return `<div class="obitem"><div class="obit"><label class="s4">Serviço<input data-ob="${p}.desc" value="${esc(it.desc)}" placeholder="Descrição do serviço"></label>
+    <label>Unid.<input data-ob="${p}.unit" list="obun" value="${esc(it.unit)}"></label><label>Qtd.<input data-ob="${p}.qty" inputmode="decimal" value="${esc(it.qty)}"></label>
+    <label>Custo unit. (R$)${hasC ? `<input value="${esc(obUnitCost(it).toLocaleString('pt-BR', { minimumFractionDigits: 2 }))}" disabled data-sum="uc${i}.${j}">` : `<input data-ob="${p}.cost" inputmode="decimal" value="${esc(it.cost)}">`}</label>
+    <label>Total (R$)<input value="${esc(obItemTotal(it).toLocaleString('pt-BR', { minimumFractionDigits: 2 }))}" disabled data-sum="it${i}.${j}"></label>
+    <button type="button" class="obx" data-obitemdel="${i}.${j}" aria-label="Remover serviço">×</button></div>
+    <details class="obcomp" ${hasC || it._o ? 'open' : ''}><summary>Composição detalhada${hasC ? ` (${it.comp.length} insumos)` : ''}</summary>${(it.comp || []).map((l, k) => { const q = `${p}.comp.${k}`; return `<div class="obit obcl"><label>Tipo<select data-ob="${q}.t">${obSelOpts(OB_COMP_T, l.t)}</select></label><label class="s2">Insumo<input data-ob="${q}.d" value="${esc(l.d)}"></label><label>Qtd. por unid.<input data-ob="${q}.q" inputmode="decimal" value="${esc(l.q)}"></label><label>Preço (R$)<input data-ob="${q}.p" inputmode="decimal" value="${esc(l.p)}"></label><button type="button" class="obx" data-obcompdel="${i}.${j}.${k}" aria-label="Remover insumo">×</button></div>`; }).join('')}<button type="button" class="ghost2" data-obcompadd="${i}.${j}">+ Adicionar insumo</button></details>
+    <label class="obspec">Especificação para a proposta (opcional)<input data-ob="${p}.spec" value="${esc(it.spec)}" placeholder="Ex.: material e instalação"></label></div>`;
+}
+function obRefreshSums() {
+  const d = S.ob.d; document.querySelectorAll('[data-sum]').forEach(el => {
+    const k = el.dataset.sum, set = t => { if (el.tagName === 'INPUT') el.value = t; else el.textContent = t; }, f = n => n.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    let m; if (k === 'direct') set(obBrl(obCalc(d).direct)); else if ((m = /^st(\d+)$/.exec(k))) set(obBrl(obStageDirect(d.stages[m[1]])));
+    else if ((m = /^it(\d+)\.(\d+)$/.exec(k))) { const it = d.stages[m[1]].items[m[2]]; if (it) set(f(obItemTotal(it))); } else if ((m = /^uc(\d+)\.(\d+)$/.exec(k))) { const it = d.stages[m[1]].items[m[2]]; if (it) set(f(obUnitCost(it))); }
+  });
+}
+function obBreak() {
+  const el = $('#obbreak'); if (!el) return; const d = S.ob.d, c = obCalc(d), P = d.pricing, rows = [['Custos diretos', c.direct], [`Custos indiretos (${obPct(pn(P.indirect))})`, c.indirect], [`Contingência (${obPct(pn(P.contingency))})`, c.cont], [`Despesas comerciais e administrativas (${obPct(pn(P.admin))})`, c.adm]];
+  el.innerHTML = `<div class="card obsec obint"><table class="obtbl"><tbody>${rows.map(([l, v]) => `<tr><td>${l}</td><td class="r">${obBrl(v)}</td></tr>`).join('')}<tr class="tot"><td>Custo total considerado</td><td class="r">${obBrl(c.cost)}</td></tr>
+  <tr><td>Tributos (${obPct(pn(P.tax))} do preço)</td><td class="r">${obBrl(c.tax)}</td></tr><tr><td>Comissão (${obPct(pn(P.commission))} do preço)</td><td class="r">${obBrl(c.comm)}</td></tr><tr><td>Margem de resultado (${obPct(c.price ? c.margin / c.price * 100 : 0)} do preço)</td><td class="r">${obBrl(c.margin)}</td></tr></tbody></table>
+  ${c.ok ? `<div class="obprice"><small>PREÇO DE VENDA</small><b>${obBrl(c.price)}</b><span>${c.per_m2 ? obBrl(c.per_m2) + ' por m² · ' : ''}acréscimo equivalente sobre o custo (markup): ${obPct(c.markup)}</span></div>` : `<p class="notice">${c.direct > 0 ? 'A soma de tributos, comissão e margem precisa ser menor que 100%.' : 'Informe serviços e custos na etapa 3 para calcular o preço.'}</p>`}</div>
+  <div class="card obsec"><h3>Valor por etapa na proposta</h3><p class="mute">É o que o cliente enxerga: o preço de venda distribuído proporcionalmente ao custo de cada etapa.</p><table class="obtbl"><tbody>${d.stages.map((s, i) => c.stagePrice[i] != null ? `<tr><td>${esc(s.name)}</td><td class="r">${obBrl(c.stagePrice[i])}</td><td class="r mute">${obPct(c.price ? c.stagePrice[i] / c.price * 100 : 0)}</td></tr>` : '').join('') || '<tr><td class="mute">Sem etapas com valor.</td></tr>'}</tbody></table></div>`;
+}
+function obPlan(d) {   // início/duração de cada etapa (dias) e prazo total para a barra do cronograma
+  let cur = 0; const rows = [];
+  d.stages.forEach((s, i) => { if (obStageDirect(s) <= 0) return; const dur = Math.max(0, Math.round(pn(s.dur))), ini = s.ini !== '' && s.ini != null ? Math.max(0, Math.round(pn(s.ini))) : cur; rows.push({ i, name: s.name, ini, dur }); cur = ini + dur; });
+  const end = Math.max(0, ...rows.map(r => r.ini + r.dur)); return { rows, total: Math.max(Math.round(pn(d.duration_days)) || 0, end) };
+}
+function obGantt() {
+  const el = $('#obgantt'); if (!el) return; const d = S.ob.d, p = obPlan(d); if (!p.rows.length || !p.total) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="obgantt">${p.rows.map(r => `<div class="ogr"><span>${esc(r.name)}</span><div class="ogt"><i style="left:${r.ini / p.total * 100}%;width:${Math.max(r.dur, 0) / p.total * 100}%"></i></div></div>`).join('')}<small class="mute">Escala: ${p.total} dias</small></div>`;
+}
+
+// ----- revisão, versões e ações
+function obIssues() {
+  const d = S.ob.d, c = obCalc(d), pay = d.payment.schedule.reduce((a, x) => a + pn(x.pct), 0), L = [];
+  L.push([!!d.client.name.trim(), 'Cliente informado']); L.push([!!d.obra.title.trim(), 'Título da obra informado']); L.push([!!d.valid_until, 'Validade da proposta definida']);
+  L.push([c.direct > 0, 'Ao menos um serviço com custo']); L.push([c.ok, 'Preço de venda calculado']); L.push([pn(d.duration_days) > 0, 'Prazo de execução informado']); L.push([Math.abs(pay - 100) < 0.01, `Pagamento fecha 100% (hoje: ${obPct(pay)})`]);
+  return L;
+}
+function obReview() {
+  const o = S.ob, d = o.d, r = o.row, c = obCalc(d), L = obIssues();
+  return `<div class="card obsec"><h3>Conferência</h3><ul class="obcheck">${L.map(([ok, t]) => `<li class="${ok ? 'ok' : 'no'}">${ok ? '✓' : '○'} ${t}</li>`).join('')}</ul></div>
+  <div class="card obsec"><h3>Resumo</h3><table class="obtbl"><tbody><tr><td>Cliente</td><td class="r">${esc(d.client.name || '—')}</td></tr><tr><td>Obra</td><td class="r">${esc(d.obra.title || '—')}</td></tr><tr><td>Investimento total</td><td class="r"><b>${obBrl(c.price)}</b></td></tr><tr><td>Prazo</td><td class="r">${esc(d.duration_days || '—')} dias</td></tr><tr><td>Validade</td><td class="r">${fmt(d.valid_until)}</td></tr><tr><td>Modalidade</td><td class="r">${esc(r.modality)}</td></tr></tbody></table>
+  <div class="obgrid"><label>Situação<select data-obrow="status">${obSelOpts(OB_ST, r.status)}</select></label>${r.status === 'Recusado' ? `<label class="s2">Motivo da recusa<input data-ob="refused_reason" value="${esc(d.refused_reason)}"></label>` : ''}</div></div>
+  <div class="card obsec"><h3>Gerar a proposta em PDF</h3><p class="mute">Abre a proposta pronta para impressão. Na janela que aparece, escolha <b>“Salvar como PDF”</b> como destino.</p>
+  <div class="obpdfbtns"><button type="button" data-obpdfcur="premium">PDF completo (proposta premium)</button><button type="button" class="ghost2" data-obpdfcur="resumido">PDF resumido (4 páginas)</button></div></div>
+  <div class="card obsec"><h3>Versões</h3><div id="obvers"><p class="mute">Carregando…</p></div><div class="acts"><button type="button" class="link" data-obnewver>Criar nova versão</button><button type="button" class="link" data-obdup="${r.id}">Duplicar como novo orçamento</button></div></div>`;
+}
+async function obVersions() {
+  const el = $('#obvers'); if (!el) return; const o = S.ob; if (o.row.isNew) { el.innerHTML = '<p class="mute">Salve o orçamento para registrar versões.</p>'; return; }
+  const { data } = await sb.from('budgets').select('id,version,status,total,created_at,data').eq('root_id', o.row.root_id).order('version'); const vs = data || [];
+  const sum = v => { const d = v.data || {}; const m = {}; (d.stages || []).forEach(s => { const t = obStageDirect(s); if (t > 0) m[s.name] = { t, items: (s.items || []).map(i => String(i.desc || '').trim()).filter(Boolean) }; }); return m; };
+  el.innerHTML = '<ul class="obvers">' + vs.map((v, i) => { const prev = vs[i - 1]; let diff = '';
+    if (prev) { const a = sum(prev), b = sum(v), ch = []; Object.keys({ ...a, ...b }).forEach(k => { const x = a[k], y = b[k]; if (!x) ch.push(`+ etapa “${esc(k)}”`); else if (!y) ch.push(`− etapa “${esc(k)}”`); else { if (Math.abs(x.t - y.t) > 0.004) ch.push(`${esc(k)}: custo ${obBrl(x.t)} → ${obBrl(y.t)}`); const add = y.items.filter(t => !x.items.includes(t)), rm = x.items.filter(t => !y.items.includes(t)); if (add.length) ch.push(`${esc(k)}: + ${add.map(esc).join(', ')}`); if (rm.length) ch.push(`${esc(k)}: − ${rm.map(esc).join(', ')}`); } });
+      diff = `<small class="mute">Desde a v${prev.version}: preço ${obBrl(prev.total)} → ${obBrl(v.total)} (${v.total - prev.total >= 0 ? '+' : ''}${obBrl(v.total - prev.total)})</small>${ch.length ? `<ul class="obdiff">${ch.map(x => `<li>${x}</li>`).join('')}</ul>` : '<small class="mute"> · sem mudança de serviços</small>'}`; }
+    return `<li class="${v.id === o.row.id ? 'cur' : ''}"><b>v${v.version}</b> <span class="obbadge ${OB_ST_C[v.status]}">${esc(v.status)}</span> <span class="mute">${obBrl(v.total)} · ${fmt(v.created_at)}</span>${v.id === o.row.id ? ' <em>(aberta)</em>' : ` <a class="link" href="#orc/${v.id}">Abrir</a>`}${diff}</li>`; }).join('') + '</ul>';
+}
+async function obNewVersion() {
+  if (!await obSaveOk()) return; const o = S.ob;
+  const { data: mx } = await sb.from('budgets').select('version').eq('root_id', o.row.root_id).order('version', { ascending: false }).limit(1); const v = ((mx && mx[0] && mx[0].version) || o.row.version) + 1, id = crypto.randomUUID();
+  const d = obClone(o.d); d.issued_on = todayIso(); d.refused_reason = '';
+  const { error } = await sb.from('budgets').insert({ id, root_id: o.row.root_id, version: v, number: o.row.number, status: 'Em elaboração', modality: o.row.modality, client_name: d.client.name || null, title: d.obra.title || null, valid_until: d.valid_until || null, residence_id: d.residence_id || null, total: obCalc(d).price, data: JSON.parse(JSON.stringify(d, (k, x) => k.startsWith('_') ? undefined : x)) });
+  if (error) return toast('Não foi possível criar a nova versão: ' + error.message, 1); S.ob = null; toast(`Versão ${v} criada. A anterior foi mantida.`); location.hash = '#orc/' + id;
+}
+async function obDuplicate(id) {
+  const { data, error } = await sb.from('budgets').select('*').eq('id', id).single(); if (error || !data) return toast('Não foi possível duplicar.', 1);
+  const nid = crypto.randomUUID(), d = data.data || {}; d.obra = { ...(d.obra || {}), title: ((d.obra && d.obra.title) || data.title || '') + ' (cópia)' }; d.issued_on = todayIso(); d.refused_reason = '';
+  const r = await sb.from('budgets').insert({ id: nid, root_id: nid, version: 1, number: '', status: 'Em elaboração', modality: data.modality, client_name: data.client_name, title: d.obra.title, valid_until: data.valid_until, residence_id: data.residence_id, total: data.total, data: d });
+  if (r.error) return toast('Não foi possível duplicar: ' + r.error.message, 1); toast('Orçamento duplicado.'); S.ob = null; location.hash = '#orc/' + nid;
+}
+async function obSaveOk() { if (!S.ob) return true; return await obSave(true); }
+function obGuard() { if (obLocked()) { toast('Orçamento aprovado pelo cliente: crie uma nova versão para editar.', 1); return true; } return false; }
+async function obPdfOpen(model, w, row, d) {
+  const cfg = await obCfg(), tmp = S.ob; S.ob = { row, d, step: 0 }; const L = obIssues(); S.ob = tmp;
+  const bad = L.slice(0, 5).filter(([ok]) => !ok);   // fecha 100% e prazo não bloqueiam; o restante sim
+  if (bad.length) { w.close(); return toast('Antes de gerar o PDF: ' + bad.map(x => x[1].toLowerCase()).join('; ') + '.', 1); }
+  w.document.open(); w.document.write(obPdfHtml(row, d, model, cfg, S.logo)); w.document.close(); w.focus(); setTimeout(() => { try { w.print(); } catch (e) { /* imprime manualmente */ } }, 900);
+}
+function obWin() { const w = window.open('', '_blank'); if (!w) { toast('O navegador bloqueou a janela. Permita pop-ups para este site e tente de novo.', 1); return null; } w.document.write('<p style="font:14px sans-serif;padding:20px">Gerando a proposta…</p>'); return w; }
+
+// ----- banco de serviços
+async function obCatalog() {
+  const { data, error } = await sb.from('budget_catalog').select('*').order('stage').order('name');
+  if (error) { view.innerHTML = head('Banco de serviços', null) + '<p class="empty">Rode o schema_v38.sql no Supabase.</p>'; return; }
+  S.obCat = data || []; const ed = S.obCatEdit && S.obCat.find(x => x.id === S.obCatEdit) || {};
+  view.innerHTML = obTabs('cat') + `<div class="pagehead"><div><h2>Banco de serviços</h2><p class="mute">Serviços e custos unitários reaproveitados nos orçamentos. Cada orçamento guarda a sua própria cópia dos valores.</p></div></div>
+  <div class="card obsec"><h3>${ed.id ? 'Editar serviço' : 'Novo serviço'}</h3><div class="obgrid" id="obcatf"><label>Etapa<select id="ocs">${obSelOpts(OB_STAGES, ed.stage || OB_STAGES[0])}</select></label><label>Unidade<input id="ocu" list="obun" value="${esc(ed.unit || 'm²')}"></label><label class="s2">Serviço<input id="ocn" value="${esc(ed.name || '')}" placeholder="Ex.: Montagem de estrutura em Steel Frame"></label><label>Custo unitário (R$)<input id="occ" inputmode="decimal" value="${ed.id ? esc(Number(ed.unit_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })) : ''}"></label><label class="s2">Descrição técnica (aparece na proposta)<input id="ocd" value="${esc(ed.description || '')}"></label></div><datalist id="obun">${OB_UN.map(u => `<option value="${u}">`).join('')}</datalist>
+  <div class="obpdfbtns"><button type="button" data-occsave="${esc(ed.id || '')}">${ed.id ? 'Salvar alterações' : 'Adicionar ao banco'}</button>${ed.id ? '<button type="button" class="ghost2" data-occcancel>Cancelar</button>' : ''}</div></div>` +
+    OB_STAGES.concat([...new Set(S.obCat.map(x => x.stage))].filter(s => !OB_STAGES.includes(s))).map(st => { const l = S.obCat.filter(x => x.stage === st); return l.length ? `<div class="card"><b>${esc(st)}</b>${l.map(x => `<div class="obcatrow"><span><b>${esc(x.name)}</b><small class="mute">${esc(x.unit)} · ${obBrl(x.unit_cost)}${x.description ? ' · ' + esc(x.description) : ''}</small></span><span class="acts"><button type="button" class="link" data-occedit="${x.id}">Editar</button><button type="button" class="link danger" data-occdel="${x.id}">Excluir</button></span></div>`).join('')}</div>` : ''; }).join('') || '<p class="empty">O banco está vazio. Adicione o primeiro serviço acima.</p>';
+}
+
+// ----- configurações
+async function obSettings() {
+  const cfg = await obCfg(), C = cfg.company, P = cfg.pricing, f = (p, l, v, ex = '') => `<label${ex}>${l}<input data-cfg="${p}" value="${esc(v)}"></label>`, t = (p, l, v, n = 3) => `<label class="s2">${l}<textarea data-cfg="${p}" rows="${n}">${esc(v)}</textarea></label>`;
+  view.innerHTML = obTabs('cfg') + `<div class="pagehead"><div><h2>Configurações do orçamento</h2><p class="mute">Valores iniciais de cada novo orçamento. Revise com o responsável financeiro e técnico.</p></div></div>
+  <div class="card obsec"><h3>Dados da empresa (rodapé e aceite)</h3><div class="obgrid">${f('company.name', 'Nome', C.name)}${f('company.cnpj', 'CNPJ', C.cnpj)}${f('company.phone', 'Telefone', C.phone)}${f('company.email', 'E-mail', C.email)}${f('company.site', 'Site', C.site)}${f('company.city', 'Cidade / UF', C.city)}${f('company.crea', 'Responsável técnico / CREA', C.crea)}</div></div>
+  <div class="card obsec obint"><span class="obtag">USO INTERNO</span><h3>Formação de preço — percentuais iniciais</h3><div class="obgrid obg3">${f('pricing.indirect', 'Custos indiretos (%)', P.indirect)}${f('pricing.contingency', 'Contingência (%)', P.contingency)}${f('pricing.admin', 'Despesas comerciais e adm. (%)', P.admin)}${f('pricing.tax', 'Tributos sobre o preço (%)', P.tax)}${f('pricing.commission', 'Comissão (%)', P.commission)}${f('pricing.margin', 'Margem sobre o preço (%)', P.margin)}${f('valid_days', 'Validade padrão (dias)', cfg.valid_days)}</div></div>
+  <div class="card obsec"><h3>Textos padrão da proposta</h3><div class="obgrid">${t('intro', 'Mensagem de apresentação', cfg.intro)}${t('about', 'Sobre a Astell', cfg.about)}${t('guidelines', 'Diretrizes (um item por linha)', cfg.guidelines, 4)}${t('compliance', 'Engenharia e conformidade', cfg.compliance)}${t('method', 'Metodologia (“Título|Texto” por linha)', cfg.method, 4)}${t('ours', 'Fornecido pela Astell (um por linha)', cfg.ours, 4)}${t('client', 'Fornecido pelo cliente (um por linha)', cfg.client, 6)}${t('excl', 'Não contemplado (um por linha)', cfg.excl, 4)}${t('warranty', 'Garantias e responsabilidades', cfg.warranty)}${t('adjust', 'Reajuste', cfg.adjust)}${t('closing', 'Encerramento', cfg.closing)}${Object.keys(cfg.systems).map(k => t('systems.' + k, 'Sistema construtivo — ' + k, cfg.systems[k], 4)).join('')}</div></div>
+  <div class="obnav"><button type="button" class="obsave" data-obcfgsave>Salvar configurações</button></div>`;
+}
+
+// ----- proposta comercial (HTML pronto para imprimir/salvar como PDF)
+const obLong = iso => iso ? new Date(iso + 'T00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+const OB_MOD_NOTE = { 'Estimativa preliminar': 'Esta proposta é uma <b>estimativa preliminar</b>, elaborada com os projetos e quantitativos disponíveis nesta etapa. Valores, quantidades e prazos poderão ser revisados após a definição dos projetos executivos.', 'Pré-orçamento revisado': 'Este é um <b>pré-orçamento revisado</b>: os quantitativos e as composições foram atualizados com base em projetos mais avançados. Ajustes finais poderão ocorrer na definição das especificações.', 'Orçamento definitivo': 'Este é um <b>orçamento definitivo</b>: escopo, quantitativos e condições comerciais definidos para a contratação.' };
+const OB_VAL_NOTE = { 'Estimativa preliminar': 'O valor é apresentado como estimativa e poderá sofrer alteração conforme a definição final do projeto. Serviços adicionais ou mudanças de escopo serão formalizados e aprovados antes da execução.', 'Pré-orçamento revisado': 'O valor considera os quantitativos revisados. Mudanças de escopo e serviços adicionais serão formalizados e aprovados antes da execução.', 'Orçamento definitivo': 'O valor corresponde ao escopo contratado. Mudanças de escopo e serviços adicionais serão formalizados e aprovados antes da execução.' };
+const OB_CSS = `@page{size:A4;margin:0}*{box-sizing:border-box}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0;font:10pt/1.55 "Segoe UI",Helvetica,Arial,sans-serif;color:#17222d;background:#e9edf0}
+.pg{width:210mm;min-height:297mm;padding:20mm 17mm 22mm;position:relative;background:#fff;page-break-after:always;break-after:page;margin:0 auto}.pg:last-child{page-break-after:auto;break-after:auto}
+@media screen{.pg{margin:12px auto;box-shadow:0 2px 14px #0003}}
+.ph{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #3dc08c;padding-bottom:6px;margin-bottom:9mm;font-size:8pt;color:#5b6b78;letter-spacing:.04em}.ph b{color:#0b1623;letter-spacing:.14em;font-size:10pt}.ph img{max-height:26px;max-width:120px}
+.pf{position:absolute;left:17mm;right:17mm;bottom:9mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#8a9aa6;border-top:1px solid #dfe6ea;padding-top:5px}
+h2{font-size:17pt;margin:0 0 5mm;color:#0b1623;line-height:1.2}h2 i{font-style:normal;color:#2aa876}h3{font-size:11pt;margin:6mm 0 2mm;color:#0b1623}p{margin:0 0 3mm}
+.lead{font-size:11pt;color:#34434f}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin:6mm 0}.kpi{background:#f3f6f8;border-left:3px solid #3dc08c;border-radius:4px;padding:4mm}.kpi b{display:block;font-size:15pt;color:#0b1623}.kpi span{font-size:8pt;color:#5b6b78;text-transform:uppercase;letter-spacing:.06em}
+ul.bl{margin:0 0 3mm;padding:0;list-style:none}ul.bl li{position:relative;padding:1.2mm 0 1.2mm 5mm;border-bottom:1px solid #eef2f4}ul.bl li:before{content:"";position:absolute;left:0;top:3.4mm;width:2mm;height:2mm;border-radius:50%;background:#3dc08c}
+table{width:100%;border-collapse:collapse}tr{break-inside:avoid}td,th{padding:2.2mm 3mm;vertical-align:top;text-align:left}th{background:#0b1623;color:#fff;font-size:8pt;letter-spacing:.08em;text-transform:uppercase}
+.kv td:first-child{width:46mm;color:#5b6b78;font-size:8.5pt;text-transform:uppercase;letter-spacing:.05em}.kv tr:nth-child(odd){background:#f3f6f8}.r{text-align:right;white-space:nowrap}
+.note{background:#eef8f3;border-left:3px solid #3dc08c;padding:3.5mm 4mm;border-radius:3px;font-size:9.5pt;margin:5mm 0}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin:4mm 0}.card3{border:1px solid #dfe6ea;border-top:3px solid #3dc08c;border-radius:4px;padding:4mm}.card3 b{display:block;margin-bottom:1.5mm;color:#0b1623}.card3 span{font-size:9pt;color:#4a5a67}
+.stg{margin:0 0 5mm;break-inside:avoid}.stg h3{margin:0;background:#0b1623;color:#fff;padding:2.2mm 3mm;font-size:9.5pt;border-radius:3px 3px 0 0}.stg h3 i{font-style:normal;color:#3dc08c;margin-right:2mm}.stg td{border-bottom:1px solid #e5ebee;font-size:9.5pt}.stg td.n{width:13mm;color:#2aa876;font-weight:700}.stg td.q{width:30mm;text-align:right;color:#5b6b78;white-space:nowrap}.stg small{display:block;color:#7a8996}
+.price{background:#0b1623;color:#fff;border-radius:6px;padding:7mm 8mm;margin:2mm 0 6mm}.price small{color:#8fd9b9;letter-spacing:.12em;font-size:8pt}.price b{display:block;font-size:26pt;color:#3dc08c;line-height:1.1;margin-top:1mm}.price span{color:#b9c6cf;font-size:9pt}
+.inv td{border-bottom:1px solid #e5ebee}.inv tr.tot td{background:#f3f6f8;font-weight:700;border-top:2px solid #3dc08c}.mut{color:#7a8996}
+.gt{margin:3mm 0}.gr{display:grid;grid-template-columns:48mm 1fr 30mm;gap:3mm;align-items:center;padding:1.6mm 0;border-bottom:1px solid #eef2f4;font-size:9pt}.gb{height:5mm;background:#eef2f4;border-radius:3px;position:relative}.gb i{position:absolute;top:0;bottom:0;background:#3dc08c;border-radius:3px}.gax{display:grid;grid-template-columns:48mm 1fr 30mm;gap:3mm;font-size:7.5pt;color:#7a8996}.gax div{display:flex;justify-content:space-between}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4mm}.box{border:1px solid #dfe6ea;border-radius:5px;padding:4mm;font-size:9pt}.box h3{margin:0 0 2mm;font-size:9.5pt}.box.g{border-top:3px solid #3dc08c}.box.a{border-top:3px solid #e0a43a}.box.x{border-top:3px solid #b8c2ca}.box ul{margin:0;padding-left:4mm}.box li{margin-bottom:1.2mm}
+.sig{display:grid;grid-template-columns:1fr 1fr;gap:14mm;margin-top:22mm}.sig div{border-top:1px solid #17222d;padding-top:2mm;font-size:9pt}.sig b{display:block}.sig span{color:#5b6b78}
+.cover{background:#0b1623;color:#fff;padding:0;display:flex;flex-direction:column;height:297mm;overflow:hidden}.cv{padding:20mm 18mm}.cv-top{display:flex;justify-content:space-between;align-items:flex-start}.plate{background:#fff;border-radius:6px;padding:8px 14px;display:inline-block}.plate img{max-height:34px;max-width:150px;display:block}.wm{font-size:20pt;font-weight:700;letter-spacing:.14em}.wm small{display:block;font-size:8pt;letter-spacing:.35em;color:#3dc08c;font-weight:400}
+.cv-mid{padding:0 18mm;margin-top:22mm}.tag{display:inline-block;background:#3dc08c;color:#04231a;font-weight:700;font-size:8.5pt;letter-spacing:.16em;padding:2mm 4mm;border-radius:2px}.cover h1{font-size:34pt;line-height:1.1;margin:6mm 0 3mm;color:#fff}.cv-sub{font-size:13pt;color:#b9c6cf}
+.cv-img{margin:12mm 18mm 0;height:78mm;border-radius:6px;overflow:hidden}.cv-img img{width:100%;height:100%;object-fit:cover;display:block}
+.cv-meta{margin:auto 18mm 22mm;display:grid;grid-template-columns:repeat(4,1fr);gap:5mm;border-top:1px solid #2a4157;padding-top:6mm}.cv-meta small{display:block;color:#8fd9b9;font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase}.cv-meta b{font-size:10.5pt}
+.cv-bar{height:4mm;background:linear-gradient(90deg,#3dc08c,#1f6f78)}`;
+function obPdfHtml(row, d, model, cfg, logo) {
+  const C = cfg.company, c = obCalc(d), full = model === 'premium', plan = obPlan(d), num = row.number ? `${row.number} · v${row.version}` : 'Rascunho', obra = d.obra, local = obra.local || '';
+  const stg = d.stages.map((s, i) => ({ s, i })).filter(x => obStageDirect(x.s) > 0), days = Math.round(pn(d.duration_days)) || plan.total;
+  const mark = logo ? `<span class="plate"><img src="${esc(cld(logo, 400))}" alt="Astell"></span>` : `<span class="wm">ASTELL®<small>ENGENHARIA</small></span>`, small = logo ? `<img src="${esc(cld(logo, 300))}" alt="">` : '<b>ASTELL</b>';
+  let pageNo = 1, secN = 0; const pages = [], foot = () => `<div class="pf"><span>${esc(C.name || 'Astell Engenharia')}${C.cnpj ? ' · CNPJ ' + esc(C.cnpj) : ''}</span><span>${esc(num)} · ${esc(d.client.name)}</span></div>`;
+  const page = (title, inner, k) => { pageNo++; const kk = k ? String(++secN).padStart(2, '0') : ''; return `<section class="pg"><div class="ph">${small}<span>PROPOSTA COMERCIAL · ${esc(num)}</span></div><h2>${kk ? `<i>${kk}</i> | ` : ''}${title}</h2>${inner}${foot()}</section>`; };
+  const kv = rows => `<table class="kv"><tbody>${rows.filter(r => r[1] !== '' && r[1] != null).map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('')}</tbody></table>`;
+  const area = pn(obra.area_built), au = pn(obra.area_useful), m2 = n => obNum(n) + ' m²', li = t => obLines(t).map(x => `<li>${esc(x)}</li>`).join('');
+  const dados = kv([['Cliente', esc(d.client.name)], ['Obra', esc(obra.title)], ['Tipo de obra', esc(obra.tipo)], ['Local', esc(local)], ['Área construída', area ? m2(area) : ''], ['Área útil', au ? m2(au) : ''], ['Sistema construtivo', esc(obra.system)], ['Pavimentos', esc(obra.floors)], ['Padrão de acabamento', esc(obra.padrao)], ['Tipo de fundação', esc(obra.foundation)], ['Situação dos projetos', esc(obra.project_status)], ['Modalidade', esc(row.modality)]]);
+  const kp = `<div class="kpis"><div class="kpi"><b>${area ? m2(area) : '—'}</b><span>Área construída</span></div><div class="kpi"><b>${days ? days + ' dias' : '—'}</b><span>Prazo estimado</span></div><div class="kpi"><b>${esc(obra.system)}</b><span>Sistema construtivo</span></div></div>`;
+  // ----- capa
+  const cover = `<section class="pg cover"><div class="cv-bar"></div><div class="cv cv-top">${mark}<span style="font-size:9pt;color:#8fd9b9;letter-spacing:.12em">${esc(num)}</span></div><div class="cv-mid"><span class="tag">PROPOSTA COMERCIAL</span><h1>${esc(obra.title || 'Proposta')}</h1><div class="cv-sub">${esc(d.client.name)}${local ? ' • ' + esc(local) : ''}</div></div>${d.cover_url ? `<div class="cv-img"><img src="${esc(cld(d.cover_url, 1400))}" alt=""></div>` : ''}<div class="cv-meta"><div><small>Proposta</small><b>${esc(num)}</b></div><div><small>Data</small><b>${fmt(d.issued_on)}</b></div><div><small>Validade</small><b>${fmt(d.valid_until)}</b></div><div><small>${area ? 'Área construída' : 'Obra'}</small><b>${area ? m2(area) : esc(obra.tipo)}</b></div></div></section>`;
+  // ----- investimento
+  const invRows = stg.map(x => `<tr><td>${String(x.i + 1).padStart(2, '0')}</td><td>${esc(x.s.name)}</td><td class="r">${obBrl(c.stagePrice[x.i])}</td><td class="r mut">${obPct(c.price ? c.stagePrice[x.i] / c.price * 100 : 0)}</td></tr>`).join('');
+  const invest = `<div class="price"><small>INVESTIMENTO TOTAL${row.modality === 'Estimativa preliminar' ? ' ESTIMADO' : ''}</small><b>${obBrl(c.price)}</b><span>${c.per_m2 ? obBrl(c.per_m2) + ' por m² construído · ' : ''}${days ? 'prazo de ' + days + ' dias · ' : ''}data-base ${fmt(d.issued_on)}</span></div><table class="inv"><thead><tr><th style="width:12mm">Etapa</th><th>Descrição</th><th class="r">Valor</th><th class="r">%</th></tr></thead><tbody>${invRows}<tr class="tot"><td></td><td>Total</td><td class="r">${obBrl(c.price)}</td><td class="r">100%</td></tr></tbody></table><h3>Condição do valor</h3><p>${OB_VAL_NOTE[row.modality]}</p>`;
+  // ----- pagamento
+  const entryV = r2(c.price * pn(d.payment.entry_pct) / 100); let acc = 0; const sch = d.payment.schedule.filter(x => pn(x.pct) > 0), pay = sch.map((x, k) => { const v = k === sch.length - 1 ? r2(c.price - acc) : r2(c.price * pn(x.pct) / 100); acc = r2(acc + v); return `<tr><td>${esc(x.d)}</td><td class="r">${obPct(pn(x.pct))}</td><td class="r">${obBrl(v)}</td></tr>`; }).join('');
+  const payT = `<table class="inv"><thead><tr><th>Etapa de pagamento</th><th class="r">%</th><th class="r">Valor</th></tr></thead><tbody>${pay}<tr class="tot"><td>Total</td><td class="r">100%</td><td class="r">${obBrl(c.price)}</td></tr></tbody></table>`;
+  const cond = `${pn(d.payment.entry_pct) > 0 ? `<div class="note">Entrada de <b>${obPct(pn(d.payment.entry_pct))}</b> (${obBrl(entryV)}) na assinatura do contrato.</div>` : ''}${payT}<h3>Reajuste e observações</h3><p>${esc(d.payment.adjust)}</p><h3>Validade da proposta</h3><p>Esta proposta é válida até <b>${fmt(d.valid_until)}</b>. Após essa data, valores e prazos deverão ser reconfirmados.</p>`;
+  // ----- escopo (paginado)
+  const stTable = x => `<div class="stg"><h3><i>${String(x.i + 1).padStart(2, '0')}</i>${esc(x.s.name)}</h3><table><tbody>${x.s.items.filter(it => String(it.desc || '').trim()).map((it, j) => `<tr><td class="n">${String(x.i + 1).padStart(2, '0')}.${j + 1}</td><td>${esc(it.desc)}${it.spec ? `<small>${esc(it.spec)}</small>` : ''}</td><td class="q">${pn(it.qty) ? obNum(pn(it.qty)) + ' ' + esc(it.unit || '') : ''}</td></tr>`).join('')}</tbody></table></div>`;
+  const weight = x => 2 + x.s.items.reduce((a, it) => a + 1 + Math.floor(String(it.desc || '').length / 70) + (it.spec ? 1 : 0), 0); const chunks = []; let cur = [], w = 0;
+  stg.forEach(x => { const wx = weight(x); if (cur.length && w + wx > 27) { chunks.push(cur); cur = []; w = 0; } cur.push(x); w += wx; }); if (cur.length) chunks.push(cur);
+  const scope = () => chunks.map((ch, n) => page(`Escopo técnico${chunks.length > 1 ? ` (${n + 1}/${chunks.length})` : ''}`, (n === 0 ? '<p class="lead">Os itens abaixo estão contemplados no investimento apresentado. O detalhamento deixa claro o que será efetivamente executado.</p>' : '') + ch.map(stTable).join(''), n === 0 ? 1 : 0)).join('');
+  // ----- cronograma
+  const gant = `<div class="gt"><div class="gax"><span></span><div><span>Dia 0</span><span>${Math.round(plan.total / 2)}</span><span>${plan.total}</span></div><span></span></div>${plan.rows.map(r => `<div class="gr"><span>${esc(r.name)}</span><div class="gb"><i style="left:${plan.total ? r.ini / plan.total * 100 : 0}%;width:${plan.total ? Math.max(r.dur, 0.8) / plan.total * 100 : 0}%"></i></div><span class="r">${obBrl(c.stagePrice[r.i])}</span></div>`).join('')}</div><p class="mut" style="font-size:8.5pt">O prazo de execução e o cronograma de pagamento estão relacionados, mas não são necessariamente iguais: os pagamentos seguem as condições comerciais.</p>`;
+  const sysTxt = `<p>${esc(obra.system_text).replace(/\n/g, '<br>')}</p><h3>Metodologia</h3><div class="cards3">${obLines(cfg.method).map(l => { const [t, ...r] = l.split('|'); return `<div class="card3"><b>${esc(t)}</b><span>${esc(r.join('|'))}</span></div>`; }).join('')}</div><div class="note">${esc(cfg.compliance)}</div>`;
+  const three = `<div class="three"><div class="box g"><h3>Fornecido e executado pela ${esc(C.name || 'Astell')}</h3><ul>${li(d.scope.ours)}</ul></div><div class="box a"><h3>Fornecido pelo cliente</h3><ul>${li(d.scope.client)}</ul></div><div class="box x"><h3>Não contemplado na proposta</h3><ul>${li(d.scope.excl)}</ul></div></div>`;
+  const sign = `<div class="sig"><div><b>${esc((C.name || 'ASTELL ENGENHARIA').toUpperCase())}</b><span>${esc(d.responsible || 'Responsável pela proposta')}${C.crea ? ' · ' + esc(C.crea) : ''}</span></div><div><b>${esc((d.client.name || 'CLIENTE').toUpperCase())}</b><span>De acordo${d.client.doc ? ' · ' + esc(d.client.doc) : ''}</span></div></div>`;
+  const contacts = [C.phone, C.email, C.site].filter(Boolean).map(esc).join(' · '), where = [C.city, obLong(d.issued_on)].filter(Boolean).join(' • ');
+  const closing = `<p class="lead">${esc(cfg.closing)}</p><p>Proposta referente a <b>${esc(obra.title)}</b>${local ? ', em ' + esc(local) : ''}, para <b>${esc(d.client.name)}</b>, com validade até <b>${fmt(d.valid_until)}</b>.</p>${sign}<p class="mut" style="margin-top:10mm;font-size:9pt">${esc(where)}${contacts ? '<br>' + contacts : ''}</p>`;
+  const stageSum = stg.map(x => `<tr><td style="width:11mm;color:#2aa876;font-weight:700">${String(x.i + 1).padStart(2, '0')}</td><td><b>${esc(x.s.name)}</b><br><span class="mut" style="font-size:8.5pt">${esc(x.s.items.map(i => i.desc).filter(Boolean).join(' · '))}</span></td></tr>`).join('');
+  let out;
+  if (full) out = [cover,
+    page('Apresentação', `<p class="lead">${esc(d.intro)}</p>${kp}<h3>Sobre a ${esc(C.name || 'Astell Engenharia')}</h3><p>${esc(cfg.about)}</p><h3>Diretrizes da proposta</h3><ul class="bl">${li(cfg.guidelines)}</ul>`, 1),
+    page('Dados do projeto', dados + `<div class="note">${OB_MOD_NOTE[row.modality]}</div>${obra.notes ? `<h3>Observações técnicas</h3><p>${esc(obra.notes)}</p>` : ''}`, 1),
+    page('Sistema construtivo', sysTxt, 1), scope(),
+    page('Investimento', invest, 1), page('Cronograma físico-financeiro', `<p class="lead">Etapas da obra, períodos previstos e valores correspondentes.</p>${gant}`, 1),
+    page('Condições comerciais', cond, 1), page('Inclusões, exclusões e garantias', three + `<h3>Garantias e responsabilidades</h3><p>${esc(d.warranty)}</p>`, 1),
+    page('Encerramento e aceite', closing, 1)].join('');
+  else out = [cover,
+    page('Resumo e investimento', `<p class="lead">${esc(d.intro)}</p>${kp}${invest}`, 1),
+    page('Escopo e responsabilidades', `<table class="inv"><tbody>${stageSum}</tbody></table><div style="height:6mm"></div>${three}`, 1),
+    page('Condições e aceite', cond + `<h3>Garantias</h3><p>${esc(d.warranty)}</p>` + sign + `<p class="mut" style="margin-top:10mm;font-size:9pt">${esc(where)}${contacts ? '<br>' + contacts : ''}</p>`, 1)].join('');
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(num)} — ${esc(d.client.name)} — ${esc(C.name || 'Astell')}</title><style>${OB_CSS}</style></head><body>${out}</body></html>`;
+}
+
+// ----- eventos do módulo
+async function obRender() {
+  const arg = location.hash.slice(1).split('/')[1] || '', editor = !!arg && !['cat', 'cfg'].includes(arg);
+  view.classList.toggle('wide', editor);
+  try {
+    await obCfg(); const { data } = await sb.from('budget_catalog').select('*').order('name'); S.obCat = data || [];
+    if (arg === 'cat') return await obCatalog(); if (arg === 'cfg') return await obSettings(); if (editor) return await obOpen(arg); return await obList();
+  } catch (e) { view.innerHTML = head('Gerador de Orçamentos', null) + `<p class="empty">${esc(e.message || 'Não foi possível carregar.')}</p>`; }
+}
+const obStage = i => S.ob.d.stages[i];
+document.addEventListener('input', e => {
+  const t = e.target; if (!t.dataset) return;
+  if (t.dataset.cfg !== undefined && S.obCfg) { setPath(S.obCfg, t.dataset.cfg, t.value); return; }
+  if (t.dataset.ob === undefined || !S.ob) return; if (obLocked() && t.dataset.obrow === undefined) return;
+  setPath(S.ob.d, t.dataset.ob, t.value); obDirty(); obRefreshSums(); if (S.ob.step === 3) obBreak(); if (S.ob.step === 4) obGantt();
+});
+document.addEventListener('change', async e => {
+  const t = e.target; if (!t.dataset || !S.ob) return;
+  if (t.dataset.obrow) { S.ob.row[t.dataset.obrow] = t.value; obDirty(); if (t.dataset.obrow === 'status') { await obSave(true); obPaint(); } return; }
+  if (t.dataset.obres !== undefined) { const r = (S.res || []).find(x => x.id === t.value); S.ob.d.residence_id = t.value;
+    if (r) { const link = (S.links || []).find(l => l.residence_id === r.id), ow = link && (S.owners || []).find(x => x.id === link.cpf_id); if (!S.ob.d.client.name && ow) S.ob.d.client.name = ow.name; if (!S.ob.d.obra.local && r.address) S.ob.d.obra.local = r.address; if (!S.ob.d.obra.title) S.ob.d.obra.title = r.name; }
+    obDirty(); obPaint(); return; }
+  if (t.dataset.obsys !== undefined) { const c = S.obCfg.systems[t.value]; if (c != null && (!S.ob.d.obra.system_text || Object.values(S.obCfg.systems).includes(S.ob.d.obra.system_text))) { S.ob.d.obra.system_text = c; obDirty(); obPaint(); } return; }
+  if (t.dataset.obcatadd !== undefined && t.value) { if (obGuard()) return; const c = (S.obCat || []).find(x => x.id === t.value), s = obStage(+t.dataset.obcatadd); if (c) { s.items.push({ desc: c.name, unit: c.unit, qty: '1', cost: String(c.unit_cost).replace('.', ','), spec: c.description || '', comp: [] }); s._open = true; obDirty(); obPaint(); } return; }
+  if (t.dataset.obcover !== undefined && t.files[0]) {
+    const f = t.files[0]; if (!/^image\//.test(f.type)) return toast('Envie uma imagem.', 1); if (f.size > 10 * 1048576) return toast('A imagem deve ter até 10 MB.', 1);
+    toast('Enviando a imagem…'); try { const j = await cldPost(f, 'astell-home/propostas'); S.ob.d.cover_url = j.secure_url; obDirty(); obPaint(); toast('Imagem da capa enviada.'); } catch (err) { toast('Não foi possível enviar a imagem: ' + err.message, 1); }
+  }
+});
+document.addEventListener('click', async e => {
+  const b = e.target.closest && e.target.closest('[data-obstep],[data-obprev],[data-obnext],[data-obsave],[data-obstageadd],[data-obstagedel],[data-obitemadd],[data-obitemdel],[data-obcompadd],[data-obcompdel],[data-obpayadd],[data-obpaydel],[data-obcoverdel],[data-obpdf],[data-obpdfcur],[data-obdup],[data-obdel],[data-obnewver],[data-occsave],[data-occedit],[data-occdel],[data-occcancel],[data-obcfgsave]');
+  if (!b) return; const D = b.dataset, o = S.ob, go = async n => { if (o.dirty) await obSave(true); o.step = n; obPaint(); if (n === 6) obVersions(); };
+  if (D.obstep !== undefined) return go(+D.obstep); if (D.obprev !== undefined) return go(Math.max(0, o.step - 1)); if (D.obnext !== undefined) return go(Math.min(OB_STEPS.length - 1, o.step + 1));
+  if (D.obsave !== undefined) { await obSave(false); return; }
+  if (D.obstageadd !== undefined) { if (obGuard()) return; const n = ($('#obnewstage').value || '').trim(); if (!n) return toast('Informe o nome da etapa.', 1); o.d.stages.push({ name: n, items: [], ini: '', dur: '', _open: true }); obDirty(); return obPaint(); }
+  if (D.obstagedel !== undefined) { if (obGuard()) return; if (!await ask('Remover esta etapa e os serviços dela?')) return; o.d.stages.splice(+D.obstagedel, 1); obDirty(); return obPaint(); }
+  if (D.obitemadd !== undefined) { if (obGuard()) return; const s = obStage(+D.obitemadd); s.items.push({ desc: '', unit: 'm²', qty: '1', cost: '', spec: '', comp: [] }); s._open = true; obDirty(); return obPaint(); }
+  if (D.obitemdel !== undefined) { if (obGuard()) return; const [i, j] = D.obitemdel.split('.').map(Number); obStage(i).items.splice(j, 1); obDirty(); return obPaint(); }
+  if (D.obcompadd !== undefined) { if (obGuard()) return; const [i, j] = D.obcompadd.split('.').map(Number), it = obStage(i).items[j]; (it.comp = it.comp || []).push({ t: 'Material', d: '', q: '1', p: '' }); it._o = true; obStage(i)._open = true; obDirty(); return obPaint(); }
+  if (D.obcompdel !== undefined) { if (obGuard()) return; const [i, j, k] = D.obcompdel.split('.').map(Number); obStage(i).items[j].comp.splice(k, 1); obDirty(); return obPaint(); }
+  if (D.obpayadd !== undefined) { if (obGuard()) return; o.d.payment.schedule.push({ d: '', pct: '' }); obDirty(); return obPaint(); }
+  if (D.obpaydel !== undefined) { if (obGuard()) return; o.d.payment.schedule.splice(+D.obpaydel, 1); obDirty(); return obPaint(); }
+  if (D.obcoverdel !== undefined) { if (obGuard()) return; o.d.cover_url = ''; obDirty(); return obPaint(); }
+  if (D.obpdfcur !== undefined) { const w = obWin(); if (!w) return; if (o.dirty) await obSave(true); return obPdfOpen(D.obpdfcur, w, o.row, o.d); }
+  if (D.obpdf !== undefined) { const [id, model] = D.obpdf.split('|'), w = obWin(); if (!w) return; const { data } = await sb.from('budgets').select('*').eq('id', id).single(); if (!data) { w.close(); return toast('Não foi possível abrir o orçamento.', 1); }
+    const d = obMerge(obBlank(await obCfg()).d, data.data || {}); d.stages = (data.data && data.data.stages) || d.stages; return obPdfOpen(model, w, { number: data.number, version: data.version, status: data.status, modality: data.modality }, d); }
+  if (D.obdup !== undefined) return obDuplicate(D.obdup);
+  if (D.obnewver !== undefined) return obNewVersion();
+  if (D.obdel !== undefined) { if (!await ask('Excluir este orçamento e todas as suas versões?')) return; const { error } = await sb.from('budgets').delete().eq('root_id', D.obdel); if (error) return toast('Não foi possível excluir.', 1); if (S.ob && S.ob.row.root_id === D.obdel) S.ob = null; toast('Orçamento excluído.'); return obList(); }
+  // banco de serviços
+  if (D.occedit !== undefined) { S.obCatEdit = D.occedit; return obCatalog(); } if (D.occcancel !== undefined) { S.obCatEdit = null; return obCatalog(); }
+  if (D.occdel !== undefined) { if (!await ask('Excluir este serviço do banco? Os orçamentos já feitos não mudam.')) return; const { error } = await sb.from('budget_catalog').delete().eq('id', D.occdel); if (error) return toast('Não foi possível excluir.', 1); return obCatalog(); }
+  if (D.occsave !== undefined) { const row = { stage: $('#ocs').value, name: $('#ocn').value.trim(), unit: $('#ocu').value.trim() || 'un', unit_cost: pn($('#occ').value), description: $('#ocd').value.trim() || null };
+    if (!row.name) return toast('Informe o nome do serviço.', 1); const r = D.occsave ? await sb.from('budget_catalog').update(row).eq('id', D.occsave) : await sb.from('budget_catalog').insert(row);
+    if (r.error) return toast('Não foi possível salvar: ' + r.error.message, 1); S.obCatEdit = null; toast('Serviço salvo no banco.'); return obCatalog(); }
+  if (D.obcfgsave !== undefined) { const { error } = await sb.from('budget_settings').upsert({ key: 'cfg', value: S.obCfg, updated_at: new Date().toISOString() }); if (error) return toast('Não foi possível salvar: ' + error.message, 1); toast('Configurações salvas.'); }
+});
+
 const PAGES = {
+  async orc() { return obRender(); },
   async res() { if (S.arg) return S.sub ? resSection(S.arg, S.sub) : resDetail(S.arg); return resList(); },
   async own() {
     await loadOwners();
@@ -970,7 +1421,7 @@ async function render() {
   S.plan = S.sub === 'pl' && cat ? cat : null;   // planta aberta dentro da residência
   S.dcat = S.menu === 'docs' && DCATS[arg] ? arg : (S.sub === 'docs' && DCATS[cat] ? cat : null);   // pasta de documentos aberta
   view.classList.toggle('wide', !!S.arg);
-  $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat) || (S.menu === 'docs' && !S.dcat) || (S.menu === 'pl' && !!S.arg) || !!S.plan || ['rep', 'logo', 'bk'].includes(S.menu);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
+  $('#searchbar').hidden = (S.menu === 'res' && !!S.arg) || (S.menu === 'bld' && !S.cat) || (S.menu === 'docs' && !S.dcat) || (S.menu === 'pl' && !!S.arg) || !!S.plan || ['rep', 'logo', 'bk', 'orc'].includes(S.menu);   // residência já escolhida, ou tela só com cards: a pesquisa não é necessária
   const tela = S.menu + '|' + (S.sub || '') + '|' + (S.cat || '') + '|' + (S.dcat || '');   // pesquisa e página voltam ao início ao trocar de módulo ou de seção da residência
   if (S.lastMenu !== tela) { S.q = ''; $('#resSearch').value = ''; S.lastMenu = tela; S.pages = {}; S.stf = new Set(); S.urf = new Set(); S.vgf = null; }
   S.noun = null;   // cada módulo começa com a pesquisa vazia
