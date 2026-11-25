@@ -374,3 +374,15 @@ body.nav-open header .menubtn{visibility:hidden;pointer-events:none}
 .obsteps{position:sticky;top:var(--obtop,56px);z-index:6;margin:0 -16px 14px;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line);scrollbar-width:none}
 .obsteps::-webkit-scrollbar{display:none}
 .obnav{position:sticky;bottom:0;z-index:6;margin:10px -16px 0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -8px 18px #0008}
+
+/* Assistência: conversa com o cliente */
+.astchat{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+#astthread{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin:8px 0 10px;padding-right:4px}
+.astm{max-width:88%;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:#0b1623}
+.astm p{margin:3px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.astm .astw{display:block;font-size:.74rem;color:var(--mute)}
+.astm.st{align-self:flex-end;background:#12382f;border-color:#2a7a61}
+.astm.cl{align-self:flex-start}
+.astwait{display:flex!important;flex-direction:row!important;align-items:center;gap:8px;margin:6px 0}.astwait input{width:auto;min-height:0}
+.badge.s-late{background:#e5534b;color:#fff;font-weight:700}
+.astchat .btn2{margin-top:4px}
