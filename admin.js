@@ -63,7 +63,7 @@ const thumbsOf = a => a && a.length ? `<div class="thumbs">${a.slice(0, 6).map(x
 
 // ---------- ícones
 const ico = d => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d.split('|').map(p => `<path d="${p}"/>`).join('')}</svg>`;
-const IC = { calc: 'M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z|M8 6h8|M8 11h.01|M12 11h.01|M16 11h.01|M8 15h.01|M12 15h.01|M16 15h.01|M8 19h8', drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15', prefeitura: 'M3 21h18|M5 10v11|M9 10v11|M15 10v11|M19 10v11|M2 10l10-7 10 7z', banco: 'M2 6h20v12H2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M6 12h.01|M18 12h.01', capacete: 'M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5|M14 6a6 6 0 0 1 6 6v3|M4 15v-3a6 6 0 0 1 6-6|M3 15h18v4H3z', regua: 'M3 17L17 3l4 4L7 21z|M14 6l2 2|M11 9l2 2|M8 12l2 2|M5 15l2 2', estrada: 'M4 21L8 3|M20 21L16 3|M12 4v3|M12 11v3|M12 18v3', compasso: 'M12 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z|M11 5.5L5 21|M13 5.5L19 21|M8 15h8', chart: 'M3 3v18h18|M8 17v-6|M13 17V7|M18 17v-4', star: 'M12 2l3 7 7 .6-5.3 4.6 1.7 7.3L12 17.8 5.6 21.5l1.7-7.3L2 9.6 9 9z', dbase: 'M12 8c4.4 0 8-1.1 8-2.5S16.4 3 12 3 4 4.1 4 5.5 7.6 8 12 8z|M4 5.5v6C4 12.9 7.6 14 12 14s8-1.1 8-2.5v-6|M4 11.5v6C4 18.9 7.6 20 12 20s8-1.1 8-2.5v-6' };
+const IC = { cubo: 'M12 2l9 5v10l-9 5-9-5V7z|M12 22V12|M21 7l-9 5-9-5', calc: 'M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z|M8 6h8|M8 11h.01|M12 11h.01|M16 11h.01|M8 15h.01|M12 15h.01|M16 15h.01|M8 19h8', drop: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', image: 'M3 3h18v18H3z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21', casa: 'M4 21V8l8-5 8 5v13|M9 21v-6h6v6', user: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', doc: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M8 13h8|M8 17h8', layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5', shield: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z|M9 12l2 2 4-4', wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z', phones: 'M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3', clock: 'M12 6v6l4 2|M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20|M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z', grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z|M9 3v15|M15 6v15', prefeitura: 'M3 21h18|M5 10v11|M9 10v11|M15 10v11|M19 10v11|M2 10l10-7 10 7z', banco: 'M2 6h20v12H2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M6 12h.01|M18 12h.01', capacete: 'M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5|M14 6a6 6 0 0 1 6 6v3|M4 15v-3a6 6 0 0 1 6-6|M3 15h18v4H3z', regua: 'M3 17L17 3l4 4L7 21z|M14 6l2 2|M11 9l2 2|M8 12l2 2|M5 15l2 2', estrada: 'M4 21L8 3|M20 21L16 3|M12 4v3|M12 11v3|M12 18v3', compasso: 'M12 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z|M11 5.5L5 21|M13 5.5L19 21|M8 15h8', chart: 'M3 3v18h18|M8 17v-6|M13 17V7|M18 17v-4', star: 'M12 2l3 7 7 .6-5.3 4.6 1.7 7.3L12 17.8 5.6 21.5l1.7-7.3L2 9.6 9 9z', dbase: 'M12 8c4.4 0 8-1.1 8-2.5S16.4 3 12 3 4 4.1 4 5.5 7.6 8 12 8z|M4 5.5v6C4 12.9 7.6 14 12 14s8-1.1 8-2.5v-6|M4 11.5v6C4 18.9 7.6 20 12 20s8-1.1 8-2.5v-6' };
 const GOOGLE_SVG = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
 
 // ---------- menus (o primeiro é a tela inicial)
@@ -468,7 +468,7 @@ async function resList() {
   view.innerHTML = head('Residências', 'res') + SHELL.replace('id="mlist"', 'id="mlist" class="rescards"'); paintItems();
 }
 const contactLine = c => `${c.phone ? `<span class="mute meta">Celular: ${esc(c.phone)}</span>` : ''}${c.whatsapp ? `<span class="mute meta">WhatsApp: <a class="golda" href="https://wa.me/55${telDigits(c.whatsapp)}" target="_blank" rel="noopener">${esc(c.whatsapp)}</a></span>` : ''}`;
-const SECTIONS = { docs: ['Documentos', 'doc'], media: ['Mídias', 'image'], eq: ['Equipamentos', 'layers'], gar: ['Garantias', 'shield'], man: ['Inspeções Preventivas', 'wrench'], ast: ['Assistências', 'phones'], bld: ['Construção', 'home'], pl: ['Plantas Técnicas', 'map'] };
+const SECTIONS = { docs: ['Documentos', 'doc'], media: ['Mídias', 'image'], eq: ['Equipamentos', 'layers'], gar: ['Garantias', 'shield'], man: ['Inspeções Preventivas', 'wrench'], ast: ['Assistências', 'phones'], bld: ['Construção', 'home'], pl: ['Plantas Técnicas', 'map'], h3: ['Casa 3D', 'cubo'] };
 const BCATS = { est: ['Estruturas', 'home', 'Estrutura'], mat: ['Materiais', 'layers', 'Materiais'], sis: ['Sistemas', 'drop', 'Sistemas'], inf: ['Infraestrutura', 'estrada', 'Infraestrutura'] };   // [rótulo do card, ícone, valor gravado no banco]
 const bldTrail = () => S.scope ? [['Painel', '#res'], ['Residências', '#res'], [resName(S.scope), '#res/' + S.scope], ['Construção', '#res/' + S.scope + '/bld'], [BCATS[S.cat][0]]] : [['Painel', '#res'], ['Construção', '#bld'], [BCATS[S.cat][0]]];
 function bldHub() {   // quatro cards: Estruturas, Materiais, Sistemas e Infraestrutura (no menu geral e dentro da residência)
@@ -491,7 +491,7 @@ async function resSection(id, sub) {
   const r = S.res.find(x => x.id === id); if (!r) return resDetail(id);
   S.cur = r; S.scope = id;
   if (sub === 'media') { resetSel(); await Promise.all([loadMedia(), loadOwners()]); view.innerHTML = head('Mídias', null) + `<div id="mediabox">${mediaPanel()}</div>`; return; }
-  return ({ docs: () => PAGES.docs(), eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => S.cat ? listPage('building_items') : bldHub(), ast: () => PAGES.ast(), pl: () => S.plan ? plantaDetail(S.plan) : plantasList() })[sub]();
+  return ({ docs: () => PAGES.docs(), eq: () => listPage('equipment'), gar: () => listPage('warranties'), man: () => listPage('maintenance_tasks'), bld: () => S.cat ? listPage('building_items') : bldHub(), ast: () => PAGES.ast(), pl: () => S.plan ? plantaDetail(S.plan) : plantasList(), h3: () => casa3dAdmin() })[sub]();
 }
 
 // ---------- páginas dos módulos (independentes: mostram tudo, por ordem de cadastro, de todas as residências)
@@ -1812,3 +1812,215 @@ document.addEventListener('submit', async e => {
 // prazos (meses/anos): só números inteiros, nunca negativos
 document.addEventListener('keydown', e => { if (e.target.matches && e.target.matches('input[data-nonneg]') && (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E' || e.key === '.' || e.key === ',')) e.preventDefault(); });
 document.addEventListener('input', e => { const t = e.target; if (t.matches && t.matches('input[data-nonneg]') && t.value !== '' && !/^\d+$/.test(t.value)) t.value = t.value.replace(/\D/g, ''); });
+/* ===== CASA3D (início) — motor 3D leve em canvas, sem bibliotecas. Mesmo código no app e no painel admin. ===== */
+const C3 = (() => {
+  const T = 0.15, CUT = 0.35, SILL = 0.9, HEAD = 2.1, FOV = 0.8;   // espessura da parede, altura da parede "cortada", peitoril, verga, abertura da câmera (rad)
+  const PAL = ['#2f5d6e', '#35634f', '#4f4f7a', '#6b5a43', '#42607f', '#566b3f', '#7a4f5f', '#3f6663'];
+  const WALLN = { N: 'Norte (topo da planta)', S: 'Sul (base da planta)', O: 'Oeste (esquerda)', L: 'Leste (direita)' };
+  const num = (v, d = 0) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : d; };
+  const r2 = v => Math.round(v * 100) / 100;
+
+  function norm(d) {   // aceita qualquer coisa vinda do banco/IA e devolve um modelo limpo
+    d = d && typeof d === 'object' ? d : {};
+    const rooms = (Array.isArray(d.rooms) ? d.rooms : []).map(r => ({
+      name: String(r.name || '').slice(0, 40), x: r2(num(r.x)), y: r2(num(r.y)), w: r2(num(r.w)), d: r2(num(r.d)),
+      op: (Array.isArray(r.op) ? r.op : []).map(o => ({ t: o.t === 'janela' ? 'janela' : 'porta', wall: ['N', 'S', 'O', 'L'].includes(o.wall) ? o.wall : 'N', at: r2(num(o.at)), w: r2(num(o.w, o.t === 'janela' ? 1.2 : 0.8)) }))
+    }));
+    return { v: 1, h: Math.min(4.5, Math.max(2, num(d.h, 2.7))), rooms };
+  }
+  function validate(m) {   // { err: [...], warn: [...] }
+    const err = [], warn = [];
+    if (!m.rooms.length) err.push('Cadastre pelo menos um cômodo.');
+    m.rooms.forEach((r, i) => {
+      const n = r.name || 'Cômodo ' + (i + 1);
+      if (!r.name) warn.push(`Cômodo ${i + 1} está sem nome.`);
+      if (!(r.w >= 0.5 && r.d >= 0.5)) err.push(`${n}: largura e profundidade precisam ser de pelo menos 0,5 m.`);
+      if (r.w > 40 || r.d > 40) err.push(`${n}: medidas acima de 40 m — confira se estão em metros.`);
+      r.op.forEach((o, j) => { const L = o.wall === 'N' || o.wall === 'S' ? r.w : r.d; if (!(o.w >= 0.3)) err.push(`${n}: abertura ${j + 1} muito estreita.`); else if (o.at < -0.01 || o.at + o.w > L + 0.01) err.push(`${n}: ${o.t} ${j + 1} passa do tamanho da parede (${String(L).replace('.', ',')} m).`); });
+      for (let k = i + 1; k < m.rooms.length; k++) { const q = m.rooms[k], ix = Math.min(r.x + r.w, q.x + q.w) - Math.max(r.x, q.x), iy = Math.min(r.y + r.d, q.y + q.d) - Math.max(r.y, q.y); if (ix > 0.05 && iy > 0.05 && ix * iy > 0.1) warn.push(`"${n}" e "${q.name || 'Cômodo ' + (k + 1)}" estão sobrepostos (${String(r2(ix * iy)).replace('.', ',')} m²).`); }
+    });
+    return { err, warn };
+  }
+  const area = r => r2(r.w * r.d);
+
+  function build(m) {   // paredes (uma só por linha compartilhada) cortadas pelas aberturas, em pedaços curtos para ordenar bem
+    const lines = {}, key = (ax, c) => ax + '|' + (Math.round(c * 20) / 20);
+    m.rooms.forEach(r => {
+      [['N', 'H', r.y, r.x, r.x + r.w], ['S', 'H', r.y + r.d, r.x, r.x + r.w], ['O', 'V', r.x, r.y, r.y + r.d], ['L', 'V', r.x + r.w, r.y, r.y + r.d]].forEach(([wl, ax, c, a, b]) => {
+        const k = key(ax, c), L = lines[k] || (lines[k] = { ax, c, iv: [], op: [] }); L.iv.push([a, b]);
+        r.op.filter(o => o.wall === wl).forEach(o => L.op.push([a + o.at, a + o.at + o.w, o.t]));
+      });
+    });
+    const out = [];
+    Object.values(lines).forEach(L => {
+      const iv = L.iv.slice().sort((p, q) => p[0] - q[0]), mg = [];
+      iv.forEach(s => { const l = mg[mg.length - 1]; if (l && s[0] <= l[1] + 0.02) l[1] = Math.max(l[1], s[1]); else mg.push(s.slice()); });
+      mg.forEach(([a, b]) => {
+        const ops = L.op.filter(o => o[1] > a && o[0] < b).map(o => [Math.max(a, o[0]), Math.min(b, o[1]), o[2]]).sort((p, q) => p[0] - q[0]);
+        const push = (s, e, y0, y1, glass) => { if (e - s < 0.01 || y1 - y0 < 0.01) return; const n = Math.max(1, Math.ceil((e - s) / 1.2)); for (let i = 0; i < n; i++) out.push({ ax: L.ax, c: L.c, a: s + (e - s) * i / n, b: s + (e - s) * (i + 1) / n, y0, y1, glass: !!glass, ext: L.ax === 'H' }); };
+        let cur = a;
+        ops.forEach(o => { push(cur, o[0], 0, m.h); if (o[2] === 'janela') { push(o[0], o[1], 0, SILL); push(o[0], o[1], SILL, HEAD, true); } push(o[0], o[1], HEAD, m.h); cur = Math.max(cur, o[1]); });
+        push(cur, b, 0, m.h);
+      });
+    });
+    return out;
+  }
+
+  function mount(host, model, opt) {
+    opt = Object.assign({ cut: true, labels: true, bar: true }, opt || {});
+    if (!document.getElementById('c3css')) {
+      const st = document.createElement('style'); st.id = 'c3css';
+      st.textContent = '.c3{position:relative;border:1px solid var(--line,#24384a);border-radius:14px;overflow:hidden;background:#0d1b29;touch-action:none;user-select:none;-webkit-user-select:none}.c3 canvas{display:block;width:100%;height:100%;cursor:grab}.c3 canvas:active{cursor:grabbing}' +
+        '.c3bar{position:absolute;left:8px;right:8px;bottom:8px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:none}.c3bar button{pointer-events:auto;margin:0;min-height:34px;padding:0 12px;border-radius:17px;font-size:.78rem;font-weight:600;background:#12202fe6;color:#dfe9ee;border:1px solid #2c4258;cursor:pointer}.c3bar button.on{background:var(--gold,#3dc08c);color:#06231a;border-color:transparent}' +
+        '.c3hint{position:absolute;left:10px;top:8px;font-size:.72rem;color:#8da3b3;pointer-events:none}.c3empty[hidden]{display:none}.c3empty{position:absolute;inset:0;display:grid;place-items:center;color:#8da3b3;font-size:.9rem;text-align:center;padding:20px;pointer-events:none}';
+      document.head.appendChild(st);
+    }
+    host.classList.add('c3'); host.innerHTML = '';
+    const cv = document.createElement('canvas'), ctx = cv.getContext('2d'); host.appendChild(cv);
+    const hint = document.createElement('div'); hint.className = 'c3hint'; hint.textContent = 'Arraste para girar · pinça para aproximar'; host.appendChild(hint);
+    const empty = document.createElement('div'); empty.className = 'c3empty'; empty.hidden = true; empty.textContent = 'Cadastre os cômodos para ver a casa.'; host.appendChild(empty);
+    let bar = null, M = norm(model), walls = [], R = 5, ctr = [0, 0], bb = [0, 0, 0, 0], W = 300, H = 300, DPR = 1, cam = { yaw: 0.6, pitch: 0.95, dist: 20 }, raf = 0, dead = false;
+
+    function fit() {
+      const rs = M.rooms.filter(r => r.w > 0 && r.d > 0);
+      if (!rs.length) { R = 5; ctr = [0, 0]; empty.hidden = false; return; } empty.hidden = true;
+      const x0 = Math.min(...rs.map(r => r.x)), x1 = Math.max(...rs.map(r => r.x + r.w)), y0 = Math.min(...rs.map(r => r.y)), y1 = Math.max(...rs.map(r => r.y + r.d));
+      bb = [x0, x1, y0, y1]; ctr = [(x0 + x1) / 2, (y0 + y1) / 2]; R = Math.max(2, Math.hypot(x1 - x0, y1 - y0, M.h) / 2);
+    }
+    function reset(plan) { cam = plan ? { yaw: 0, pitch: 1.55, dist: R * 1.05 / Math.sin(FOV / 2) } : { yaw: 0.6, pitch: 0.95, dist: R * 1.15 / Math.sin(FOV / 2) }; draw(); }
+    function setModel(m, keep) { const had = M.rooms.some(r => r.w > 0 && r.d > 0); M = norm(m); walls = build(M); fit(); if (keep && had) draw(); else reset(false); }
+    function resize() { const b = host.getBoundingClientRect(); W = Math.max(120, b.width); H = Math.max(120, b.height); DPR = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); draw(); }
+    function sched() { if (!raf && !dead) raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
+
+    function draw() {
+      if (dead) return; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#13283a'); g.addColorStop(1, '#0a1520'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      if (!M.rooms.some(r => r.w > 0 && r.d > 0)) return;
+      const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch), E = [ctr[0] + cam.dist * cp * Math.sin(cam.yaw), cam.dist * sp, ctr[1] + cam.dist * cp * Math.cos(cam.yaw)];
+      let f = [ctr[0] - E[0], 0 - E[1], ctr[1] - E[2]]; const fl0 = Math.hypot(...f); f = f.map(v => v / fl0);
+      let rt = [-f[2], 0, f[0]]; const rl = Math.hypot(...rt); rt = rt.map(v => v / rl);   // direita = f × up
+      const up = [rt[1] * f[2] - rt[2] * f[1], rt[2] * f[0] - rt[0] * f[2], rt[0] * f[1] - rt[1] * f[0]], FL = 0.5 * Math.min(W, H) / Math.tan(FOV / 2);
+      const P = p => { const d = [p[0] - E[0], p[1] - E[1], p[2] - E[2]], z = d[0] * f[0] + d[1] * f[1] + d[2] * f[2]; return [W / 2 + FL * (d[0] * rt[0] + d[1] * rt[1] + d[2] * rt[2]) / z, H / 2 - FL * (d[0] * up[0] + d[1] * up[1] + d[2] * up[2]) / z, z]; };
+      const Ld = [-0.35, 0.8, 0.5], Ll = Math.hypot(...Ld), shade = n => 0.5 + 0.5 * Math.max(0, (n[0] * Ld[0] + n[1] * Ld[1] + n[2] * Ld[2]) / Ll);
+      const mul = (hex, k) => { const n = parseInt(hex.slice(1), 16); return `rgb(${Math.min(255, (n >> 16) * k) | 0},${Math.min(255, (n >> 8 & 255) * k) | 0},${Math.min(255, (n & 255) * k) | 0})`; };
+      // chão
+      M.rooms.forEach((r, i) => { if (!(r.w > 0 && r.d > 0)) return; const q = [[r.x, 0, r.y], [r.x + r.w, 0, r.y], [r.x + r.w, 0, r.y + r.d], [r.x, 0, r.y + r.d]].map(P); if (q.some(p => p[2] < 0.1)) return; ctx.beginPath(); q.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fillStyle = PAL[i % PAL.length]; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; ctx.stroke(); });
+      // paredes
+      const faces = [], near = w => { const cp2 = w.ax === 'H' ? E[2] : E[0], cen = w.ax === 'H' ? ctr[1] : ctr[0]; return Math.abs(w.c - cen) > 0.05 && (cp2 - w.c) * (w.c - cen) > 0; };
+      const cutOn = opt.cut && cam.pitch > 0.35;
+      walls.forEach(w => {
+        const inner = w.ax === 'H' ? (w.c > bb[2] + 0.1 && w.c < bb[3] - 0.1) : (w.c > bb[0] + 0.1 && w.c < bb[1] - 0.1), cut = cutOn && (inner || near(w)); let y1 = w.y1; if (cut) { if (w.glass) return; y1 = Math.min(y1, CUT); } if (y1 - w.y0 < 0.01) return;
+        const x0 = w.ax === 'H' ? w.a - (w.ext ? T / 2 : 0) : w.c - T / 2, x1 = w.ax === 'H' ? w.b + (w.ext ? T / 2 : 0) : w.c + T / 2, z0 = w.ax === 'H' ? w.c - T / 2 : w.a, z1 = w.ax === 'H' ? w.c + T / 2 : w.b;
+        const col = w.glass ? '#9fd4ee' : '#e4e9ee';
+        const add = (pts, n, base, alpha) => { const c = [0, 1, 2].map(k => (pts[0][k] + pts[1][k] + pts[2][k] + pts[3][k]) / 4); if (!alpha && (n[0] * (E[0] - c[0]) + n[1] * (E[1] - c[1]) + n[2] * (E[2] - c[2])) <= 0) return; faces.push({ pts, d: (E[0] - c[0]) ** 2 + (E[1] - c[1]) ** 2 + (E[2] - c[2]) ** 2, col: alpha ? 'rgba(150,205,235,.38)' : mul(base, shade(n)), line: alpha ? 'rgba(190,225,245,.7)' : 'rgba(10,20,30,.35)' }); };
+        if (w.glass) { const zc = w.ax === 'H' ? [[w.a, w.y0, w.c], [w.b, w.y0, w.c], [w.b, y1, w.c], [w.a, y1, w.c]] : [[w.c, w.y0, w.a], [w.c, w.y0, w.b], [w.c, y1, w.b], [w.c, y1, w.a]]; add(zc, [0, 0, 1], col, true); return; }
+        add([[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]], [0, 1, 0], '#f4f7fa');
+        add([[x0, w.y0, z0], [x1, w.y0, z0], [x1, y1, z0], [x0, y1, z0]], [0, 0, -1], col); add([[x1, w.y0, z1], [x0, w.y0, z1], [x0, y1, z1], [x1, y1, z1]], [0, 0, 1], col);
+        add([[x0, w.y0, z1], [x0, w.y0, z0], [x0, y1, z0], [x0, y1, z1]], [-1, 0, 0], col); add([[x1, w.y0, z0], [x1, w.y0, z1], [x1, y1, z1], [x1, y1, z0]], [1, 0, 0], col);
+      });
+      faces.sort((a, b) => b.d - a.d);
+      faces.forEach(fc => { const q = fc.pts.map(P); if (q.some(p => p[2] < 0.1)) return; ctx.beginPath(); q.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fillStyle = fc.col; ctx.fill(); ctx.strokeStyle = fc.line; ctx.lineWidth = 0.6; ctx.stroke(); });
+      // nomes
+      if (opt.labels) {
+        const seen = {}; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+        M.rooms.forEach(r => { if (!(r.w > 0 && r.d > 0) || !r.name || seen[r.name]) return; seen[r.name] = 1; const p = P([r.x + r.w / 2, 0.02, r.y + r.d / 2]); if (p[2] < 0.1) return;
+          const px = Math.max(10, Math.min(20, FL * 0.3 / p[2])), nm = r.name, ar = String(area(r)).replace('.', ',') + ' m²';
+          ctx.font = `700 ${px}px system-ui,sans-serif`; ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(8,16,24,.85)'; ctx.strokeText(nm, p[0], p[1]); ctx.fillStyle = '#fff'; ctx.fillText(nm, p[0], p[1]);
+          ctx.font = `500 ${px * 0.78}px system-ui,sans-serif`; ctx.strokeText(ar, p[0], p[1] + px * 1.05); ctx.fillStyle = '#cfe6dc'; ctx.fillText(ar, p[0], p[1] + px * 1.05); });
+      }
+    }
+
+    // gestos: 1 dedo gira, 2 dedos aproximam; roda do mouse aproxima; toque duplo restaura
+    const ptr = new Map(); let pinch = 0, lastTap = 0;
+    cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); ptr.set(e.pointerId, [e.clientX, e.clientY]); if (ptr.size === 2) { const a = [...ptr.values()]; pinch = Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]); } hint.style.opacity = 0; const t = Date.now(); if (ptr.size === 1 && t - lastTap < 300) reset(false); lastTap = t; });
+    cv.addEventListener('pointermove', e => { const p = ptr.get(e.pointerId); if (!p) return; const dx = e.clientX - p[0], dy = e.clientY - p[1]; ptr.set(e.pointerId, [e.clientX, e.clientY]);
+      if (ptr.size === 1) { cam.yaw -= dx * 0.008; cam.pitch = Math.max(0.2, Math.min(1.55, cam.pitch + dy * 0.006)); }
+      else if (ptr.size === 2) { const a = [...ptr.values()], d = Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]); if (pinch > 0) cam.dist = Math.max(R * 0.7, Math.min(R * 6, cam.dist * pinch / d)); pinch = d; }
+      sched(); });
+    const up = e => { ptr.delete(e.pointerId); pinch = 0; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    cv.addEventListener('wheel', e => { e.preventDefault(); cam.dist = Math.max(R * 0.7, Math.min(R * 6, cam.dist * (e.deltaY > 0 ? 1.1 : 0.9))); sched(); }, { passive: false });
+
+    if (opt.bar) {
+      bar = document.createElement('div'); bar.className = 'c3bar';
+      const mk = (txt, fn, tgl, on) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; if (tgl) b.classList.toggle('on', on()); b.addEventListener('click', () => { fn(); if (tgl) b.classList.toggle('on', on()); }); bar.appendChild(b); return b; };
+      mk('Vista 3D', () => reset(false)); mk('Planta (topo)', () => reset(true));
+      mk('Paredes baixas', () => { opt.cut = !opt.cut; draw(); }, true, () => opt.cut); mk('Nomes', () => { opt.labels = !opt.labels; draw(); }, true, () => opt.labels);
+      host.appendChild(bar);
+    }
+    const ro = window.ResizeObserver ? new ResizeObserver(() => resize()) : null; if (ro) ro.observe(host); else window.addEventListener('resize', resize);
+    walls = build(M); fit(); resize(); reset(false);
+    return { setModel, reset, redraw: draw, destroy() { dead = true; if (ro) ro.disconnect(); host.innerHTML = ''; host.classList.remove('c3'); }, get model() { return M; }, _cam: () => cam };
+  }
+  return { mount, norm, validate, area, WALLN, build };
+})();
+/* ===== fim do CASA3D ===== */
+
+// ---------- Casa 3D: planta (PDF) → cômodos conferidos pelo admin → modelo 3D para o cliente
+const H3W = [['N', 'Norte (topo)'], ['S', 'Sul (base)'], ['O', 'Oeste (esquerda)'], ['L', 'Leste (direita)']];
+const h3n = v => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : 0; };
+async function casa3dAdmin() {
+  const id = S.scope, { data, error } = await sb.from('house_models').select('*').eq('residence_id', id);
+  if (error) { view.innerHTML = head('Casa 3D', null) + '<p class="empty">Não foi possível carregar. Rode o schema_v41.sql no Supabase e tente de novo.</p>'; return; }
+  const row = (data || [])[0]; if (S.h3 && S.h3.api) { try { S.h3.api.destroy(); } catch { } }
+  const st = S.h3 = { id: row ? row.id : null, pub: !!(row && row.published), m: C3.norm(row ? row.data : {}), api: null, pdf: null };
+  view.innerHTML = head('Casa 3D', null) + `<div class="h3box" id="h3box">
+    <section class="card"><h3 style="margin-top:0">1. Planta técnica (PDF)</h3>
+      <p class="mute">Envie a planta da residência (1 pavimento). A IA sugere cômodos, medidas, portas e janelas; <b>você confere e corrige</b> abaixo antes de publicar. Se preferir, monte tudo à mão.</p>
+      <div class="h3file"><input type="file" id="h3file" accept="application/pdf,.pdf"><button type="button" class="up" id="h3ai">Ler planta com IA</button></div>
+      <p class="mute" id="h3st" role="status"></p><div class="notice" id="h3notes" hidden></div>
+      <details id="h3pdf" hidden><summary>Ver a planta enviada (para conferir)</summary><iframe id="h3frame" title="Planta enviada"></iframe></details></section>
+    <section class="card"><h3 style="margin-top:0">2. Cômodos e medidas (em metros)</h3>
+      <p class="mute">Origem (0, 0) no canto superior esquerdo da casa. X cresce para a direita e Y para baixo; o topo da planta é o Norte. Os cômodos devem encostar uns nos outros, como na planta. Cômodo em L: cadastre em dois retângulos com o mesmo nome.</p>
+      <label class="h3pd">Pé-direito (m)<input id="h3h" type="number" step="0.05" min="2" max="4.5" value="${st.m.h}"></label>
+      <div id="h3rooms"></div><button type="button" class="up" id="h3addroom">+ Adicionar cômodo</button></section>
+    <section class="card"><h3 style="margin-top:0">3. Conferir</h3><div id="h3val"></div><div id="h3prev" class="h3prev"></div></section>
+    <section class="card h3pub"><label class="chk"><input type="checkbox" id="h3pub" ${st.pub ? 'checked' : ''}> Publicar para o cliente (aparece em Minha Casa › Casa 3D)</label>
+      <button type="button" class="up" id="h3save">Salvar</button></section></div>`;
+  const box = $('#h3box'), say = t => { $('#h3st').textContent = t; };
+  const redraw = (keep) => { const v = C3.validate(C3.norm(st.m)), el = $('#h3val'); el.innerHTML = v.err.map(x => `<p class="h3err">⚠ ${esc(x)}</p>`).join('') + v.warn.map(x => `<p class="h3warn">• ${esc(x)}</p>`).join('') + (!v.err.length && !v.warn.length ? '<p class="mute">Tudo certo com as medidas.</p>' : ''); if (st.api) st.api.setModel(st.m, keep); };
+  const paintRooms = () => {
+    $('#h3rooms').innerHTML = st.m.rooms.length ? st.m.rooms.map((r, i) => `<div class="h3room" data-i="${i}">
+      <div class="h3g"><label class="h3n">Nome<input data-f="name" value="${esc(r.name)}" maxlength="40"></label>${[['x', 'X (m)'], ['y', 'Y (m)'], ['w', 'Largura (m)'], ['d', 'Profund. (m)']].map(([k, l]) => `<label>${l}<input data-f="${k}" type="number" step="0.05" inputmode="decimal" value="${r[k]}"></label>`).join('')}</div>
+      <details ${r.op.length ? 'open' : ''}><summary>Portas e janelas (${r.op.length})</summary>${r.op.map((o, j) => `<div class="h3op" data-j="${j}"><select data-o="t"><option value="porta" ${o.t === 'porta' ? 'selected' : ''}>Porta</option><option value="janela" ${o.t === 'janela' ? 'selected' : ''}>Janela</option></select><select data-o="wall">${H3W.map(([k, l]) => `<option value="${k}" ${o.wall === k ? 'selected' : ''}>${l}</option>`).join('')}</select><label>Início (m)<input data-o="at" type="number" step="0.05" inputmode="decimal" value="${o.at}"></label><label>Largura (m)<input data-o="w" type="number" step="0.05" inputmode="decimal" value="${o.w}"></label><button type="button" class="link" data-delop>Remover</button></div>`).join('')}
+        <div class="h3btns"><button type="button" class="ghost" data-addop="porta">+ Porta</button><button type="button" class="ghost" data-addop="janela">+ Janela</button></div>
+        <p class="mute">Início = distância do começo da parede (da esquerda nas paredes Norte/Sul, de cima nas Oeste/Leste) até a abertura.</p></details>
+      <button type="button" class="link" data-delroom>Excluir cômodo</button></div>`).join('') : '<p class="empty">Nenhum cômodo ainda. Use a leitura por IA ou adicione manualmente.</p>';
+  };
+  paintRooms(); st.api = C3.mount($('#h3prev'), st.m); redraw(false);
+  box.addEventListener('input', e => {
+    const t = e.target, rm = t.closest('.h3room');
+    if (t.id === 'h3h') { st.m.h = h3n(t.value) || 2.7; return redraw(true); }
+    if (!rm) return; const r = st.m.rooms[+rm.dataset.i]; if (!r) return;
+    if (t.dataset.f) r[t.dataset.f] = t.dataset.f === 'name' ? t.value : h3n(t.value);
+    else if (t.dataset.o) { const o = r.op[+t.closest('.h3op').dataset.j]; if (o) o[t.dataset.o] = ['t', 'wall'].includes(t.dataset.o) ? t.value : h3n(t.value); }
+    redraw(true);
+  });
+  box.addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return; const rm = b.closest('.h3room'), r = rm && st.m.rooms[+rm.dataset.i];
+    if (b.id === 'h3addroom') { const last = st.m.rooms[st.m.rooms.length - 1]; st.m.rooms.push({ name: '', x: last ? last.x + last.w : 0, y: last ? last.y : 0, w: 3, d: 3, op: [] }); paintRooms(); redraw(true); }
+    else if (b.dataset.delroom !== undefined && r) { if (!confirm(`Excluir o cômodo "${r.name || 'sem nome'}"?`)) return; st.m.rooms.splice(+rm.dataset.i, 1); paintRooms(); redraw(true); }
+    else if (b.dataset.addop && r) { r.op.push({ t: b.dataset.addop, wall: 'N', at: 0.5, w: b.dataset.addop === 'janela' ? 1.2 : 0.8 }); paintRooms(); redraw(true); }
+    else if (b.dataset.delop !== undefined && r) { r.op.splice(+b.closest('.h3op').dataset.j, 1); paintRooms(); redraw(true); }
+    else if (b.id === 'h3save') {
+      const m = C3.norm(st.m), v = C3.validate(m); if (v.err.length) return toast(v.err[0], 1);
+      const pub = $('#h3pub').checked; b.disabled = true;
+      const { data: d2, error } = await sb.from('house_models').upsert({ residence_id: id, data: m, published: pub, updated_at: new Date().toISOString() }, { onConflict: 'residence_id' }).select();
+      b.disabled = false; if (error) return toast('Não foi possível salvar: ' + error.message, 1);
+      st.id = d2 && d2[0] ? d2[0].id : st.id; st.pub = pub; toast(pub ? 'Casa 3D salva e publicada para o cliente.' : 'Casa 3D salva (ainda não visível para o cliente).');
+    }
+    else if (b.id === 'h3ai') {
+      const f = $('#h3file').files[0]; if (!f) return toast('Escolha o PDF da planta primeiro.', 1); if (f.size > 10e6) return toast('PDF muito grande (máximo 10 MB).', 1);
+      if (st.m.rooms.length && !confirm('A leitura por IA vai substituir os cômodos atuais. Continuar?')) return;
+      b.disabled = true; say('Lendo a planta com IA… pode levar até 1 minuto.');
+      try {
+        const b64 = await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = no; fr.readAsDataURL(f); });
+        const { data: out, error } = await sb.functions.invoke('plan-read', { body: { pdf: b64 } });
+        if (error) { let msg = 'Não foi possível ler a planta agora.'; try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch { } throw new Error(msg); }
+        if (!out || !(out.rooms || []).length) throw new Error('A IA não encontrou cômodos nessa planta. Monte à mão.');
+        st.m = C3.norm({ h: out.h, rooms: out.rooms }); $('#h3h').value = st.m.h; paintRooms(); redraw(false);
+        const nt = $('#h3notes'); nt.hidden = !out.notes; nt.innerHTML = out.notes ? `<b>Observações da IA:</b> ${esc(out.notes)}` : ''; say(`${st.m.rooms.length} cômodos sugeridos. Confira cada medida com a planta antes de publicar.`);
+      } catch (er) { say(''); toast(er.message || 'Falha ao ler a planta.', 1); } finally { b.disabled = false; }
+    }
+  });
+  $('#h3file').addEventListener('change', e => { const f = e.target.files[0]; if (st.pdf) URL.revokeObjectURL(st.pdf); st.pdf = f ? URL.createObjectURL(f) : null; $('#h3pdf').hidden = !f; $('#h3frame').src = st.pdf || 'about:blank'; });
+}
